@@ -1,0 +1,4635 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Colveur — Portfolio Vidéo</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Google Fonts : Dela Gothic One (Titres & Logo) + Inter (Interface Éditeur) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Inter:wght@400;500;600;700&display=block" rel="stylesheet">
+
+  <style>
+    :root {
+      --col-noir: #151515;
+      --col-taupe: #b6ab9d;
+      --diag-slant: 13vh;
+    }
+
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      text-rendering: geometricPrecision;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: var(--col-noir);
+      font-family: 'Inter', sans-serif;
+      color: var(--col-taupe);
+    }
+
+    .font-dela {
+      font-family: 'Dela Gothic One', cursive, sans-serif;
+      letter-spacing: -0.01em;
+    }
+
+    /* ==========================================================
+       ACCUEIL : CARROUSEL DIAGONAL EN BOUCLE INFINIE & FLÈCHES
+       ========================================================== */
+    #carousel-viewport {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background-color: var(--col-noir);
+      cursor: grab;
+      z-index: 10;
+    }
+
+    #carousel-viewport.is-dragging {
+      cursor: grabbing;
+    }
+
+    #carousel-track {
+      position: relative;
+      height: 100vh;
+      display: flex;
+      flex-direction: row;
+      align-items: stretch;
+      will-change: transform;
+    }
+
+    .diag-column {
+      position: relative;
+      flex-shrink: 0;
+      height: 100vh;
+      cursor: pointer;
+      z-index: 1;
+      transition: width 0.42s cubic-bezier(0.22, 1, 0.36, 1), z-index 0s;
+    }
+
+    .diag-column.is-hovered {
+      z-index: 25;
+    }
+
+    /* Mode 2 : Pousser les autres colonnes */
+    body[data-hover-mode="push"] #carousel-track.has-hovered .diag-column:not(.is-hovered) {
+      width: calc(var(--col-base-width) * 0.91) !important;
+    }
+
+    body[data-hover-mode="push"] #carousel-track.has-hovered .diag-column.is-hovered {
+      width: calc(var(--col-base-width) * 1.18) !important;
+    }
+
+    /* Cadre parallélogramme incliné avec bordures noires nettes */
+    .col-skew-frame {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      background-color: var(--col-noir);
+      border-left: 1.5px solid var(--col-noir);
+      border-right: 1.5px solid var(--col-noir);
+      transform: skewX(-14deg);
+      transform-origin: center center;
+      outline: 1px solid transparent;
+      backface-visibility: hidden;
+      transition: transform 0.42s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.42s ease;
+    }
+
+    /* Mode 1 (Défaut) : Manger sur les colonnes voisines */
+    body[data-hover-mode="eat"] .diag-column.is-hovered .col-skew-frame {
+      transform: skewX(-14deg) scaleX(1.16);
+      box-shadow: 0 0 40px rgba(0, 0, 0, 0.45);
+    }
+
+    /* Mode 3 : Cinéma Hybride */
+    body[data-hover-mode="hybrid"] .diag-column.is-hovered .col-skew-frame {
+      transform: skewX(-14deg) scaleX(1.11);
+      box-shadow: 0 0 40px rgba(0, 0, 0, 0.45);
+    }
+
+    /* Contre-inclinaison du média pour garder l'image droite sans trous dans les coins */
+    .col-unskew-media {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: -24%;
+      right: -24%;
+      transform: skewX(14deg);
+      transform-origin: center center;
+    }
+
+    .diag-media-layer {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      transition: opacity 0.38s ease, transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    body[data-hover-mode="hybrid"] .diag-column.is-hovered .diag-media-layer {
+      transform: scale(1.06);
+    }
+
+    .diag-sim-canvas,
+    .diag-video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    /* Conteneur YouTube sans bandes noires (simule object-fit: cover + recadrage X/Y) */
+    .yt-cover-wrap {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      pointer-events: none;
+      background-color: #151515;
+    }
+
+    .yt-cover-iframe {
+      position: absolute;
+      width: 260%;
+      height: 260%;
+      border: 0;
+      pointer-events: none;
+      transform: translate(-50%, -50%);
+    }
+
+    /* Titres des catégories : 100% nets (hors skewX), opacité 100% permanente, zéro glow */
+    .diag-title-wrap {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      z-index: 30;
+    }
+
+    .diag-title {
+      font-family: 'Dela Gothic One', cursive, sans-serif;
+      font-size: clamp(1.85rem, 3.2vw, 3.35rem);
+      color: var(--col-noir);
+      opacity: 1;
+      text-shadow: none;
+      transform: scale(0.92);
+      letter-spacing: -0.01em;
+      transition: transform 0.38s cubic-bezier(0.22, 1, 0.36, 1), letter-spacing 0.38s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .diag-column.is-hovered .diag-title {
+      transform: scale(1.05) translateY(-4px);
+      letter-spacing: 0.02em;
+    }
+
+    /* Boutons flèches latéraux en gélule (Taupe #b6ab9d + chevron Noir #151515, opacité unifiée 40% -> 100%) */
+    .carousel-arrow-btn {
+      position: fixed;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 46px;
+      height: 148px;
+      border-radius: 9999px;
+      background-color: var(--col-taupe);
+      color: var(--col-noir);
+      border: none;
+      outline: none;
+      box-shadow: none;
+      opacity: 0.4;
+      z-index: 40;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .carousel-arrow-btn.arrow-left {
+      left: 14px;
+    }
+
+    .carousel-arrow-btn.arrow-right {
+      right: 14px;
+    }
+
+    .carousel-arrow-btn:hover {
+      opacity: 1;
+      transform: translateY(-50%) scale(1.05);
+    }
+
+    .carousel-arrow-btn:active {
+      transform: translateY(-50%) scale(0.96);
+    }
+
+    .carousel-arrow-btn svg {
+      transition: transform 0.25s ease;
+    }
+
+    .carousel-arrow-btn.arrow-left:hover svg {
+      transform: translateX(-3px);
+    }
+
+    .carousel-arrow-btn.arrow-right:hover svg {
+      transform: translateX(3px);
+    }
+
+    /* Contrôles d'édition sur chaque colonne */
+    .editor-overlay-card {
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+
+    body.editor-active .editor-overlay-card {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .colveur-slider {
+      width: 100%;
+      accent-color: var(--col-taupe);
+      cursor: pointer;
+    }
+
+    /* ==========================================================
+       PAGE DE DESTINATION : PAGES PLEIN ÉCRAN ALTERNÉES (TAUPE / NOIR)
+       & HEADER FIXE À INVERSION BICOLORE EN TEMPS RÉEL
+       ========================================================== */
+    #category-page {
+      position: fixed;
+      inset: 0;
+      background-color: var(--col-taupe);
+      color: var(--col-noir);
+      z-index: 60;
+      opacity: 0;
+      pointer-events: none;
+      transform: scale(1.03);
+      transition: opacity 0.45s cubic-bezier(0.22, 1, 0.36, 1), transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    #category-page.is-open {
+      opacity: 1;
+      pointer-events: auto;
+      transform: scale(1);
+    }
+
+    /* Conteneur de défilement vertical (Scroll Libre ou Scroll Aimanté) */
+    #category-scroll-container {
+      width: 100vw;
+      height: 100vh;
+      overflow-y: auto;
+      overflow-x: hidden;
+      scroll-behavior: auto;
+    }
+
+    #category-scroll-container.scroll-mode-snap {
+      scroll-snap-type: y mandatory;
+    }
+
+    /* Chaque page de catégorie fait 100% de l'écran (100vw x 100vh) */
+    .cat-page-section {
+      position: relative;
+      width: 100vw;
+      min-height: 100vh;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    #category-scroll-container.scroll-mode-snap .cat-page-section {
+      scroll-snap-align: start;
+      scroll-snap-stop: always;
+    }
+
+    .cat-page-section.theme-taupe {
+      background-color: #b6ab9d;
+      color: #151515;
+    }
+
+    .cat-page-section.theme-noir {
+      background-color: #151515;
+      color: #b6ab9d;
+    }
+
+    /* Superposition des 2 calques d'en-tête fixe découpés en direct par SVG clipPath */
+    .cat-fixed-header-layer {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 132px;
+      z-index: 35;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1.5rem 2rem;
+      pointer-events: none;
+      opacity: 0;
+      transform: translateY(-14px);
+      transition: opacity 0.42s cubic-bezier(0.22, 1, 0.36, 1), transform 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    #category-page.header-visible .cat-fixed-header-layer {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .cat-fixed-header-layer.layer-for-taupe {
+      clip-path: url(#clip-taupe-header);
+      -webkit-clip-path: url(#clip-taupe-header);
+    }
+
+    .cat-fixed-header-layer.layer-for-noir {
+      clip-path: url(#clip-noir-header);
+      -webkit-clip-path: url(#clip-noir-header);
+    }
+
+    .cat-back-pill {
+      pointer-events: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.625rem 1.25rem;
+      border-radius: 9999px;
+      font-family: 'Dela Gothic One', cursive, sans-serif;
+      font-size: 0.875rem;
+      letter-spacing: 0.025em;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.22);
+      transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    #category-page.header-visible .cat-back-pill {
+      pointer-events: auto;
+    }
+
+    .cat-back-pill.is-hovered {
+      transform: scale(1.05);
+    }
+
+    .cat-back-pill:active {
+      transform: scale(0.95);
+    }
+
+    .cat-back-pill svg {
+      transition: transform 0.22s ease;
+    }
+
+    .cat-back-pill.is-hovered svg {
+      transform: translateX(-4px);
+    }
+
+    /* Conteneur du bouton "+ Ajouter une page" en bas (visible uniquement en Mode Éditeur) */
+    #category-editor-footer {
+      display: none;
+    }
+
+    body.editor-active #category-editor-footer {
+      display: flex;
+    }
+
+    #category-scroll-container.scroll-mode-snap #category-editor-footer {
+      scroll-snap-align: end;
+    }
+
+    /* ==========================================================
+       MODÈLE 2 : CADRES VIDÉO ARRONDIS & ZONES DE TEXTE (LIBRE / CANVA)
+       ========================================================== */
+    .m2-canvas-stage {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      z-index: 10;
+    }
+
+    /* Repères d'alignement magnétiques au centre en Mode Éditeur */
+    .m2-guide-line {
+      position: absolute;
+      pointer-events: none;
+      z-index: 45;
+      opacity: 0;
+      transition: opacity 0.12s ease;
+    }
+
+    .m2-guide-line.guide-v {
+      top: 0;
+      bottom: 0;
+      left: 50%;
+      width: 1px;
+      border-left: 1px dashed currentColor;
+    }
+
+    .m2-guide-line.guide-h {
+      left: 0;
+      right: 0;
+      top: 50%;
+      height: 1px;
+      border-top: 1px dashed currentColor;
+    }
+
+    .m2-guide-line.is-visible {
+      opacity: 0.45;
+    }
+
+    .m2-block {
+      position: absolute;
+      z-index: 15;
+      transition: box-shadow 0.2s ease;
+    }
+
+    body.editor-active .m2-block {
+      cursor: move;
+    }
+
+    body.editor-active .m2-block:hover {
+      outline: 2px dashed rgba(182, 171, 157, 0.55);
+      outline-offset: 4px;
+    }
+
+    .cat-page-section.theme-taupe .m2-block:hover {
+      outline-color: rgba(21, 21, 21, 0.45);
+    }
+
+    body.editor-active .m2-block.is-selected {
+      outline: 2px solid #10b981 !important;
+      outline-offset: 4px;
+      z-index: 30;
+    }
+
+    /* Cadre vidéo arrondi : Noir sur fond Taupe, Taupe sur fond Noir */
+    .m2-video-frame {
+      width: 100%;
+      height: 100%;
+      border-radius: 42px;
+      overflow: hidden;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background-color 0.3s ease;
+    }
+
+    .cat-page-section.theme-taupe .m2-video-frame {
+      background-color: #151515;
+      color: #b6ab9d;
+    }
+
+    .cat-page-section.theme-noir .m2-video-frame {
+      background-color: #b6ab9d;
+      color: #151515;
+    }
+
+    .m2-video-el {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      cursor: pointer;
+    }
+
+    /* Contrôles lecteur vidéo au survol (Pause, Son, Timeline, Plein écran) */
+    .m2-player-controls {
+      position: absolute;
+      left: 14px;
+      right: 14px;
+      bottom: 14px;
+      padding: 8px 14px;
+      border-radius: 9999px;
+      background: rgba(21, 21, 21, 0.82);
+      color: #b6ab9d;
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      opacity: 0;
+      transform: translateY(6px);
+      transition: opacity 0.25s ease, transform 0.25s ease;
+      z-index: 20;
+    }
+
+    .m2-video-frame:hover .m2-player-controls,
+    .m2-video-frame.is-paused .m2-player-controls {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Badge indicateur de son au clic sur la vidéo */
+    .m2-sound-toast {
+      position: absolute;
+      top: 16px;
+      right: 18px;
+      padding: 6px 12px;
+      border-radius: 9999px;
+      background: rgba(21, 21, 21, 0.78);
+      color: #b6ab9d;
+      font-size: 11px;
+      font-weight: 600;
+      pointer-events: none;
+      backdrop-filter: blur(6px);
+      opacity: 0;
+      transition: opacity 0.25s ease;
+      z-index: 18;
+    }
+
+    .m2-video-frame:hover .m2-sound-toast {
+      opacity: 0.9;
+    }
+
+    /* Zone de texte : Dela Gothic One + support Gras / Italique / Souligné */
+    .m2-text-content {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      font-family: 'Dela Gothic One', cursive, sans-serif;
+      line-height: 1.25;
+      word-break: break-word;
+      outline: none;
+      padding: 8px 12px;
+      user-select: text;
+      -webkit-user-select: text;
+    }
+
+    .cat-page-section.theme-taupe .m2-text-content {
+      color: #151515;
+    }
+
+    .cat-page-section.theme-noir .m2-text-content {
+      color: #b6ab9d;
+    }
+
+    /* Effet Gras amplifié pour Dela Gothic One (qui est en 400 natif) */
+    .m2-text-content.is-bold,
+    .m2-text-content b,
+    .m2-text-content strong {
+      font-weight: 900;
+      -webkit-text-stroke: 0.032em currentColor;
+      letter-spacing: 0.015em;
+    }
+
+    .m2-text-content.is-italic,
+    .m2-text-content i,
+    .m2-text-content em {
+      font-style: italic;
+    }
+
+    .m2-text-content.is-underline,
+    .m2-text-content u {
+      text-decoration: underline;
+      text-underline-offset: 0.14em;
+      text-decoration-thickness: 0.08em;
+    }
+
+    /* Poignées de redimensionnement (visibles uniquement en Mode Éditeur) */
+    .m2-resize-handle {
+      display: none;
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      border-radius: 9999px;
+      background-color: #10b981;
+      border: 2px solid #151515;
+      z-index: 40;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.45);
+    }
+
+    body.editor-active .m2-block:hover .m2-resize-handle,
+    body.editor-active .m2-block.is-selected .m2-resize-handle {
+      display: block;
+    }
+
+    .m2-resize-handle.handle-nw { top: -7px; left: -7px; cursor: nwse-resize; }
+    .m2-resize-handle.handle-ne { top: -7px; right: -7px; cursor: nesw-resize; }
+    .m2-resize-handle.handle-sw { bottom: -7px; left: -7px; cursor: nesw-resize; }
+    .m2-resize-handle.handle-se { bottom: -7px; right: -7px; cursor: nwse-resize; }
+    .m2-resize-handle.handle-e  { top: 50%; right: -7px; transform: translateY(-50%); cursor: ew-resize; }
+    .m2-resize-handle.handle-s  { bottom: -7px; left: 50%; transform: translateX(-50%); cursor: ns-resize; }
+
+    /* Barre d'outils flottante au-dessus du bloc sélectionné en Mode Éditeur */
+    .m2-block-toolbar {
+      display: none;
+      position: absolute;
+      bottom: calc(100% + 10px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(21, 21, 21, 0.96);
+      color: #b6ab9d;
+      border: 1px solid rgba(182, 171, 157, 0.4);
+      border-radius: 14px;
+      padding: 6px 10px;
+      gap: 6px;
+      align-items: center;
+      white-space: nowrap;
+      z-index: 55;
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.5);
+    }
+
+    /* Si le bloc est très haut dans la page, afficher sa barre d'outils en dessous */
+    .m2-block.toolbar-below .m2-block-toolbar {
+      bottom: auto;
+      top: calc(100% + 10px);
+    }
+
+    body.editor-active .m2-block.is-selected .m2-block-toolbar {
+      display: flex;
+    }
+
+    /* ==========================================================
+       CANVAS D'INTRO "COLVEUR" (3 SECONDES OU CLIC DIRECT -> ZOOM DANS LE "V")
+       ========================================================== */
+    #intro-canvas {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 100;
+      pointer-events: all;
+      cursor: pointer;
+      display: block;
+    }
+
+    #intro-canvas.is-hidden {
+      display: none;
+      pointer-events: none;
+    }
+
+    /* Petit texte informatif en bas de l'écran d'intro qui pulse lentement */
+    @keyframes slowFlicker {
+      0%, 100% { opacity: 0.22; }
+      50% { opacity: 0.75; }
+    }
+
+    #intro-bottom-hint {
+      position: fixed;
+      bottom: 2.25rem;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 105;
+      pointer-events: none;
+      color: var(--col-noir);
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      animation: slowFlicker 2.4s ease-in-out infinite;
+      transition: opacity 0.2s ease;
+    }
+
+    #intro-bottom-hint.is-hidden {
+      opacity: 0 !important;
+      animation: none;
+      display: none;
+    }
+  </style>
+</head>
+<body data-hover-mode="eat">
+
+  <!-- =====================================================================
+       1. ÉCRAN D'INTRODUCTION "COLVEUR" (3 SECONDES OU CLIC -> ZOOM DANS LE "V")
+       ===================================================================== -->
+  <canvas id="intro-canvas"></canvas>
+  <div id="intro-bottom-hint">Cliquer pour lancer l'animation</div>
+
+  <!-- =====================================================================
+       2. ACCUEIL PRINCIPAL : CARROUSEL DIAGONAL INFINI & FLÈCHES LATÉRALES
+       ===================================================================== -->
+  <main id="carousel-viewport" aria-label="Catégories du portfolio">
+    <div id="carousel-track"></div>
+
+    <button
+      type="button"
+      class="carousel-arrow-btn arrow-left"
+      aria-label="Catégorie précédente"
+      onclick="nudgeCarousel(-1)"
+    >
+      <svg class="w-6 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 48">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3.2" d="M17 6L7 24l10 18" />
+      </svg>
+    </button>
+
+    <button
+      type="button"
+      class="carousel-arrow-btn arrow-right"
+      aria-label="Catégorie suivante"
+      onclick="nudgeCarousel(1)"
+    >
+      <svg class="w-6 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 48">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3.2" d="M7 6l10 18-10 18" />
+      </svg>
+    </button>
+  </main>
+
+  <!-- =====================================================================
+       3. PAGE DE DESTINATION CATÉGORIE (PAGES PLEIN ÉCRAN ALTERNÉES TAUPE/NOIR
+          + HEADER FIXE À INVERSION BICOLORE DYNAMIQUE)
+       ===================================================================== -->
+  <section id="category-page" aria-hidden="true">
+    <!-- Définitions SVG invisibles qui découpent les 2 versions du header fixe au pixel près -->
+    <svg width="0" height="0" style="position:fixed; pointer-events:none;" aria-hidden="true">
+      <defs>
+        <clipPath id="clip-taupe-header" clipPathUnits="userSpaceOnUse"></clipPath>
+        <clipPath id="clip-noir-header" clipPathUnits="userSpaceOnUse"></clipPath>
+      </defs>
+    </svg>
+
+    <!-- CALQUE 1 DU HEADER FIXE : Visible uniquement au-dessus des sections Taupe (#b6ab9d) -->
+    <header class="cat-fixed-header-layer layer-for-taupe">
+      <button
+        type="button"
+        class="cat-back-pill bg-[#151515] text-[#b6ab9d]"
+        onmouseenter="setBackButtonHover(true)"
+        onmouseleave="setBackButtonHover(false)"
+        onclick="closeCategoryPage()"
+      >
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7" />
+        </svg>
+        <span>Accueil</span>
+      </button>
+
+      <div class="flex items-center gap-4">
+        <span class="text-xs uppercase tracking-widest font-semibold text-[#151515]/60">Catégorie</span>
+        <span class="cat-header-title font-dela text-2xl md:text-4xl text-[#151515]">Docu</span>
+      </div>
+    </header>
+
+    <!-- CALQUE 2 DU HEADER FIXE : Visible uniquement au-dessus des sections Noires (#151515) -->
+    <header class="cat-fixed-header-layer layer-for-noir" aria-hidden="true">
+      <button
+        type="button"
+        class="cat-back-pill bg-[#b6ab9d] text-[#151515]"
+        onmouseenter="setBackButtonHover(true)"
+        onmouseleave="setBackButtonHover(false)"
+        onclick="closeCategoryPage()"
+      >
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7" />
+        </svg>
+        <span>Accueil</span>
+      </button>
+
+      <div class="flex items-center gap-4">
+        <span class="text-xs uppercase tracking-widest font-semibold text-[#b6ab9d]/60">Catégorie</span>
+        <span class="cat-header-title font-dela text-2xl md:text-4xl text-[#b6ab9d]">Docu</span>
+      </div>
+    </header>
+
+    <!-- Zone de défilement des pages plein écran de la catégorie active -->
+    <div id="category-scroll-container">
+      <div id="category-pages-list">
+        <!-- Généré dynamiquement : Page 1 Taupe (#b6ab9d), Page 2 Noir (#151515), etc. -->
+      </div>
+
+      <!-- Bouton "+" en bas pour ajouter une nouvelle page (uniquement visible en Mode Éditeur) -->
+      <div
+        id="category-editor-footer"
+        class="w-full py-16 px-6 flex-col items-center justify-center gap-3 border-t border-current/15 transition-colors"
+      >
+        <button
+          type="button"
+          onclick="openAddPageTemplateModal()"
+          class="group flex items-center gap-3 px-7 py-4 rounded-full bg-[#b6ab9d] text-[#151515] border-2 border-[#151515] font-dela text-base shadow-2xl hover:scale-105 active:scale-95 transition-all"
+        >
+          <span class="w-8 h-8 rounded-full bg-[#151515] text-[#b6ab9d] flex items-center justify-center text-xl font-bold leading-none group-hover:rotate-90 transition-transform">+</span>
+          <span>Ajouter une page</span>
+        </button>
+        <span id="next-page-color-hint" class="text-xs font-medium opacity-75">
+          La prochaine page sera ajoutée en fond Taupe (#b6ab9d)
+        </span>
+      </div>
+    </div>
+  </section>
+
+  <!-- =====================================================================
+       4. BARRE SUPÉRIEURE DU MODE ÉDITEUR (VISIBLE UNIQUEMENT PAR TOI)
+       ===================================================================== -->
+  <aside
+    id="editor-topbar"
+    class="fixed top-4 left-1/2 -translate-x-1/2 z-[70] hidden items-center flex-wrap gap-2 md:gap-3 px-4 py-2.5 rounded-2xl bg-[#151515]/95 border border-[#b6ab9d]/40 text-[#b6ab9d] shadow-2xl backdrop-blur-md max-w-[96vw]"
+  >
+    <div class="flex items-center gap-2 pr-2 border-r border-[#b6ab9d]/20">
+      <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+      <span class="text-xs font-bold uppercase tracking-wider">Mode Éditeur</span>
+    </div>
+
+    <!-- Contrôles spécifiques à l'accueil (masqués quand on est dans une sous-page catégorie) -->
+    <div id="editor-home-controls" class="flex items-center flex-wrap gap-2 md:gap-3">
+      <div class="flex items-center gap-1.5 bg-[#222222] px-2.5 py-1 rounded-xl border border-[#b6ab9d]/15">
+        <span class="text-[11px] opacity-75">Effet survol :</span>
+        <select
+          id="hover-mode-select"
+          class="bg-transparent text-xs font-semibold text-[#b6ab9d] focus:outline-none cursor-pointer"
+          onchange="changeHoverMode(this.value)"
+        >
+          <option value="eat" class="bg-[#151515]">1. Manger sur les autres (Défaut)</option>
+          <option value="push" class="bg-[#151515]">2. Pousser les autres (Compresser)</option>
+          <option value="hybrid" class="bg-[#151515]">3. Cinéma Hybride (Élargir + Dolly Zoom)</option>
+        </select>
+      </div>
+
+      <div class="flex items-center gap-2 bg-[#222222] px-2.5 py-1 rounded-xl border border-[#b6ab9d]/15">
+        <span class="text-[11px] opacity-75">Opacité repos :</span>
+        <input
+          id="resting-opacity-slider"
+          type="range"
+          min="15"
+          max="85"
+          value="40"
+          class="w-16 accent-[#b6ab9d] cursor-pointer"
+          oninput="updateRestingOpacity(this.value)"
+        />
+        <span id="resting-opacity-label" class="text-xs font-mono font-bold w-8">40%</span>
+      </div>
+
+      <button
+        onclick="openAddCategoryModal()"
+        class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#b6ab9d] text-[#151515] text-xs font-bold hover:brightness-110 transition-all"
+      >
+        <span class="text-base leading-none">+</span>
+        <span>Catégorie</span>
+      </button>
+    </div>
+
+    <!-- Contrôles spécifiques aux sous-pages catégories (Scroll Libre vs Scroll Aimanté) -->
+    <div id="editor-category-controls" class="hidden items-center flex-wrap gap-2 md:gap-3">
+      <div class="flex items-center gap-1.5 bg-[#222222] px-2.5 py-1 rounded-xl border border-[#b6ab9d]/15">
+        <span class="text-[11px] opacity-75">Navigation :</span>
+        <select
+          id="category-scroll-mode-select"
+          class="bg-transparent text-xs font-semibold text-[#b6ab9d] focus:outline-none cursor-pointer"
+          onchange="changeCategoryScrollMode(this.value)"
+        >
+          <option value="free" class="bg-[#151515]">Scroll : Libre (Fluide)</option>
+          <option value="snap" class="bg-[#151515]">Scroll : Aimanté (Page par page)</option>
+        </select>
+      </div>
+    </div>
+
+    <button
+      onclick="replayIntroAnimation()"
+      class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#252525] hover:bg-[#303030] border border-[#b6ab9d]/25 text-xs font-medium transition-all"
+      title="Tester l'animation d'ouverture Colveur (3s + zoom dans le V)"
+    >
+      <span>🎬 Rejouer l'intro</span>
+    </button>
+
+    <button
+      onclick="openChangePinModal()"
+      class="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-[#252525] hover:bg-[#303030] border border-[#b6ab9d]/25 text-xs font-medium transition-all"
+      title="Changer le mot de passe du Mode Éditeur"
+    >
+      <span>🔑 Code secret</span>
+    </button>
+
+    <button
+      onclick="openExportCodeModal()"
+      class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500 text-[#151515] font-bold text-xs hover:brightness-110 transition-all shadow-lg"
+      title="Sauvegarder toutes tes modifications dans le code pour que tes clients les voient en ligne"
+    >
+      <span>💾 Sauvegarder pour mise en ligne</span>
+    </button>
+
+    <button
+      onclick="toggleEditorMode(false)"
+      class="px-2.5 py-1.5 rounded-xl bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-500/30 text-xs font-semibold transition-all"
+    >
+      Verrouiller
+    </button>
+  </aside>
+
+  <!-- =====================================================================
+       5. ACCÈS SECRET AU MODE ÉDITEUR (100% INVISIBLE POUR LES CLIENTS)
+          - Raccourci clavier : Shift + E
+          - Ou clic maintenu 1,5 seconde dans le coin inférieur droit
+       ===================================================================== -->
+  <div
+    id="secret-admin-corner"
+    class="fixed bottom-0 right-0 w-10 h-10 z-[74] opacity-0"
+    onpointerdown="startSecretCornerHold()"
+    onpointerup="cancelSecretCornerHold()"
+    onpointerleave="cancelSecretCornerHold()"
+  ></div>
+
+  <div id="admin-floating-controls" class="fixed bottom-5 right-5 z-[75] hidden items-center gap-2">
+    <button
+      id="btn-replay-quick"
+      onclick="replayIntroAnimation()"
+      class="px-3.5 py-2 rounded-full bg-[#151515]/85 hover:bg-[#151515] border border-[#b6ab9d]/30 text-[#b6ab9d] text-xs font-medium backdrop-blur-md shadow-lg transition-all hover:scale-105"
+      title="Revoir l'animation d'ouverture Colveur"
+    >
+      ↺ Revoir l'intro
+    </button>
+
+    <button
+      id="btn-editor-lock"
+      onclick="handleLockButtonClick()"
+      class="flex items-center gap-2 px-4 py-2 rounded-full bg-[#151515]/90 hover:bg-[#151515] border border-[#b6ab9d]/40 text-[#b6ab9d] text-xs font-semibold backdrop-blur-md shadow-xl transition-all hover:scale-105"
+    >
+      <span id="lock-icon">🔓</span>
+      <span id="lock-label">Quitter Éditeur</span>
+    </button>
+  </div>
+
+  <!-- =====================================================================
+       6. MODALES (CONNEXION ÉDITEUR, AJOUT VIDÉO "+", AJOUT CATÉGORIE, EXPORT)
+       ===================================================================== -->
+
+  <!-- Modale Mot de Passe / PIN Mode Éditeur -->
+  <div id="modal-login" class="fixed inset-0 z-[80] hidden items-center justify-center bg-black/75 backdrop-blur-sm p-4">
+    <div class="w-full max-w-md rounded-2xl bg-[#151515] border border-[#b6ab9d]/40 p-6 text-[#b6ab9d] shadow-2xl">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="font-dela text-xl text-[#b6ab9d]">Accès Créateur</h2>
+        <button onclick="closeModal('modal-login')" class="text-[#b6ab9d]/60 hover:text-[#b6ab9d] text-xl">&times;</button>
+      </div>
+      <p class="text-xs text-[#b6ab9d]/80 mb-4 leading-relaxed">
+        Entre ton code secret pour déverrouiller le <strong>Mode Éditeur</strong> (invisible pour tes visiteurs).
+      </p>
+      <form onsubmit="submitEditorLogin(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs uppercase tracking-wider mb-1.5 opacity-80">Code d'accès</label>
+          <input
+            id="editor-pin-input"
+            type="password"
+            placeholder="••••••"
+            value=""
+            class="w-full px-4 py-2.5 rounded-xl bg-[#222222] border border-[#b6ab9d]/30 text-[#b6ab9d] text-center text-lg tracking-widest font-bold focus:outline-none focus:border-[#b6ab9d]"
+          />
+          <p id="login-error-msg" class="text-xs text-red-400 mt-1.5 hidden">Code incorrect.</p>
+        </div>
+        <div class="flex items-center justify-end gap-2 pt-2">
+          <button type="button" onclick="closeModal('modal-login')" class="px-4 py-2 rounded-xl text-xs hover:bg-white/5">Annuler</button>
+          <button type="submit" class="px-5 py-2.5 rounded-xl bg-[#b6ab9d] text-[#151515] font-bold text-xs hover:brightness-110">
+            Déverrouiller le Mode Éditeur
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modale "+" : Ajouter / Changer la vidéo & Recadrer une catégorie -->
+  <div id="modal-video-edit" class="fixed inset-0 z-[80] hidden items-center justify-center bg-black/75 backdrop-blur-sm p-4">
+    <div class="w-full max-w-lg rounded-2xl bg-[#151515] border border-[#b6ab9d]/40 p-6 text-[#b6ab9d] shadow-2xl">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <span class="text-[11px] uppercase tracking-widest opacity-60">Modifier la bande diagonale</span>
+          <h2 id="modal-video-cat-name" class="font-dela text-2xl">Docu</h2>
+        </div>
+        <button onclick="closeModal('modal-video-edit')" class="text-[#b6ab9d]/60 hover:text-[#b6ab9d] text-2xl leading-none">&times;</button>
+      </div>
+
+      <div class="space-y-5">
+        <div>
+          <label class="block text-xs uppercase tracking-wider mb-1.5 opacity-80">Titre affiché sur la colonne</label>
+          <input
+            id="edit-cat-title-input"
+            type="text"
+            class="w-full px-3.5 py-2 rounded-xl bg-[#222222] border border-[#b6ab9d]/30 text-[#b6ab9d] font-dela text-base focus:outline-none focus:border-[#b6ab9d]"
+          />
+        </div>
+
+        <div class="p-4 rounded-xl bg-[#1e1e1e] border border-dashed border-[#b6ab9d]/40 text-center">
+          <label class="cursor-pointer flex flex-col items-center justify-center gap-2">
+            <span class="w-12 h-12 rounded-full bg-[#b6ab9d] text-[#151515] flex items-center justify-center text-2xl font-bold shadow-md hover:scale-105 transition-transform">+</span>
+            <span class="text-sm font-semibold">Choisir une vidéo sur ton ordinateur (.MP4, .MOV, .WEBM)</span>
+            <span class="text-xs opacity-65">La vidéo s'adapte immédiatement dans la colonne diagonale</span>
+            <input id="edit-cat-file-input" type="file" accept="video/*" class="hidden" onchange="handleLocalVideoUpload(event)" />
+          </label>
+        </div>
+
+        <div>
+          <label class="block text-xs uppercase tracking-wider mb-1.5 opacity-80">Coller un lien YouTube (normal, non-répertorié, Short) ou .mp4</label>
+          <input
+            id="edit-cat-url-input"
+            type="url"
+            placeholder="https://www.youtube.com/watch?v=... ou https://youtu.be/..."
+            class="w-full px-3.5 py-2 rounded-xl bg-[#222222] border border-[#b6ab9d]/30 text-[#b6ab9d] text-xs focus:outline-none focus:border-[#b6ab9d]"
+          />
+        </div>
+
+        <div class="p-4 rounded-xl bg-[#222222] border border-[#b6ab9d]/20">
+          <div class="flex items-center justify-between mb-2">
+            <label class="text-xs font-semibold">Cadrage horizontal (Gauche ↔ Droite)</label>
+            <span id="modal-pos-x-label" class="text-xs font-mono font-bold text-[#b6ab9d]">50%</span>
+          </div>
+          <input
+            id="modal-pos-x-slider"
+            type="range"
+            min="0"
+            max="100"
+            value="50"
+            class="colveur-slider"
+            oninput="updateCategoryPosXFromModal(this.value)"
+          />
+          <div class="flex justify-between text-[10px] opacity-60 mt-1">
+            <span>← Bord gauche de la vidéo</span>
+            <span>Centre (50%)</span>
+            <span>Bord droit de la vidéo →</span>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between pt-2">
+          <button
+            id="btn-delete-category"
+            type="button"
+            onclick="deleteActiveCategory()"
+            class="px-3.5 py-2 rounded-xl bg-red-500/15 hover:bg-red-500/25 text-red-300 text-xs font-medium transition-all"
+          >
+            Supprimer la catégorie
+          </button>
+
+          <div class="flex items-center gap-2 ml-auto">
+            <button type="button" onclick="closeModal('modal-video-edit')" class="px-4 py-2 rounded-xl text-xs hover:bg-white/5">Fermer</button>
+            <button
+              type="button"
+              onclick="saveCategoryModalChanges()"
+              class="px-5 py-2.5 rounded-xl bg-[#b6ab9d] text-[#151515] font-bold text-xs hover:brightness-110"
+            >
+              Enregistrer
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modale Ajouter une nouvelle catégorie -->
+  <div id="modal-add-category" class="fixed inset-0 z-[80] hidden items-center justify-center bg-black/75 backdrop-blur-sm p-4">
+    <div class="w-full max-w-md rounded-2xl bg-[#151515] border border-[#b6ab9d]/40 p-6 text-[#b6ab9d] shadow-2xl">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="font-dela text-xl">Nouvelle catégorie</h2>
+        <button onclick="closeModal('modal-add-category')" class="text-[#b6ab9d]/60 hover:text-[#b6ab9d] text-2xl leading-none">&times;</button>
+      </div>
+      <form onsubmit="confirmAddCategory(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs uppercase tracking-wider mb-1.5 opacity-80">Nom de la catégorie (ex: Clip, Pub, Court-métrage)</label>
+          <input
+            id="new-cat-name-input"
+            type="text"
+            required
+            placeholder="Clip"
+            class="w-full px-3.5 py-2.5 rounded-xl bg-[#222222] border border-[#b6ab9d]/30 text-[#b6ab9d] font-dela text-base focus:outline-none focus:border-[#b6ab9d]"
+          />
+        </div>
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" onclick="closeModal('modal-add-category')" class="px-4 py-2 rounded-xl text-xs hover:bg-white/5">Annuler</button>
+          <button type="submit" class="px-5 py-2.5 rounded-xl bg-[#b6ab9d] text-[#151515] font-bold text-xs hover:brightness-110">
+            Ajouter au carrousel
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modale "+" : Choisir un modèle de page à ajouter en bas de la catégorie -->
+  <div id="modal-add-page-template" class="fixed inset-0 z-[85] hidden items-center justify-center bg-black/75 backdrop-blur-sm p-4">
+    <div class="w-full max-w-xl rounded-2xl bg-[#151515] border border-[#b6ab9d]/40 p-6 text-[#b6ab9d] shadow-2xl space-y-5">
+      <div class="flex items-center justify-between">
+        <div>
+          <span class="text-[11px] uppercase tracking-widest opacity-60">Structure de la catégorie</span>
+          <h2 class="font-dela text-xl">Choisir un modèle de page</h2>
+        </div>
+        <button onclick="closeModal('modal-add-page-template')" class="text-[#b6ab9d]/60 hover:text-[#b6ab9d] text-2xl leading-none">&times;</button>
+      </div>
+
+      <p id="modal-template-color-info" class="text-xs text-[#b6ab9d]/85 leading-relaxed">
+        La nouvelle page sera ajoutée en plein écran (100%) en dessous des pages existantes avec alternance automatique des couleurs.
+      </p>
+
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+        <button
+          type="button"
+          onclick="addPageToActiveCategory('blank')"
+          class="group flex flex-col items-start text-left p-4 rounded-2xl bg-[#222222] hover:bg-[#2a2a2a] border-2 border-[#b6ab9d]/60 hover:border-[#b6ab9d] transition-all hover:scale-[1.02] active:scale-[0.98]"
+        >
+          <div id="template-blank-preview" class="w-full aspect-video rounded-xl bg-[#b6ab9d] border border-white/15 mb-3 flex items-center justify-center">
+            <span class="font-dela text-xs text-[#151515] opacity-75">100% Uni</span>
+          </div>
+          <span class="text-xs font-bold text-[#b6ab9d] group-hover:underline">Page vierge (Fond uni)</span>
+          <span class="text-[11px] opacity-65 mt-1">Fond uni Taupe ou Noir changeable en 1 clic.</span>
+        </button>
+
+        <button
+          type="button"
+          onclick="addPageToActiveCategory('fullscreen-video')"
+          class="group flex flex-col items-start text-left p-4 rounded-2xl bg-[#222222] hover:bg-[#2a2a2a] border-2 border-[#b6ab9d]/70 hover:border-[#b6ab9d] transition-all hover:scale-[1.02] active:scale-[0.98]"
+        >
+          <div class="w-full aspect-video rounded-xl bg-[#151515] border border-[#b6ab9d]/40 mb-3 flex flex-col items-center justify-center relative overflow-hidden">
+            <div class="absolute inset-0 bg-gradient-to-tr from-[#151515] via-[#b6ab9d]/25 to-[#151515]"></div>
+            <span class="relative z-10 w-8 h-8 rounded-full bg-[#b6ab9d] text-[#151515] flex items-center justify-center text-xs font-bold shadow">▶</span>
+            <span class="relative z-10 text-[10px] uppercase tracking-wider mt-1 text-[#b6ab9d]/90 font-semibold">Fond Noir + Opacité</span>
+          </div>
+          <span class="text-xs font-bold text-[#b6ab9d] group-hover:underline">Modèle 1 — Vidéo Plein Écran</span>
+          <span class="text-[11px] opacity-65 mt-1">Vidéo 100% sur fond noir avec réglage d'opacité et de volume/mute.</span>
+        </button>
+
+        <button
+          type="button"
+          onclick="addPageToActiveCategory('media-text')"
+          class="group flex flex-col items-start text-left p-4 rounded-2xl bg-[#222222] hover:bg-[#2a2a2a] border-2 border-[#b6ab9d] transition-all hover:scale-[1.02] active:scale-[0.98]"
+        >
+          <div class="w-full aspect-video rounded-xl bg-[#b6ab9d] border border-white/15 mb-3 p-2.5 flex items-center justify-between gap-2">
+            <div class="w-1/2 h-4/5 rounded-lg bg-[#151515] flex items-center justify-center text-[#b6ab9d] text-[10px] font-bold">▶</div>
+            <div class="w-5/12 text-center font-dela text-[8px] text-[#151515] leading-tight">ZONE DE TEXTE</div>
+          </div>
+          <span class="text-xs font-bold text-[#b6ab9d] group-hover:underline">Modèle 2 — Cadre Vidéo & Texte</span>
+          <span class="text-[11px] opacity-65 mt-1">Cadres vidéo déplaçables/redimensionnables + texte Dela Gothic formatable.</span>
+        </button>
+      </div>
+
+      <div class="flex justify-end pt-1">
+        <button type="button" onclick="closeModal('modal-add-page-template')" class="px-4 py-2 rounded-xl text-xs hover:bg-white/5">
+          Annuler
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modale "+" pour configurer un Cadre Vidéo du Modèle 2 (Fichier/URL + Recadrage interne X/Y + Formats) -->
+  <div id="modal-m2-frame-video" class="fixed inset-0 z-[85] hidden items-center justify-center bg-black/75 backdrop-blur-sm p-4">
+    <div class="w-full max-w-lg rounded-2xl bg-[#151515] border border-[#b6ab9d]/40 p-6 text-[#b6ab9d] shadow-2xl space-y-5">
+      <div class="flex items-center justify-between">
+        <div>
+          <span class="text-[11px] uppercase tracking-widest opacity-60">Modèle 2 — Cadre Vidéo</span>
+          <h2 class="font-dela text-xl">Ajouter / Cadrer la vidéo</h2>
+        </div>
+        <button onclick="closeModal('modal-m2-frame-video')" class="text-[#b6ab9d]/60 hover:text-[#b6ab9d] text-2xl leading-none">&times;</button>
+      </div>
+
+      <div class="p-4 rounded-xl bg-[#1e1e1e] border border-dashed border-[#b6ab9d]/40 text-center">
+        <label class="cursor-pointer flex flex-col items-center justify-center gap-2">
+          <span class="w-12 h-12 rounded-full bg-[#b6ab9d] text-[#151515] flex items-center justify-center text-2xl font-bold shadow-md hover:scale-105 transition-transform">+</span>
+          <span class="text-sm font-semibold">Choisir une vidéo sur ton ordinateur (.MP4, .MOV, .WEBM)</span>
+          <span class="text-xs opacity-65">Lecture auto en boucle • Clic visiteur pour le son ou pause</span>
+          <input id="m2-frame-file-input" type="file" accept="video/*" class="hidden" onchange="handleM2FrameLocalVideoUpload(event)" />
+        </label>
+      </div>
+
+      <div>
+        <label class="block text-xs uppercase tracking-wider mb-1.5 opacity-80">Coller un lien YouTube (normal, non-répertorié, Short) ou .mp4</label>
+        <input
+          id="m2-frame-url-input"
+          type="url"
+          placeholder="https://www.youtube.com/watch?v=... ou https://youtu.be/..."
+          class="w-full px-3.5 py-2 rounded-xl bg-[#222222] border border-[#b6ab9d]/30 text-[#b6ab9d] text-xs focus:outline-none focus:border-[#b6ab9d]"
+        />
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div class="p-3.5 rounded-xl bg-[#222222] border border-[#b6ab9d]/20">
+          <div class="flex items-center justify-between mb-1.5">
+            <label class="text-xs font-semibold">Cadrage Gauche ↔ Droite</label>
+            <span id="m2-frame-posx-label" class="text-xs font-mono font-bold">50%</span>
+          </div>
+          <input
+            id="m2-frame-posx-slider"
+            type="range"
+            min="0"
+            max="100"
+            value="50"
+            class="colveur-slider"
+            oninput="updateActiveM2FrameCrop('x', this.value)"
+          />
+        </div>
+
+        <div class="p-3.5 rounded-xl bg-[#222222] border border-[#b6ab9d]/20">
+          <div class="flex items-center justify-between mb-1.5">
+            <label class="text-xs font-semibold">Cadrage Haut ↕ Bas</label>
+            <span id="m2-frame-posy-label" class="text-xs font-mono font-bold">50%</span>
+          </div>
+          <input
+            id="m2-frame-posy-slider"
+            type="range"
+            min="0"
+            max="100"
+            value="50"
+            class="colveur-slider"
+            oninput="updateActiveM2FrameCrop('y', this.value)"
+          />
+        </div>
+      </div>
+
+      <div class="p-3.5 rounded-xl bg-[#222222] border border-[#b6ab9d]/20">
+        <div class="flex items-center justify-between mb-1.5">
+          <label class="text-xs font-semibold">Arrondi des coins du cadre</label>
+          <span id="m2-frame-radius-label" class="text-xs font-mono font-bold">42px</span>
+        </div>
+        <input
+          id="m2-frame-radius-slider"
+          type="range"
+          min="0"
+          max="120"
+          value="42"
+          class="colveur-slider"
+          oninput="updateActiveM2FrameRadius(this.value)"
+        />
+      </div>
+
+      <div class="flex items-center justify-between pt-2">
+        <button
+          type="button"
+          onclick="clearActiveM2FrameVideo()"
+          class="px-3.5 py-2 rounded-xl bg-red-500/15 hover:bg-red-500/25 text-red-300 text-xs font-medium"
+        >
+          Vider la vidéo
+        </button>
+        <div class="flex items-center gap-2">
+          <button type="button" onclick="closeModal('modal-m2-frame-video')" class="px-4 py-2 rounded-xl text-xs hover:bg-white/5">
+            Fermer
+          </button>
+          <button
+            type="button"
+            onclick="saveM2FrameVideoModal()"
+            class="px-5 py-2.5 rounded-xl bg-[#b6ab9d] text-[#151515] font-bold text-xs hover:brightness-110"
+          >
+            Enregistrer
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modale "+" pour ajouter/modifier la vidéo d'une page "Modèle 1 : Vidéo Plein Écran" -->
+  <div id="modal-page-video-edit" class="fixed inset-0 z-[85] hidden items-center justify-center bg-black/75 backdrop-blur-sm p-4">
+    <div class="w-full max-w-lg rounded-2xl bg-[#151515] border border-[#b6ab9d]/40 p-6 text-[#b6ab9d] shadow-2xl space-y-5">
+      <div class="flex items-center justify-between">
+        <div>
+          <span class="text-[11px] uppercase tracking-widest opacity-60">Modèle 1 — Vidéo Plein Écran</span>
+          <h2 id="modal-page-video-title" class="font-dela text-xl">Configurer la vidéo de la page</h2>
+        </div>
+        <button onclick="closeModal('modal-page-video-edit')" class="text-[#b6ab9d]/60 hover:text-[#b6ab9d] text-2xl leading-none">&times;</button>
+      </div>
+
+      <div class="p-4 rounded-xl bg-[#1e1e1e] border border-dashed border-[#b6ab9d]/40 text-center">
+        <label class="cursor-pointer flex flex-col items-center justify-center gap-2">
+          <span class="w-12 h-12 rounded-full bg-[#b6ab9d] text-[#151515] flex items-center justify-center text-2xl font-bold shadow-md hover:scale-105 transition-transform">+</span>
+          <span class="text-sm font-semibold">Choisir une vidéo sur ton ordinateur (.MP4, .MOV, .WEBM)</span>
+          <span class="text-xs opacity-65">Lecture en boucle plein écran sur fond Noir (#151515)</span>
+          <input id="edit-page-file-input" type="file" accept="video/*" class="hidden" onchange="handlePageLocalVideoUpload(event)" />
+        </label>
+      </div>
+
+      <div>
+        <label class="block text-xs uppercase tracking-wider mb-1.5 opacity-80">Coller un lien YouTube (normal, non-répertorié, Short) ou .mp4</label>
+        <input
+          id="edit-page-url-input"
+          type="url"
+          placeholder="https://www.youtube.com/watch?v=... ou https://youtu.be/..."
+          class="w-full px-3.5 py-2 rounded-xl bg-[#222222] border border-[#b6ab9d]/30 text-[#b6ab9d] text-xs focus:outline-none focus:border-[#b6ab9d]"
+        />
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div class="p-3.5 rounded-xl bg-[#222222] border border-[#b6ab9d]/20">
+          <div class="flex items-center justify-between mb-1.5">
+            <label class="text-xs font-semibold">Opacité vidéo</label>
+            <span id="modal-page-opacity-label" class="text-xs font-mono font-bold">80%</span>
+          </div>
+          <input
+            id="modal-page-opacity-slider"
+            type="range"
+            min="0"
+            max="100"
+            value="80"
+            class="colveur-slider"
+            oninput="updateActiveEditPageOpacity(this.value)"
+          />
+          <span class="block text-[10px] opacity-60 mt-1">Fond Noir (#151515) derrière</span>
+        </div>
+
+        <div class="p-3.5 rounded-xl bg-[#222222] border border-[#b6ab9d]/20">
+          <div class="flex items-center justify-between mb-1.5">
+            <label class="text-xs font-semibold">Volume sonore</label>
+            <span id="modal-page-volume-label" class="text-xs font-mono font-bold">80%</span>
+          </div>
+          <input
+            id="modal-page-volume-slider"
+            type="range"
+            min="0"
+            max="100"
+            value="80"
+            class="colveur-slider"
+            oninput="updateActiveEditPageVolume(this.value)"
+          />
+          <div class="flex items-center justify-between mt-2">
+            <span class="text-[10px] opacity-60">En boucle avec son</span>
+            <button
+              type="button"
+              id="modal-page-mute-btn"
+              onclick="toggleActiveEditPageMute()"
+              class="px-2.5 py-1 rounded-lg bg-[#151515] border border-[#b6ab9d]/30 text-[11px] font-bold hover:border-[#b6ab9d] transition-all"
+            >
+              🔊 Son actif
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-2">
+        <button type="button" onclick="closeModal('modal-page-video-edit')" class="px-4 py-2 rounded-xl text-xs hover:bg-white/5">
+          Fermer
+        </button>
+        <button
+          type="button"
+          onclick="savePageVideoModalChanges()"
+          class="px-5 py-2.5 rounded-xl bg-[#b6ab9d] text-[#151515] font-bold text-xs hover:brightness-110"
+        >
+          Enregistrer
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modale pour changer le code secret du Mode Éditeur -->
+  <div id="modal-change-pin" class="fixed inset-0 z-[85] hidden items-center justify-center bg-black/75 backdrop-blur-sm p-4">
+    <div class="w-full max-w-md rounded-2xl bg-[#151515] border border-[#b6ab9d]/40 p-6 text-[#b6ab9d] shadow-2xl space-y-4">
+      <div class="flex items-center justify-between">
+        <h2 class="font-dela text-lg">🔑 Changer ton code secret</h2>
+        <button onclick="closeModal('modal-change-pin')" class="text-[#b6ab9d]/60 hover:text-[#b6ab9d] text-2xl leading-none">&times;</button>
+      </div>
+      <p class="text-xs text-[#b6ab9d]/80 leading-relaxed">
+        Choisis ton nouveau mot de passe ou code PIN pour ouvrir le Mode Éditeur (via <strong>Shift + E</strong> ou en maintenant le coin inférieur droit pendant 1,5 seconde).
+      </p>
+      <form onsubmit="saveNewEditorPin(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs uppercase tracking-wider mb-1.5 opacity-80">Nouveau code secret</label>
+          <input
+            id="new-editor-pin-input"
+            type="text"
+            required
+            minlength="3"
+            placeholder="Ex: Colveur2026!"
+            class="w-full px-4 py-2.5 rounded-xl bg-[#222222] border border-[#b6ab9d]/30 text-[#b6ab9d] font-bold focus:outline-none focus:border-[#b6ab9d]"
+          />
+        </div>
+        <p id="pin-saved-feedback" class="text-xs text-emerald-400 font-semibold hidden">
+          ✓ Nouveau code enregistré ! Pense à cliquer sur « 💾 Sauvegarder pour mise en ligne » avant de quitter.
+        </p>
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" onclick="closeModal('modal-change-pin')" class="px-4 py-2 rounded-xl text-xs hover:bg-white/5">Fermer</button>
+          <button type="submit" class="px-5 py-2.5 rounded-xl bg-[#b6ab9d] text-[#151515] font-bold text-xs hover:brightness-110">
+            Valider le nouveau code
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modale d'Exportation du Code Final (pour Netlify / Google Sites) -->
+  <div id="modal-export-code" class="fixed inset-0 z-[90] hidden items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+    <div class="w-full max-w-2xl rounded-2xl bg-[#151515] border border-[#b6ab9d]/40 p-6 text-[#b6ab9d] shadow-2xl space-y-4">
+      <div class="flex items-center justify-between">
+        <div>
+          <span class="text-[11px] uppercase tracking-widest text-emerald-400 font-bold">Prêt pour Netlify & Google Sites</span>
+          <h2 class="font-dela text-xl">💾 Sauvegarder ton site mis à jour</h2>
+        </div>
+        <button onclick="closeModal('modal-export-code')" class="text-[#b6ab9d]/60 hover:text-[#b6ab9d] text-2xl leading-none">&times;</button>
+      </div>
+
+      <div class="text-xs space-y-2 text-[#b6ab9d]/85 leading-relaxed bg-[#202020] p-3.5 rounded-xl border border-[#b6ab9d]/20">
+        <p>
+          <strong>Pour Netlify (important pour éviter l'écran noir "Error - Request ID") :</strong><br>
+          Netlify refuse qu'on glisse un fichier <code>index.html</code> tout seul : il faut obligatoirement glisser soit un <strong>fichier .ZIP</strong> (bouton vert ci-dessous), soit un <strong>dossier</strong> contenant <code>index.html</code> !
+        </p>
+      </div>
+
+      <textarea
+        id="exported-html-textarea"
+        readonly
+        class="w-full h-36 p-3 rounded-xl bg-[#0e0e0e] border border-[#b6ab9d]/25 text-[#b6ab9d]/80 font-mono text-[11px] focus:outline-none"
+      ></textarea>
+
+      <div class="flex flex-wrap items-center justify-between gap-2.5 pt-1">
+        <div class="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onclick="downloadNetlifyReadyZip()"
+            class="px-4 py-2.5 rounded-xl bg-emerald-500 text-[#151515] font-bold text-xs hover:brightness-110 transition-all shadow-lg"
+          >
+            📦 Télécharger le .ZIP prêt pour Netlify
+          </button>
+
+          <button
+            type="button"
+            onclick="downloadUpdatedHtmlFile()"
+            class="px-3.5 py-2.5 rounded-xl bg-[#252525] hover:bg-[#323232] border border-[#b6ab9d]/30 text-xs font-semibold transition-all"
+          >
+            ⬇️ Fichier index.html seul
+          </button>
+        </div>
+
+        <div class="flex items-center gap-2 ml-auto">
+          <button
+            type="button"
+            id="btn-copy-exported-code"
+            onclick="copyExportedHtmlCode()"
+            class="px-4 py-2.5 rounded-xl bg-[#b6ab9d] text-[#151515] font-bold text-xs hover:brightness-110 transition-all"
+          >
+            📋 Copier le code
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =====================================================================
+       SCRIPT PRINCIPAL : ANIMATION "COLVEUR", CARROUSEL INFINI & ÉDITEUR
+       ===================================================================== -->
+  <script>
+    /*************************************************************************
+     * 0. CODE SECRET DU MODE ÉDITEUR (MODIFIABLE ICI OU VIA LE BOUTON "🔑 CODE")
+     *************************************************************************/
+    /* __COLVEUR_CONFIG_START__ */
+    let EDITOR_SECRET_PIN = "2026";
+    /* __COLVEUR_CONFIG_END__ */
+
+    const STORAGE_KEY_EDITOR_PIN = 'colveur_editor_secret_pin_v1';
+    try {
+      const savedPin = localStorage.getItem(STORAGE_KEY_EDITOR_PIN);
+      if (savedPin && savedPin.trim().length >= 3) {
+        EDITOR_SECRET_PIN = savedPin.trim();
+      }
+    } catch (e) {}
+
+    /**
+     * Détecte et extrait l'identifiant d'une vidéo YouTube (watch?v=, youtu.be/, shorts/, embed/)
+     */
+    function extractYouTubeId(url) {
+      if (!url || typeof url !== 'string') return null;
+      const trimmed = url.trim();
+      const regExp = /(?:youtube\.com\/(?:watch\?.*v=|embed\/|shorts\/|v\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
+      const match = trimmed.match(regExp);
+      return match ? match[1] : null;
+    }
+
+    function buildYouTubeEmbedUrl(ytId, autoplay = false) {
+      if (!ytId) return '';
+      return `https://www.youtube-nocookie.com/embed/${ytId}?enablejsapi=1&autoplay=${autoplay ? 1 : 0}&mute=1&loop=1&playlist=${ytId}&controls=0&rel=0&modestbranding=1&playsinline=1&iv_load_policy=3&disablekb=1`;
+    }
+
+    function sendYouTubeCommand(iframeEl, funcName, args = []) {
+      if (!iframeEl || !iframeEl.contentWindow) return;
+      try {
+        iframeEl.contentWindow.postMessage(JSON.stringify({
+          event: 'command',
+          func: funcName,
+          args: args
+        }), '*');
+      } catch (e) {}
+    }
+
+    /*************************************************************************
+     * 1. DONNÉES INITIALES DES CATÉGORIES (Docu, Event, Réseaux)
+     *************************************************************************/
+    const STORAGE_KEY_PORTFOLIO = 'colveur_portfolio_data_v2';
+    const STORAGE_KEY_SCROLL_MODE = 'colveur_category_scroll_mode_v1';
+
+    function createDefaultM2Blocks() {
+      return [
+        {
+          id: 'blk-vid-' + Math.random().toString(36).slice(2, 8),
+          type: 'video',
+          x: 6.2,
+          y: 33.5,
+          w: 39.8,
+          h: 41.5,
+          borderRadius: 42,
+          videoUrl: '',
+          posX: 50,
+          posY: 50
+        },
+        {
+          id: 'blk-txt-' + Math.random().toString(36).slice(2, 8),
+          type: 'text',
+          x: 59.5,
+          y: 44.5,
+          w: 31.0,
+          h: 18.0,
+          html: 'ZONE DE TEXTE',
+          fontSize: 28,
+          bold: false,
+          italic: false,
+          underline: false,
+          align: 'center'
+        }
+      ];
+    }
+
+    function normalizeM2Block(b, idx) {
+      if (!b || typeof b !== 'object') {
+        return createDefaultM2Blocks()[idx % 2];
+      }
+      if (b.type === 'text') {
+        return {
+          id: b.id || ('blk-txt-' + Math.random().toString(36).slice(2, 8)),
+          type: 'text',
+          x: typeof b.x === 'number' ? b.x : 58,
+          y: typeof b.y === 'number' ? b.y : 44,
+          w: typeof b.w === 'number' ? b.w : 32,
+          h: typeof b.h === 'number' ? b.h : 18,
+          html: typeof b.html === 'string' ? b.html : 'ZONE DE TEXTE',
+          fontSize: typeof b.fontSize === 'number' ? b.fontSize : 28,
+          bold: Boolean(b.bold),
+          italic: Boolean(b.italic),
+          underline: Boolean(b.underline),
+          align: (b.align === 'left' || b.align === 'right' || b.align === 'center') ? b.align : 'center'
+        };
+      }
+      return {
+        id: b.id || ('blk-vid-' + Math.random().toString(36).slice(2, 8)),
+        type: 'video',
+        x: typeof b.x === 'number' ? b.x : 6.2,
+        y: typeof b.y === 'number' ? b.y : 33.5,
+        w: typeof b.w === 'number' ? b.w : 39.8,
+        h: typeof b.h === 'number' ? b.h : 41.5,
+        borderRadius: typeof b.borderRadius === 'number' ? b.borderRadius : 42,
+        videoUrl: (b.videoUrl && !String(b.videoUrl).startsWith('blob:')) ? b.videoUrl : (b.videoUrl || ''),
+        posX: typeof b.posX === 'number' ? b.posX : 50,
+        posY: typeof b.posY === 'number' ? b.posY : 50
+      };
+    }
+
+    function normalizePageObject(page, index) {
+      let tpl = 'blank';
+      if (page && page.template === 'fullscreen-video') tpl = 'fullscreen-video';
+      else if (page && page.template === 'media-text') tpl = 'media-text';
+
+      const defaultTheme = tpl === 'fullscreen-video' ? 'noir' : (index % 2 === 0 ? 'taupe' : 'noir');
+      const bgTheme = (page && (page.bgTheme === 'taupe' || page.bgTheme === 'noir')) ? page.bgTheme : defaultTheme;
+
+      const titleMap = {
+        'blank': 'Page vierge (Fond uni)',
+        'fullscreen-video': 'Modèle 1 : Vidéo Plein Écran',
+        'media-text': 'Modèle 2 : Cadre Vidéo & Texte'
+      };
+
+      const rawBlocks = (page && Array.isArray(page.blocks) && page.blocks.length > 0)
+        ? page.blocks.map((b, bIdx) => normalizeM2Block(b, bIdx))
+        : createDefaultM2Blocks();
+
+      return {
+        id: (page && page.id) ? page.id : ('page-' + Math.random().toString(36).slice(2, 9)),
+        template: tpl,
+        title: titleMap[tpl],
+        bgTheme,
+        videoUrl: (page && page.videoUrl) ? page.videoUrl : '',
+        videoOpacity: (page && typeof page.videoOpacity === 'number') ? page.videoOpacity : 80,
+        videoVolume: (page && typeof page.videoVolume === 'number') ? page.videoVolume : 80,
+        videoMuted: (page && typeof page.videoMuted === 'boolean') ? page.videoMuted : false,
+        blocks: rawBlocks
+      };
+    }
+
+    function createDefaultPages() {
+      return [
+        normalizePageObject({ template: 'media-text', bgTheme: 'taupe' }, 0),
+        normalizePageObject({ template: 'blank', bgTheme: 'noir' }, 1)
+      ];
+    }
+
+    /* __COLVEUR_DATA_START__ */
+    const DEFAULT_CATEGORIES = [
+      {
+        id: 'cat-docu',
+        title: 'Docu',
+        theme: 'docu',
+        videoUrl: '',
+        posX: 50,
+        pages: createDefaultPages()
+      },
+      {
+        id: 'cat-event',
+        title: 'Event',
+        theme: 'event',
+        videoUrl: '',
+        posX: 50,
+        pages: createDefaultPages()
+      },
+      {
+        id: 'cat-reseaux',
+        title: 'Réseaux',
+        theme: 'reseaux',
+        videoUrl: '',
+        posX: 50,
+        pages: createDefaultPages()
+      }
+    ];
+    /* __COLVEUR_DATA_END__ */
+
+    function loadPersistedCategories() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY_PORTFOLIO);
+        if (!raw) return JSON.parse(JSON.stringify(DEFAULT_CATEGORIES));
+        const parsed = JSON.parse(raw);
+        if (!Array.isArray(parsed) || parsed.length === 0) {
+          return JSON.parse(JSON.stringify(DEFAULT_CATEGORIES));
+        }
+        return parsed.map((cat, idx) => ({
+          id: cat.id || 'cat-' + idx,
+          title: cat.title || 'Catégorie',
+          theme: cat.theme || ['docu', 'event', 'reseaux'][idx % 3],
+          videoUrl: (cat.videoUrl && !cat.videoUrl.startsWith('blob:')) ? cat.videoUrl : '',
+          posX: typeof cat.posX === 'number' ? cat.posX : 50,
+          pages: (Array.isArray(cat.pages) && cat.pages.length > 0)
+            ? cat.pages.map((p, pIdx) => normalizePageObject({
+                ...p,
+                videoUrl: (p && p.videoUrl && !String(p.videoUrl).startsWith('blob:')) ? p.videoUrl : '',
+                blocks: Array.isArray(p && p.blocks) ? p.blocks.map((b, bIdx) => ({
+                  ...normalizeM2Block(b, bIdx),
+                  videoUrl: (b && b.videoUrl && !String(b.videoUrl).startsWith('blob:')) ? b.videoUrl : ''
+                })) : undefined
+              }, pIdx))
+            : createDefaultPages()
+        }));
+      } catch (e) {
+        return JSON.parse(JSON.stringify(DEFAULT_CATEGORIES));
+      }
+    }
+
+    function saveCategoriesToStorage() {
+      try {
+        const serializable = categories.map(cat => ({
+          ...cat,
+          videoUrl: (cat.videoUrl && !cat.videoUrl.startsWith('blob:')) ? cat.videoUrl : '',
+          pages: (cat.pages || []).map((p, idx) => {
+            const norm = normalizePageObject(p, idx);
+            return {
+              ...norm,
+              videoUrl: (norm.videoUrl && !String(norm.videoUrl).startsWith('blob:')) ? norm.videoUrl : '',
+              blocks: (norm.blocks || []).map((b, bIdx) => ({
+                ...normalizeM2Block(b, bIdx),
+                videoUrl: (b.videoUrl && !String(b.videoUrl).startsWith('blob:')) ? b.videoUrl : ''
+              }))
+            };
+          })
+        }));
+        localStorage.setItem(STORAGE_KEY_PORTFOLIO, JSON.stringify(serializable));
+      } catch (e) {}
+    }
+
+    let categories = loadPersistedCategories();
+    let categoryScrollMode = 'free';
+    try {
+      const savedScrollMode = localStorage.getItem(STORAGE_KEY_SCROLL_MODE);
+      if (savedScrollMode === 'snap' || savedScrollMode === 'free') {
+        categoryScrollMode = savedScrollMode;
+      }
+    } catch (e) {}
+
+    let restingOpacity = 0.40;
+    let isEditorMode = false;
+    let activeEditCatId = null;
+    let activeCategoryPageId = null;
+    let activeEditPageId = null;
+    let activeM2EditPageId = null;
+    let activeM2EditBlockId = null;
+    let selectedM2BlockId = null;
+    let pendingDeletePageId = null;
+    let pendingDeleteTimeout = null;
+
+    const pageVideoSimCanvases = [];
+
+    /*************************************************************************
+     * 2. ANIMATION D'INTRO "COLVEUR" (3 SECONDES OU CLIC -> ZOOM DANS LE "V")
+     *************************************************************************/
+    const introCanvas = document.getElementById('intro-canvas');
+    const introCtx = introCanvas.getContext('2d');
+    const introBottomHint = document.getElementById('intro-bottom-hint');
+
+    const introController = {
+      runId: 0,
+      rafId: null,
+      phase: 'IDLE',
+      phaseStartTime: 0,
+      anchorX: 0,
+      anchorY: 0
+    };
+
+    function shouldPlayIntroOnLoad() {
+      try {
+        return !sessionStorage.getItem('colveur_intro_played_v2');
+      } catch (e) {
+        return true;
+      }
+    }
+
+    function markIntroAsPlayed() {
+      try {
+        sessionStorage.setItem('colveur_intro_played_v2', 'true');
+      } catch (e) {}
+    }
+
+    function computeExactVStrokeAnchor(w, h, fontSize) {
+      const off = document.createElement('canvas');
+      off.width = Math.max(1, Math.floor(w));
+      off.height = Math.max(1, Math.floor(h));
+      const octx = off.getContext('2d');
+
+      octx.font = `400 ${fontSize}px "Dela Gothic One", sans-serif`;
+      octx.textAlign = 'center';
+      octx.textBaseline = 'middle';
+
+      const fullWidth = octx.measureText('Colveur').width;
+      const colWidth = octx.measureText('Col').width;
+      const colvWidth = octx.measureText('Colv').width;
+      const vWidth = Math.max(10, colvWidth - colWidth);
+
+      const leftEdgeX = w / 2 - fullWidth / 2;
+      const vStartX = leftEdgeX + colWidth;
+
+      octx.fillStyle = '#000000';
+      octx.fillText('Colveur', w / 2, h / 2);
+
+      let targetX = vStartX + vWidth * 0.76;
+      let targetY = h / 2 + fontSize * 0.02;
+
+      try {
+        const searchRadii = [0, 2, 4, 6, 8, 12, 16, 20];
+        let foundInk = false;
+        for (const r of searchRadii) {
+          for (let angle = 0; angle < Math.PI * 2; angle += Math.PI / 4) {
+            const testX = Math.round(targetX + Math.cos(angle) * r);
+            const testY = Math.round(targetY + Math.sin(angle) * r);
+            const alpha = octx.getImageData(testX, testY, 1, 1).data[3];
+            const alphaL = octx.getImageData(testX - 3, testY, 1, 1).data[3];
+            const alphaR = octx.getImageData(testX + 3, testY, 1, 1).data[3];
+            if (alpha > 220 && alphaL > 200 && alphaR > 200) {
+              targetX = testX;
+              targetY = testY;
+              foundInk = true;
+              break;
+            }
+          }
+          if (foundInk) break;
+        }
+      } catch (e) {}
+
+      return {
+        offsetX: targetX - w / 2,
+        offsetY: targetY - h / 2
+      };
+    }
+
+    function triggerImmediateZoomFromHold() {
+      if (introController.phase === 'HOLD') {
+        introController.phase = 'ZOOM';
+        introController.phaseStartTime = performance.now();
+        if (introBottomHint) introBottomHint.classList.add('is-hidden');
+      }
+    }
+
+    introCanvas.addEventListener('pointerdown', (e) => {
+      e.stopPropagation();
+      triggerImmediateZoomFromHold();
+    });
+
+    introCanvas.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      triggerImmediateZoomFromHold();
+    }, { passive: false });
+
+    window.addEventListener('keydown', (e) => {
+      if (introController.phase === 'HOLD' && (e.code === 'Space' || e.code === 'Enter')) {
+        e.preventDefault();
+        triggerImmediateZoomFromHold();
+      }
+    });
+
+    async function startIntroAnimation(forceReplay = false) {
+      if (!forceReplay && !shouldPlayIntroOnLoad()) {
+        introController.phase = 'DONE';
+        introCanvas.classList.add('is-hidden');
+        if (introBottomHint) introBottomHint.classList.add('is-hidden');
+        return;
+      }
+
+      introController.runId += 1;
+      const currentRunId = introController.runId;
+      if (introController.rafId) {
+        cancelAnimationFrame(introController.rafId);
+        introController.rafId = null;
+      }
+
+      markIntroAsPlayed();
+      introCanvas.classList.remove('is-hidden');
+      if (introBottomHint) introBottomHint.classList.remove('is-hidden');
+
+      if (document.fonts && document.fonts.ready) {
+        try {
+          await document.fonts.ready;
+        } catch (e) {}
+      }
+
+      if (currentRunId !== introController.runId) return;
+
+      const HOLD_DURATION = 2300;
+      const ZOOM_DURATION = 1100;
+
+      introController.phase = 'HOLD';
+      introController.phaseStartTime = performance.now();
+
+      let cachedW = 0;
+      let cachedH = 0;
+      let cachedAnchor = { offsetX: 0, offsetY: 0 };
+
+      function stepIntro(now) {
+        if (currentRunId !== introController.runId) return;
+
+        const w = window.innerWidth;
+        const h = window.innerHeight;
+        const dpr = Math.max(2, window.devicePixelRatio || 1);
+
+        if (introCanvas.width !== Math.round(w * dpr) || introCanvas.height !== Math.round(h * dpr)) {
+          introCanvas.width = Math.round(w * dpr);
+          introCanvas.height = Math.round(h * dpr);
+        }
+
+        const baseFontSize = Math.min(w * 0.095, 165);
+
+        if (w !== cachedW || h !== cachedH) {
+          cachedW = w;
+          cachedH = h;
+          cachedAnchor = computeExactVStrokeAnchor(w, h, baseFontSize);
+        }
+
+        if (introController.phase === 'HOLD' && (now - introController.phaseStartTime >= HOLD_DURATION)) {
+          introController.phase = 'ZOOM';
+          introController.phaseStartTime = now;
+          if (introBottomHint) introBottomHint.classList.add('is-hidden');
+        }
+
+        introCtx.save();
+        introCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        introCtx.imageSmoothingEnabled = true;
+        introCtx.imageSmoothingQuality = 'high';
+        introCtx.font = `400 ${baseFontSize}px "Dela Gothic One", sans-serif`;
+        introCtx.textAlign = 'center';
+        introCtx.textBaseline = 'middle';
+
+        if (introController.phase === 'HOLD') {
+          introCtx.globalCompositeOperation = 'source-over';
+          introCtx.fillStyle = '#b6ab9d';
+          introCtx.fillRect(0, 0, w, h);
+
+          introCtx.save();
+          introCtx.translate(w / 2, h / 2);
+          introCtx.translate(-cachedAnchor.offsetX, -cachedAnchor.offsetY);
+          introCtx.fillStyle = '#151515';
+          introCtx.fillText('Colveur', 0, 0);
+          introCtx.restore();
+
+          introCtx.restore();
+          introController.rafId = requestAnimationFrame(stepIntro);
+        } else if (introController.phase === 'ZOOM') {
+          const zoomElapsed = now - introController.phaseStartTime;
+          const t = Math.min(1, Math.max(0, zoomElapsed / ZOOM_DURATION));
+
+          const eased = Math.pow(t, 1.75);
+          const scale = Math.pow(240, eased);
+          const masterAlpha = t > 0.92 ? Math.max(0, 1 - (t - 0.92) / 0.08) : 1;
+
+          introCtx.globalAlpha = masterAlpha;
+          introCtx.globalCompositeOperation = 'source-over';
+          introCtx.fillStyle = '#b6ab9d';
+          introCtx.fillRect(0, 0, w, h);
+
+          introCtx.save();
+          introCtx.translate(w / 2, h / 2);
+          introCtx.scale(scale, scale);
+          introCtx.translate(-cachedAnchor.offsetX, -cachedAnchor.offsetY);
+
+          introCtx.globalCompositeOperation = 'destination-out';
+          introCtx.globalAlpha = 1;
+          introCtx.fillStyle = '#000000';
+          introCtx.fillText('Colveur', 0, 0);
+
+          const blackInkOpacity = Math.max(0, 1 - Math.pow(t / 0.30, 1.2));
+          if (blackInkOpacity > 0) {
+            introCtx.globalCompositeOperation = 'source-over';
+            introCtx.fillStyle = `rgba(21, 21, 21, ${blackInkOpacity})`;
+            introCtx.fillText('Colveur', 0, 0);
+          }
+
+          introCtx.restore();
+          introCtx.restore();
+
+          if (t < 1) {
+            introController.rafId = requestAnimationFrame(stepIntro);
+          } else {
+            introController.phase = 'DONE';
+            introController.rafId = null;
+            introCanvas.classList.add('is-hidden');
+            if (introBottomHint) introBottomHint.classList.add('is-hidden');
+          }
+        }
+      }
+
+      introController.rafId = requestAnimationFrame(stepIntro);
+    }
+
+    function replayIntroAnimation() {
+      closeCategoryPage();
+      startIntroAnimation(true);
+    }
+
+    /*************************************************************************
+     * 3. MOTEUR D'APERÇU VIDÉO CINÉMATIQUE INTÉGRÉ
+     *************************************************************************/
+    const simCanvases = [];
+
+    function registerSimCanvas(canvasEl, theme, catId) {
+      simCanvases.push({
+        canvas: canvasEl,
+        ctx: canvasEl.getContext('2d'),
+        theme: theme || 'docu',
+        catId,
+        time: Math.random() * 10,
+        isPlaying: false
+      });
+    }
+
+    function drawProceduralCinemaFrame(item, dt) {
+      const { canvas, ctx, theme, catId } = item;
+      const cat = categories.find(c => c.id === catId);
+      const posXRatio = ((cat ? cat.posX : 50) - 50) / 50;
+
+      const w = 420;
+      const h = 640;
+      if (canvas.width !== w || canvas.height !== h) {
+        canvas.width = w;
+        canvas.height = h;
+      }
+
+      if (item.isPlaying) {
+        item.time += dt * 1.4;
+      }
+      const t = item.time;
+      const panOffset = posXRatio * 95;
+
+      ctx.save();
+
+      if (theme === 'docu') {
+        const grad = ctx.createLinearGradient(0, 0, 0, h);
+        grad.addColorStop(0, '#968c80');
+        grad.addColorStop(0.52, '#c8bdb0');
+        grad.addColorStop(1, '#59524a');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, w, h);
+
+        const sunX = w * 0.52 - panOffset * 0.8 + Math.sin(t * 0.4) * 18;
+        const sunY = h * 0.34;
+        const radial = ctx.createRadialGradient(sunX, sunY, 8, sunX, sunY, 220);
+        radial.addColorStop(0, 'rgba(248, 240, 228, 0.85)');
+        radial.addColorStop(1, 'rgba(248, 240, 228, 0)');
+        ctx.fillStyle = radial;
+        ctx.fillRect(0, 0, w, h);
+
+        for (let layer = 0; layer < 3; layer++) {
+          ctx.beginPath();
+          const baseY = h * (0.58 + layer * 0.13);
+          ctx.moveTo(0, h);
+          for (let x = 0; x <= w; x += 20) {
+            const worldX = x + panOffset * (0.5 + layer * 0.35) + t * (8 + layer * 6);
+            const y = baseY + Math.sin(worldX * 0.012 + layer) * 28 + Math.cos(worldX * 0.027) * 14;
+            ctx.lineTo(x, y);
+          }
+          ctx.lineTo(w, h);
+          ctx.closePath();
+          ctx.fillStyle = layer === 0 ? '#7d7368' : layer === 1 ? '#5e564e' : '#3d3833';
+          ctx.fill();
+        }
+      } else if (theme === 'event') {
+        const grad = ctx.createLinearGradient(0, 0, w, h);
+        grad.addColorStop(0, '#786d63');
+        grad.addColorStop(0.5, '#b6ab9d');
+        grad.addColorStop(1, '#4a433d');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, w, h);
+
+        for (let i = 0; i < 4; i++) {
+          const angle = Math.sin(t * 0.9 + i * 1.4) * 0.28;
+          const originX = (w * (0.2 + i * 0.22)) - panOffset * 0.6;
+          ctx.save();
+          ctx.translate(originX, -20);
+          ctx.rotate(angle);
+          const beam = ctx.createLinearGradient(0, 0, 0, h * 1.1);
+          beam.addColorStop(0, 'rgba(245, 236, 224, 0.55)');
+          beam.addColorStop(1, 'rgba(245, 236, 224, 0)');
+          ctx.fillStyle = beam;
+          ctx.beginPath();
+          ctx.moveTo(-18, 0);
+          ctx.lineTo(18, 0);
+          ctx.lineTo(115, h * 1.1);
+          ctx.lineTo(-115, h * 1.1);
+          ctx.closePath();
+          ctx.fill();
+          ctx.restore();
+        }
+
+        for (let p = 0; p < 14; p++) {
+          const px = ((p * 73 + t * 28 - panOffset * 0.9) % (w + 60)) - 30;
+          const py = ((p * 97 - t * 18) % h + h) % h;
+          const radius = 6 + (p % 4) * 5;
+          ctx.beginPath();
+          ctx.arc(px, py, radius, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(245, 235, 220, 0.35)';
+          ctx.fill();
+        }
+      } else {
+        const grad = ctx.createLinearGradient(0, 0, 0, h);
+        grad.addColorStop(0, '#857c72');
+        grad.addColorStop(0.5, '#b0a597');
+        grad.addColorStop(1, '#524c46');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, w, h);
+
+        for (let i = 0; i < 9; i++) {
+          const y = (h * 0.15) + i * 58;
+          const speed = (i % 2 === 0 ? 1 : -1) * (55 + i * 12);
+          const trailX = (((i * 90 + t * speed - panOffset) % (w + 220)) + (w + 220)) % (w + 220) - 110;
+          const trailGrad = ctx.createLinearGradient(trailX - 90, y, trailX + 90, y);
+          trailGrad.addColorStop(0, 'rgba(255,255,255,0)');
+          trailGrad.addColorStop(0.5, i % 2 === 0 ? 'rgba(245, 236, 225, 0.65)' : 'rgba(215, 205, 192, 0.5)');
+          trailGrad.addColorStop(1, 'rgba(255,255,255,0)');
+
+          ctx.fillStyle = trailGrad;
+          ctx.fillRect(trailX - 90, y, 180, 10 + (i % 3) * 6);
+        }
+      }
+
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+      ctx.lineWidth = 1;
+      for (let gx = -1; gx <= 5; gx++) {
+        const lineX = gx * 90 - panOffset;
+        ctx.beginPath();
+        ctx.moveTo(lineX, 0);
+        ctx.lineTo(lineX, h);
+        ctx.stroke();
+      }
+
+      ctx.restore();
+    }
+
+    /*************************************************************************
+     * 4. CARROUSEL DIAGONAL INFINI (Docu | Event | Réseaux)
+     *************************************************************************/
+    const viewport = document.getElementById('carousel-viewport');
+    const track = document.getElementById('carousel-track');
+
+    const CLONE_SETS = 5;
+    let baseColWidth = window.innerWidth / 3;
+    let scrollTarget = 0;
+    let scrollCurrent = 0;
+
+    let isPointerDown = false;
+    let pointerStartX = 0;
+    let scrollStartTarget = 0;
+    let dragDistance = 0;
+    let framingDragCatId = null;
+    let framingStartPosX = 50;
+
+    function updateColumnDimensions() {
+      const colsVisible = window.innerWidth < 640 ? 1.25 : window.innerWidth < 1024 ? 2 : 3;
+      baseColWidth = window.innerWidth / colsVisible;
+      document.documentElement.style.setProperty('--col-base-width', `${baseColWidth}px`);
+
+      const allCols = track.querySelectorAll('.diag-column');
+      allCols.forEach(col => {
+        col.style.width = `${baseColWidth}px`;
+      });
+    }
+
+    function buildInfiniteCarousel() {
+      track.innerHTML = '';
+      simCanvases.length = 0;
+
+      const colsVisible = window.innerWidth < 640 ? 1.25 : window.innerWidth < 1024 ? 2 : 3;
+      baseColWidth = window.innerWidth / colsVisible;
+      document.documentElement.style.setProperty('--col-base-width', `${baseColWidth}px`);
+
+      for (let setIndex = 0; setIndex < CLONE_SETS; setIndex++) {
+        categories.forEach((cat, catIndex) => {
+          const col = document.createElement('article');
+          col.className = 'diag-column';
+          col.style.width = `${baseColWidth}px`;
+          col.dataset.catId = cat.id;
+          col.dataset.setIndex = setIndex;
+          col.dataset.catIndex = catIndex;
+
+          const hasCustomVideo = Boolean(cat.videoUrl && cat.videoUrl.trim() !== '');
+          const ytId = extractYouTubeId(cat.videoUrl);
+          const isYouTube = Boolean(ytId);
+
+          col.innerHTML = `
+            <div class="col-skew-frame">
+              <div class="col-unskew-media">
+                <div class="diag-media-layer" style="opacity: ${restingOpacity};">
+                  <canvas class="diag-sim-canvas ${hasCustomVideo ? 'hidden' : ''}"></canvas>
+                  <video
+                    class="diag-video ${(hasCustomVideo && !isYouTube) ? '' : 'hidden'}"
+                    ${(hasCustomVideo && !isYouTube) ? `src="${cat.videoUrl}"` : ''}
+                    muted
+                    loop
+                    playsinline
+                    preload="metadata"
+                    style="object-position: ${cat.posX}% 50%;"
+                  ></video>
+                  <div class="yt-cover-wrap diag-yt-wrap ${isYouTube ? '' : 'hidden'}">
+                    <iframe
+                      class="yt-cover-iframe diag-yt-iframe"
+                      ${isYouTube ? `src="${buildYouTubeEmbedUrl(ytId, false)}"` : ''}
+                      allow="autoplay; encrypted-media"
+                      style="left: ${100 - cat.posX}%; top: 50%;"
+                    ></iframe>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="diag-title-wrap">
+              <h2 class="diag-title select-none">${escapeHtml(cat.title)}</h2>
+            </div>
+
+            <div class="editor-overlay-card absolute inset-x-0 bottom-10 flex flex-col items-center justify-center gap-2.5 px-6 z-40">
+              <button
+                type="button"
+                onclick="event.stopPropagation(); openCategoryEditModal('${cat.id}')"
+                class="w-14 h-14 rounded-full bg-[#b6ab9d] text-[#151515] border-4 border-[#151515] flex items-center justify-center text-3xl font-bold shadow-2xl hover:scale-110 active:scale-95 transition-transform"
+                title="Ajouter ou remplacer la vidéo de ${escapeHtml(cat.title)}"
+              >
+                +
+              </button>
+
+              <div
+                onclick="event.stopPropagation()"
+                onpointerdown="event.stopPropagation()"
+                class="w-56 max-w-[85%] rounded-2xl bg-[#151515]/95 border border-[#b6ab9d]/40 px-3.5 py-2.5 text-[#b6ab9d] shadow-xl backdrop-blur-md"
+              >
+                <div class="flex items-center justify-between text-[11px] font-semibold mb-1.5">
+                  <span>↔ Cadrer la vidéo</span>
+                  <span class="pos-x-readout font-mono text-xs" data-cat-id="${cat.id}">${Math.round(cat.posX)}%</span>
+                </div>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value="${cat.posX}"
+                  data-cat-id="${cat.id}"
+                  class="colveur-slider pos-x-slider"
+                  oninput="updateCategoryPosX('${cat.id}', this.value)"
+                />
+                <p class="text-[10px] text-center opacity-65 mt-1">
+                  Ou glisse l'image de gauche à droite
+                </p>
+              </div>
+            </div>
+          `;
+
+          const mediaLayer = col.querySelector('.diag-media-layer');
+          const videoEl = col.querySelector('video');
+          const ytWrapEl = col.querySelector('.diag-yt-wrap');
+          const ytIframeEl = col.querySelector('.diag-yt-iframe');
+          const simCanvas = col.querySelector('.diag-sim-canvas');
+
+          registerSimCanvas(simCanvas, cat.theme, cat.id);
+          const simEntry = simCanvases[simCanvases.length - 1];
+
+          drawProceduralCinemaFrame(simEntry, 0);
+
+          videoEl.addEventListener('error', () => {
+            if (!extractYouTubeId(cat.videoUrl)) {
+              videoEl.classList.add('hidden');
+              simCanvas.classList.remove('hidden');
+            }
+          });
+
+          col.addEventListener('mouseenter', () => {
+            col.classList.add('is-hovered');
+            track.classList.add('has-hovered');
+            mediaLayer.style.opacity = '1';
+            simEntry.isPlaying = true;
+
+            if (ytWrapEl && !ytWrapEl.classList.contains('hidden') && ytIframeEl) {
+              sendYouTubeCommand(ytIframeEl, 'mute');
+              sendYouTubeCommand(ytIframeEl, 'playVideo');
+            } else if (!videoEl.classList.contains('hidden') && videoEl.src) {
+              const p = videoEl.play();
+              if (p !== undefined) p.catch(() => {});
+            }
+          });
+
+          col.addEventListener('mouseleave', () => {
+            col.classList.remove('is-hovered');
+            if (!track.querySelector('.diag-column.is-hovered')) {
+              track.classList.remove('has-hovered');
+            }
+            mediaLayer.style.opacity = String(restingOpacity);
+            simEntry.isPlaying = false;
+
+            if (ytWrapEl && !ytWrapEl.classList.contains('hidden') && ytIframeEl) {
+              sendYouTubeCommand(ytIframeEl, 'pauseVideo');
+            } else if (!videoEl.classList.contains('hidden')) {
+              videoEl.pause();
+            }
+          });
+
+          col.addEventListener('click', () => {
+            if (dragDistance > 6) return;
+            openCategoryPage(cat.id);
+          });
+
+          track.appendChild(col);
+        });
+      }
+
+      const singleSetWidth = categories.length * baseColWidth;
+      scrollTarget = singleSetWidth * 2;
+      scrollCurrent = scrollTarget;
+    }
+
+    function nudgeCarousel(direction) {
+      scrollTarget += direction * baseColWidth;
+    }
+
+    let lastLoopTime = performance.now();
+
+    function animateCarouselLoop(now) {
+      const dt = Math.min(0.05, (now - lastLoopTime) / 1000);
+      lastLoopTime = now;
+
+      scrollCurrent += (scrollTarget - scrollCurrent) * 0.12;
+      if (Math.abs(scrollTarget - scrollCurrent) < 0.15) {
+        scrollCurrent = Math.round(scrollTarget);
+      }
+
+      const singleSetWidth = categories.length * baseColWidth;
+      if (singleSetWidth > 0) {
+        const minBound = singleSetWidth * 1;
+        const maxBound = singleSetWidth * 3;
+
+        if (scrollCurrent < minBound) {
+          scrollCurrent += singleSetWidth;
+          scrollTarget += singleSetWidth;
+        } else if (scrollCurrent >= maxBound) {
+          scrollCurrent -= singleSetWidth;
+          scrollTarget -= singleSetWidth;
+        }
+      }
+
+      track.style.transform = `translate3d(${-scrollCurrent}px, 0, 0)`;
+
+      for (let i = 0; i < simCanvases.length; i++) {
+        if (simCanvases[i].isPlaying) {
+          drawProceduralCinemaFrame(simCanvases[i], dt);
+        }
+      }
+
+      if (activeCategoryPageId) {
+        for (let i = 0; i < pageVideoSimCanvases.length; i++) {
+          drawProceduralCinemaFrame(pageVideoSimCanvases[i], dt);
+        }
+      }
+
+      requestAnimationFrame(animateCarouselLoop);
+    }
+
+    function handleWheelScroll(e) {
+      if (introController.phase !== 'DONE') return;
+      const catPage = document.getElementById('category-page');
+      if (catPage.classList.contains('is-open')) return;
+      if (document.querySelector('[id^="modal-"]:not(.hidden)')) return;
+
+      e.preventDefault();
+      let rawDelta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+      if (e.deltaMode === 1) rawDelta *= 36;
+      if (e.deltaMode === 2) rawDelta *= 300;
+
+      scrollTarget += rawDelta * 1.35;
+    }
+
+    viewport.addEventListener('wheel', handleWheelScroll, { passive: false });
+
+    window.addEventListener('pointerdown', (e) => {
+      if (introController.phase !== 'DONE') return;
+      if (document.getElementById('category-page').classList.contains('is-open')) return;
+      if (e.target.closest('button, input, select, label, #editor-topbar, [id^="modal-"]')) return;
+
+      isPointerDown = true;
+      pointerStartX = e.clientX;
+      scrollStartTarget = scrollTarget;
+      dragDistance = 0;
+      viewport.classList.add('is-dragging');
+
+      if (isEditorMode) {
+        const col = e.target.closest('.diag-column');
+        if (col && col.dataset.catId) {
+          framingDragCatId = col.dataset.catId;
+          const cat = categories.find(c => c.id === framingDragCatId);
+          framingStartPosX = cat ? cat.posX : 50;
+        }
+      }
+    });
+
+    window.addEventListener('pointermove', (e) => {
+      if (!isPointerDown) return;
+      const dx = e.clientX - pointerStartX;
+      dragDistance = Math.abs(dx);
+
+      if (isEditorMode && framingDragCatId) {
+        const sensitivity = 0.18;
+        const newPosX = Math.max(0, Math.min(100, framingStartPosX - dx * sensitivity));
+        updateCategoryPosX(framingDragCatId, newPosX);
+      } else {
+        scrollTarget = scrollStartTarget - dx * 1.3;
+      }
+    });
+
+    window.addEventListener('pointerup', () => {
+      isPointerDown = false;
+      framingDragCatId = null;
+      viewport.classList.remove('is-dragging');
+    });
+
+    window.addEventListener('resize', () => {
+      updateColumnDimensions();
+    });
+
+    /*************************************************************************
+     * 4B. RECADRAGE VIDÉO GAUCHE <-> DROITE & MODIFICATIONS EN DIRECT
+     *************************************************************************/
+    function updateCategoryPosX(catId, newValue) {
+      const clamped = Math.max(0, Math.min(100, parseFloat(newValue) || 50));
+      const cat = categories.find(c => c.id === catId);
+      if (cat) {
+        cat.posX = clamped;
+        saveCategoriesToStorage();
+      }
+
+      document.querySelectorAll(`.diag-column[data-cat-id="${catId}"] .diag-video`).forEach(vid => {
+        vid.style.objectPosition = `${clamped}% 50%`;
+      });
+      document.querySelectorAll(`.diag-column[data-cat-id="${catId}"] .diag-yt-iframe`).forEach(ifr => {
+        ifr.style.left = `${100 - clamped}%`;
+      });
+
+      simCanvases.forEach(item => {
+        if (item.catId === catId) {
+          drawProceduralCinemaFrame(item, 0);
+        }
+      });
+
+      document.querySelectorAll(`.pos-x-slider[data-cat-id="${catId}"]`).forEach(slider => {
+        slider.value = clamped;
+      });
+
+      document.querySelectorAll(`.pos-x-readout[data-cat-id="${catId}"]`).forEach(label => {
+        label.textContent = `${Math.round(clamped)}%`;
+      });
+
+      const modalSlider = document.getElementById('modal-pos-x-slider');
+      const modalLabel = document.getElementById('modal-pos-x-label');
+      if (activeEditCatId === catId && modalSlider && modalLabel) {
+        modalSlider.value = clamped;
+        modalLabel.textContent = `${Math.round(clamped)}%`;
+      }
+    }
+
+    function updateCategoryPosXFromModal(val) {
+      if (!activeEditCatId) return;
+      updateCategoryPosX(activeEditCatId, val);
+    }
+
+    function updateRestingOpacity(valPercent) {
+      restingOpacity = Math.max(0.1, Math.min(0.95, parseInt(valPercent, 10) / 100));
+      document.getElementById('resting-opacity-label').textContent = `${valPercent}%`;
+
+      document.querySelectorAll('.diag-column:not(.is-hovered) .diag-media-layer').forEach(layer => {
+        layer.style.opacity = String(restingOpacity);
+      });
+    }
+
+    function changeHoverMode(mode) {
+      document.body.setAttribute('data-hover-mode', mode);
+    }
+
+    /*************************************************************************
+     * 5. PAGE DE DESTINATION : PAGES PLEIN ÉCRAN ALTERNÉES (TAUPE / NOIR)
+     *************************************************************************/
+    const categoryPage = document.getElementById('category-page');
+    const categoryScrollContainer = document.getElementById('category-scroll-container');
+    const categoryPagesList = document.getElementById('category-pages-list');
+    const categoryEditorFooter = document.getElementById('category-editor-footer');
+    const clipTaupeHeader = document.getElementById('clip-taupe-header');
+    const clipNoirHeader = document.getElementById('clip-noir-header');
+    let splitHeaderRafId = null;
+    let headerAutoHideTimer = null;
+    let isHoveringBackButton = false;
+    const HEADER_AUTO_HIDE_DELAY = 2200;
+
+    function revealCategoryHeaderOnAction() {
+      if (!categoryPage.classList.contains('is-open')) return;
+
+      categoryPage.classList.add('header-visible');
+
+      if (headerAutoHideTimer) {
+        clearTimeout(headerAutoHideTimer);
+      }
+
+      headerAutoHideTimer = setTimeout(() => {
+        if (!isHoveringBackButton && categoryPage.classList.contains('is-open')) {
+          categoryPage.classList.remove('header-visible');
+        }
+      }, HEADER_AUTO_HIDE_DELAY);
+    }
+
+    function setBackButtonHover(isHover) {
+      isHoveringBackButton = isHover;
+      document.querySelectorAll('.cat-back-pill').forEach(btn => {
+        btn.classList.toggle('is-hovered', isHover);
+      });
+      if (isHover) {
+        if (headerAutoHideTimer) clearTimeout(headerAutoHideTimer);
+        categoryPage.classList.add('header-visible');
+      } else {
+        revealCategoryHeaderOnAction();
+      }
+    }
+
+    categoryPage.addEventListener('pointermove', () => {
+      revealCategoryHeaderOnAction();
+    }, { passive: true });
+
+    categoryPage.addEventListener('wheel', () => {
+      revealCategoryHeaderOnAction();
+    }, { passive: true });
+
+    categoryPage.addEventListener('touchstart', () => {
+      revealCategoryHeaderOnAction();
+    }, { passive: true });
+
+    function applyCategoryScrollModeUI() {
+      if (!categoryScrollContainer) return;
+      categoryScrollContainer.classList.toggle('scroll-mode-snap', categoryScrollMode === 'snap');
+      const selectEl = document.getElementById('category-scroll-mode-select');
+      if (selectEl) {
+        selectEl.value = categoryScrollMode;
+      }
+    }
+
+    function changeCategoryScrollMode(newMode) {
+      categoryScrollMode = newMode === 'snap' ? 'snap' : 'free';
+      try {
+        localStorage.setItem(STORAGE_KEY_SCROLL_MODE, categoryScrollMode);
+      } catch (e) {}
+      applyCategoryScrollModeUI();
+      updateCategorySplitHeader();
+    }
+
+    function syncEditorTopbarContext() {
+      const homeCtrls = document.getElementById('editor-home-controls');
+      const catCtrls = document.getElementById('editor-category-controls');
+      if (!homeCtrls || !catCtrls) return;
+
+      if (activeCategoryPageId) {
+        homeCtrls.classList.add('hidden');
+        homeCtrls.classList.remove('flex');
+        catCtrls.classList.remove('hidden');
+        catCtrls.classList.add('flex');
+      } else {
+        catCtrls.classList.add('hidden');
+        catCtrls.classList.remove('flex');
+        homeCtrls.classList.remove('hidden');
+        homeCtrls.classList.add('flex');
+      }
+    }
+
+    function updateCategorySplitHeader() {
+      if (!categoryPage.classList.contains('is-open')) return;
+
+      const headerHeight = 132;
+      const vw = window.innerWidth;
+      const sections = categoryPagesList.querySelectorAll('.cat-page-section');
+
+      let taupeRectsHtml = '';
+      let noirRectsHtml = '';
+
+      sections.forEach((sec) => {
+        const rect = sec.getBoundingClientRect();
+        const top = Math.max(0, rect.top);
+        const bottom = Math.min(headerHeight, rect.bottom);
+
+        if (bottom > top) {
+          const rectTag = `<rect x="0" y="${top.toFixed(2)}" width="${vw}" height="${(bottom - top).toFixed(2)}" />`;
+          if (sec.dataset.bgTheme === 'taupe') {
+            taupeRectsHtml += rectTag;
+          } else {
+            noirRectsHtml += rectTag;
+          }
+        }
+      });
+
+      if (isEditorMode && categoryEditorFooter) {
+        const fRect = categoryEditorFooter.getBoundingClientRect();
+        const fTop = Math.max(0, fRect.top);
+        const fBottom = Math.min(headerHeight, fRect.bottom);
+        if (fBottom > fTop) {
+          const rectTag = `<rect x="0" y="${fTop.toFixed(2)}" width="${vw}" height="${(fBottom - fTop).toFixed(2)}" />`;
+          if (categoryEditorFooter.dataset.bgTheme === 'taupe') {
+            taupeRectsHtml += rectTag;
+          } else {
+            noirRectsHtml += rectTag;
+          }
+        }
+      }
+
+      clipTaupeHeader.innerHTML = taupeRectsHtml;
+      clipNoirHeader.innerHTML = noirRectsHtml;
+    }
+
+    function syncCategoryFullscreenVideosPlayback() {
+      const sections = categoryPagesList.querySelectorAll('.cat-page-section');
+      if (!categoryPage.classList.contains('is-open')) {
+        sections.forEach(sec => {
+          sec.querySelectorAll('video').forEach(vid => vid.pause());
+          sec.querySelectorAll('iframe.yt-cover-iframe').forEach(ifr => sendYouTubeCommand(ifr, 'pauseVideo'));
+        });
+        return;
+      }
+
+      const vh = window.innerHeight || 1;
+      sections.forEach(sec => {
+        const rect = sec.getBoundingClientRect();
+        const visibleHeight = Math.min(vh, rect.bottom) - Math.max(0, rect.top);
+        const visibleRatio = visibleHeight / vh;
+        const pageId = sec.dataset.pageId;
+        const cat = categories.find(c => c.id === activeCategoryPageId);
+        const pageObj = cat && cat.pages ? cat.pages.find(p => p.id === pageId) : null;
+
+        const vid = sec.querySelector('.cat-page-fullscreen-video');
+        if (vid && !vid.classList.contains('hidden') && vid.getAttribute('src')) {
+          if (visibleRatio > 0.35) {
+            if (pageObj) {
+              vid.volume = Math.max(0, Math.min(1, (typeof pageObj.videoVolume === 'number' ? pageObj.videoVolume : 80) / 100));
+              vid.muted = Boolean(pageObj.videoMuted);
+            }
+            if (vid.paused) {
+              const p = vid.play();
+              if (p !== undefined) {
+                p.catch(() => {
+                  vid.muted = true;
+                  vid.play().catch(() => {});
+                });
+              }
+            }
+          } else {
+            if (!vid.paused) vid.pause();
+          }
+        }
+
+        const ytFullIframe = sec.querySelector('.cat-page-yt-iframe');
+        if (ytFullIframe && ytFullIframe.getAttribute('src')) {
+          if (visibleRatio > 0.35) {
+            sendYouTubeCommand(ytFullIframe, 'playVideo');
+            if (pageObj) {
+              const vol = Math.round(typeof pageObj.videoVolume === 'number' ? pageObj.videoVolume : 80);
+              sendYouTubeCommand(ytFullIframe, 'setVolume', [vol]);
+              sendYouTubeCommand(ytFullIframe, pageObj.videoMuted ? 'mute' : 'unMute');
+            }
+          } else {
+            sendYouTubeCommand(ytFullIframe, 'pauseVideo');
+          }
+        }
+
+        sec.querySelectorAll('.m2-video-el').forEach(m2Vid => {
+          if (!m2Vid.getAttribute('src')) return;
+          if (visibleRatio > 0.3) {
+            if (m2Vid.paused && m2Vid.dataset.userPaused !== 'true') {
+              const p = m2Vid.play();
+              if (p !== undefined) p.catch(() => {});
+            }
+          } else {
+            if (!m2Vid.paused) m2Vid.pause();
+          }
+        });
+
+        sec.querySelectorAll('.m2-yt-iframe').forEach(m2Yt => {
+          if (!m2Yt.getAttribute('src')) return;
+          if (visibleRatio > 0.3) {
+            if (m2Yt.dataset.userPaused !== 'true') {
+              sendYouTubeCommand(m2Yt, 'playVideo');
+            }
+          } else {
+            sendYouTubeCommand(m2Yt, 'pauseVideo');
+          }
+        });
+      });
+    }
+
+    function startSplitHeaderLoop() {
+      if (splitHeaderRafId) cancelAnimationFrame(splitHeaderRafId);
+      function tick() {
+        if (!categoryPage.classList.contains('is-open')) {
+          splitHeaderRafId = null;
+          return;
+        }
+        updateCategorySplitHeader();
+        splitHeaderRafId = requestAnimationFrame(tick);
+      }
+      splitHeaderRafId = requestAnimationFrame(tick);
+    }
+
+    categoryScrollContainer.addEventListener('scroll', () => {
+      updateCategorySplitHeader();
+      revealCategoryHeaderOnAction();
+      syncCategoryFullscreenVideosPlayback();
+    }, { passive: true });
+    window.addEventListener('resize', updateCategorySplitHeader);
+
+    function renderCategoryPages(cat) {
+      if (!cat.pages || cat.pages.length === 0) {
+        cat.pages = createDefaultPages();
+      }
+
+      cat.pages = cat.pages.map((p, idx) => normalizePageObject(p, idx));
+      categoryPagesList.innerHTML = '';
+      pageVideoSimCanvases.length = 0;
+
+      cat.pages.forEach((page, index) => {
+        const isVideoTemplate = page.template === 'fullscreen-video';
+        const isMediaTextTemplate = page.template === 'media-text';
+        const bgTheme = page.bgTheme === 'taupe' ? 'taupe' : 'noir';
+        const isTaupe = bgTheme === 'taupe';
+        const colorName = isTaupe ? 'Taupe (#b6ab9d)' : 'Noir (#151515)';
+        const isPendingDel = pendingDeletePageId === page.id;
+        const hasCustomVideo = Boolean(page.videoUrl && String(page.videoUrl).trim() !== '');
+        const opacityPercent = typeof page.videoOpacity === 'number' ? page.videoOpacity : 80;
+        const volumePercent = typeof page.videoVolume === 'number' ? page.videoVolume : 80;
+        const isMuted = Boolean(page.videoMuted);
+
+        const section = document.createElement('section');
+        section.className = `cat-page-section theme-${bgTheme}`;
+        section.dataset.pageId = page.id;
+        section.dataset.bgTheme = bgTheme;
+
+        let m2BlocksHtml = '';
+        if (isMediaTextTemplate) {
+          const blocks = Array.isArray(page.blocks) && page.blocks.length > 0 ? page.blocks : createDefaultM2Blocks();
+          const videoCount = blocks.filter(b => b.type === 'video').length;
+          const textCount = blocks.filter(b => b.type === 'text').length;
+
+          m2BlocksHtml = `
+            <div class="m2-canvas-stage" data-page-id="${page.id}" onpointerdown="handleM2StagePointerDown(event, '${page.id}')">
+              <div class="m2-guide-line guide-v"></div>
+              <div class="m2-guide-line guide-h"></div>
+
+              ${blocks.map((blk) => {
+                const isSelected = selectedM2BlockId === blk.id;
+                const toolbarBelowClass = blk.y < 18 ? 'toolbar-below' : '';
+
+                if (blk.type === 'video') {
+                  const hasBlkVideo = Boolean(blk.videoUrl && String(blk.videoUrl).trim() !== '');
+                  const blkYtId = extractYouTubeId(blk.videoUrl);
+                  const isBlkYouTube = Boolean(blkYtId);
+                  const radiusPx = typeof blk.borderRadius === 'number' ? blk.borderRadius : 42;
+                  const canDeleteBlk = videoCount > 1 || blocks.length > 1;
+
+                  return `
+                    <div
+                      class="m2-block m2-block-video ${isSelected ? 'is-selected' : ''} ${toolbarBelowClass}"
+                      data-page-id="${page.id}"
+                      data-block-id="${blk.id}"
+                      data-block-type="video"
+                      style="left:${blk.x}%; top:${blk.y}%; width:${blk.w}%; height:${blk.h}%;"
+                      onpointerdown="startM2BlockInteract(event, '${page.id}', '${blk.id}', 'move')"
+                    >
+                      <div class="m2-block-toolbar" onpointerdown="event.stopPropagation()">
+                        <button
+                          type="button"
+                          onclick="openM2FrameVideoModal('${page.id}', '${blk.id}')"
+                          class="px-2.5 py-1 rounded-lg bg-[#b6ab9d] text-[#151515] text-[11px] font-bold hover:brightness-110"
+                        >
+                          + Vidéo / Cadrage
+                        </button>
+                        <button
+                          type="button"
+                          onclick="applyM2VideoPresetRatio('${page.id}', '${blk.id}', '16:9')"
+                          class="px-2 py-1 rounded-lg bg-[#252525] hover:bg-[#333] text-[11px] font-semibold"
+                          title="Format horizontal 16:9"
+                        >16:9</button>
+                        <button
+                          type="button"
+                          onclick="applyM2VideoPresetRatio('${page.id}', '${blk.id}', '9:16')"
+                          class="px-2 py-1 rounded-lg bg-[#252525] hover:bg-[#333] text-[11px] font-semibold"
+                          title="Format vertical 9:16 (Réseaux)"
+                        >9:16</button>
+                        <button
+                          type="button"
+                          onclick="applyM2VideoPresetRatio('${page.id}', '${blk.id}', '1:1')"
+                          class="px-2 py-1 rounded-lg bg-[#252525] hover:bg-[#333] text-[11px] font-semibold"
+                          title="Format carré 1:1"
+                        >1:1</button>
+                        ${canDeleteBlk ? `
+                          <button
+                            type="button"
+                            onclick="deleteM2Block('${page.id}', '${blk.id}')"
+                            class="px-2 py-1 rounded-lg bg-red-500/20 hover:bg-red-500/35 text-red-300 text-[11px] font-bold"
+                            title="Supprimer ce cadre"
+                          >✕</button>
+                        ` : ''}
+                      </div>
+
+                      <div class="m2-video-frame" style="border-radius:${radiusPx}px;">
+                        ${hasBlkVideo ? (isBlkYouTube ? `
+                          <div
+                            class="yt-cover-wrap m2-yt-wrap"
+                            style="pointer-events: auto; cursor: pointer;"
+                            onclick="handleM2YouTubeClick(event, this)"
+                          >
+                            <iframe
+                              class="yt-cover-iframe m2-yt-iframe"
+                              src="${buildYouTubeEmbedUrl(blkYtId, true)}"
+                              allow="autoplay; encrypted-media; fullscreen"
+                              data-muted="true"
+                              data-user-paused="false"
+                              style="left:${100 - (blk.posX ?? 50)}%; top:${100 - (blk.posY ?? 50)}%;"
+                            ></iframe>
+                          </div>
+
+                          <div class="m2-sound-toast">🔇 Cliquer sur la vidéo pour le son</div>
+
+                          <div class="m2-player-controls" onclick="event.stopPropagation()" onpointerdown="event.stopPropagation()">
+                            <button
+                              type="button"
+                              class="m2-btn-play text-xs font-bold w-6 h-6 flex items-center justify-center rounded-full hover:bg-white/10"
+                              onclick="toggleM2YouTubePlayPause(this)"
+                              title="Lecture / Pause"
+                            >❚❚</button>
+
+                            <button
+                              type="button"
+                              class="m2-btn-mute text-xs font-bold px-1.5 py-0.5 rounded hover:bg-white/10"
+                              onclick="toggleM2YouTubeSoundFromBar(this)"
+                              title="Activer / Couper le son"
+                            >🔇</button>
+
+                            <span class="text-[10px] opacity-70 flex-1 text-center truncate">YouTube HD</span>
+
+                            <button
+                              type="button"
+                              class="text-xs font-bold px-1.5 py-0.5 rounded hover:bg-white/10"
+                              onclick="requestM2FrameFullscreen(this)"
+                              title="Plein écran"
+                            >⛶</button>
+                          </div>
+                        ` : `
+                          <video
+                            class="m2-video-el"
+                            src="${blk.videoUrl}"
+                            autoplay
+                            loop
+                            muted
+                            playsinline
+                            preload="auto"
+                            style="object-position:${blk.posX ?? 50}% ${blk.posY ?? 50}%;"
+                            onclick="handleM2VideoClick(event, this)"
+                            ontimeupdate="handleM2VideoTimeUpdate(this)"
+                          ></video>
+
+                          <div class="m2-sound-toast">🔇 Cliquer sur la vidéo pour le son</div>
+
+                          <div class="m2-player-controls" onclick="event.stopPropagation()" onpointerdown="event.stopPropagation()">
+                            <button
+                              type="button"
+                              class="m2-btn-play text-xs font-bold w-6 h-6 flex items-center justify-center rounded-full hover:bg-white/10"
+                              onclick="toggleM2VideoPlayPause(this)"
+                              title="Lecture / Pause"
+                            >❚❚</button>
+
+                            <button
+                              type="button"
+                              class="m2-btn-mute text-xs font-bold px-1.5 py-0.5 rounded hover:bg-white/10"
+                              onclick="toggleM2VideoSoundFromBar(this)"
+                              title="Activer / Couper le son"
+                            >🔇</button>
+
+                            <input
+                              type="range"
+                              min="0"
+                              max="100"
+                              value="0"
+                              step="0.5"
+                              class="m2-timeline-slider colveur-slider flex-1 h-1"
+                              oninput="seekM2Video(this)"
+                              title="Avancer dans la vidéo"
+                            />
+
+                            <button
+                              type="button"
+                              class="text-xs font-bold px-1.5 py-0.5 rounded hover:bg-white/10"
+                              onclick="requestM2VideoFullscreen(this)"
+                              title="Plein écran"
+                            >⛶</button>
+                          </div>
+                        `) : ''}
+
+                        <div class="cat-page-editor-placeholder ${isEditorMode ? 'flex' : 'hidden'} absolute inset-0 flex-col items-center justify-center gap-2 bg-black/25 backdrop-blur-[1px] z-10 pointer-events-none">
+                          <button
+                            type="button"
+                            onpointerdown="event.stopPropagation()"
+                            onclick="event.stopPropagation(); openM2FrameVideoModal('${page.id}', '${blk.id}')"
+                            class="pointer-events-auto w-12 h-12 rounded-full bg-[#b6ab9d] text-[#151515] border-2 border-[#151515] flex items-center justify-center text-2xl font-bold shadow-xl hover:scale-110 transition-transform"
+                            title="Ajouter ou modifier la vidéo de ce cadre"
+                          >+</button>
+                          <span class="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-[#151515]/85 text-[#b6ab9d]">
+                            ${hasBlkVideo ? 'Changer / Cadrer la vidéo' : 'Ajouter une vidéo'}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div class="m2-resize-handle handle-nw" onpointerdown="startM2BlockInteract(event, '${page.id}', '${blk.id}', 'nw')"></div>
+                      <div class="m2-resize-handle handle-ne" onpointerdown="startM2BlockInteract(event, '${page.id}', '${blk.id}', 'ne')"></div>
+                      <div class="m2-resize-handle handle-sw" onpointerdown="startM2BlockInteract(event, '${page.id}', '${blk.id}', 'sw')"></div>
+                      <div class="m2-resize-handle handle-se" onpointerdown="startM2BlockInteract(event, '${page.id}', '${blk.id}', 'se')"></div>
+                      <div class="m2-resize-handle handle-e" onpointerdown="startM2BlockInteract(event, '${page.id}', '${blk.id}', 'e')"></div>
+                      <div class="m2-resize-handle handle-s" onpointerdown="startM2BlockInteract(event, '${page.id}', '${blk.id}', 's')"></div>
+                    </div>
+                  `;
+                } else {
+                  const canDeleteTxt = textCount > 1 || blocks.length > 1;
+                  const boldClass = blk.bold ? 'is-bold' : '';
+                  const italicClass = blk.italic ? 'is-italic' : '';
+                  const underlineClass = blk.underline ? 'is-underline' : '';
+
+                  return `
+                    <div
+                      class="m2-block m2-block-text ${isSelected ? 'is-selected' : ''} ${toolbarBelowClass}"
+                      data-page-id="${page.id}"
+                      data-block-id="${blk.id}"
+                      data-block-type="text"
+                      style="left:${blk.x}%; top:${blk.y}%; width:${blk.w}%; height:${blk.h}%;"
+                      onpointerdown="startM2BlockInteract(event, '${page.id}', '${blk.id}', 'move')"
+                    >
+                      <div class="m2-block-toolbar" onpointerdown="event.stopPropagation()">
+                        <span class="text-[10px] uppercase tracking-wider opacity-60 px-1 cursor-move" onpointerdown="startM2BlockInteract(event, '${page.id}', '${blk.id}', 'move')" title="Glisser pour déplacer">✥</span>
+
+                        <button
+                          type="button"
+                          onmousedown="event.preventDefault()"
+                          onclick="toggleM2TextFormat('${page.id}', '${blk.id}', 'bold')"
+                          class="w-7 h-7 rounded-lg ${blk.bold ? 'bg-[#b6ab9d] text-[#151515]' : 'bg-[#252525] text-[#b6ab9d]'} font-bold text-xs flex items-center justify-center hover:brightness-110"
+                          title="Gras (B)"
+                        >B</button>
+
+                        <button
+                          type="button"
+                          onmousedown="event.preventDefault()"
+                          onclick="toggleM2TextFormat('${page.id}', '${blk.id}', 'italic')"
+                          class="w-7 h-7 rounded-lg ${blk.italic ? 'bg-[#b6ab9d] text-[#151515]' : 'bg-[#252525] text-[#b6ab9d]'} italic font-serif font-bold text-xs flex items-center justify-center hover:brightness-110"
+                          title="Italique (I)"
+                        >I</button>
+
+                        <button
+                          type="button"
+                          onmousedown="event.preventDefault()"
+                          onclick="toggleM2TextFormat('${page.id}', '${blk.id}', 'underline')"
+                          class="w-7 h-7 rounded-lg ${blk.underline ? 'bg-[#b6ab9d] text-[#151515]' : 'bg-[#252525] text-[#b6ab9d]'} underline font-bold text-xs flex items-center justify-center hover:brightness-110"
+                          title="Souligné (U)"
+                        >U</button>
+
+                        <div class="h-4 w-[1px] bg-[#b6ab9d]/25 mx-0.5"></div>
+
+                        <button
+                          type="button"
+                          onmousedown="event.preventDefault()"
+                          onclick="changeM2TextAlign('${page.id}', '${blk.id}', 'left')"
+                          class="px-2 h-7 rounded-lg ${blk.align === 'left' ? 'bg-[#b6ab9d] text-[#151515]' : 'bg-[#252525] text-[#b6ab9d]'} text-[11px] font-bold"
+                          title="Aligner à gauche"
+                        >⫷</button>
+                        <button
+                          type="button"
+                          onmousedown="event.preventDefault()"
+                          onclick="changeM2TextAlign('${page.id}', '${blk.id}', 'center')"
+                          class="px-2 h-7 rounded-lg ${blk.align === 'center' ? 'bg-[#b6ab9d] text-[#151515]' : 'bg-[#252525] text-[#b6ab9d]'} text-[11px] font-bold"
+                          title="Centrer"
+                        >≡</button>
+                        <button
+                          type="button"
+                          onmousedown="event.preventDefault()"
+                          onclick="changeM2TextAlign('${page.id}', '${blk.id}', 'right')"
+                          class="px-2 h-7 rounded-lg ${blk.align === 'right' ? 'bg-[#b6ab9d] text-[#151515]' : 'bg-[#252525] text-[#b6ab9d]'} text-[11px] font-bold"
+                          title="Aligner à droite"
+                        >⫸</button>
+
+                        <div class="h-4 w-[1px] bg-[#b6ab9d]/25 mx-0.5"></div>
+
+                        <div class="flex items-center gap-1.5 px-1">
+                          <span class="text-[10px] opacity-75">Taille</span>
+                          <input
+                            type="range"
+                            min="12"
+                            max="92"
+                            value="${blk.fontSize || 28}"
+                            class="w-20 accent-[#b6ab9d] cursor-pointer"
+                            oninput="updateM2TextFontSize('${page.id}', '${blk.id}', this.value)"
+                          />
+                          <span class="m2-fontsize-label text-[11px] font-mono font-bold w-8">${Math.round(blk.fontSize || 28)}px</span>
+                        </div>
+
+                        ${canDeleteTxt ? `
+                          <button
+                            type="button"
+                            onclick="deleteM2Block('${page.id}', '${blk.id}')"
+                            class="px-2 h-7 rounded-lg bg-red-500/20 hover:bg-red-500/35 text-red-300 text-[11px] font-bold"
+                            title="Supprimer cette zone de texte"
+                          >✕</button>
+                        ` : ''}
+                      </div>
+
+                      <div
+                        class="m2-text-content ${boldClass} ${italicClass} ${underlineClass}"
+                        contenteditable="${isEditorMode ? 'true' : 'false'}"
+                        spellcheck="false"
+                        style="font-size:${blk.fontSize || 28}px; text-align:${blk.align || 'center'};"
+                        onfocus="selectM2Block('${page.id}', '${blk.id}')"
+                        oninput="saveM2TextInline('${page.id}', '${blk.id}', this)"
+                      >${blk.html || 'ZONE DE TEXTE'}</div>
+
+                      <div class="m2-resize-handle handle-nw" onpointerdown="startM2BlockInteract(event, '${page.id}', '${blk.id}', 'nw')"></div>
+                      <div class="m2-resize-handle handle-ne" onpointerdown="startM2BlockInteract(event, '${page.id}', '${blk.id}', 'ne')"></div>
+                      <div class="m2-resize-handle handle-sw" onpointerdown="startM2BlockInteract(event, '${page.id}', '${blk.id}', 'sw')"></div>
+                      <div class="m2-resize-handle handle-se" onpointerdown="startM2BlockInteract(event, '${page.id}', '${blk.id}', 'se')"></div>
+                      <div class="m2-resize-handle handle-e" onpointerdown="startM2BlockInteract(event, '${page.id}', '${blk.id}', 'e')"></div>
+                      <div class="m2-resize-handle handle-s" onpointerdown="startM2BlockInteract(event, '${page.id}', '${blk.id}', 's')"></div>
+                    </div>
+                  `;
+                }
+              }).join('')}
+            </div>
+          `;
+        }
+
+        const pageYtId = extractYouTubeId(page.videoUrl);
+        const isPageYouTube = Boolean(pageYtId);
+
+        section.innerHTML = `
+          ${isVideoTemplate ? `
+            <div
+              class="cat-page-video-layer absolute inset-0 w-full h-full pointer-events-none z-0 overflow-hidden"
+              style="opacity: ${(opacityPercent / 100).toFixed(2)};"
+            >
+              <canvas class="cat-page-sim-canvas w-full h-full object-cover ${hasCustomVideo ? 'hidden' : ''}"></canvas>
+              <video
+                class="cat-page-fullscreen-video w-full h-full object-cover ${(hasCustomVideo && !isPageYouTube) ? '' : 'hidden'}"
+                ${(hasCustomVideo && !isPageYouTube) ? `src="${page.videoUrl}"` : ''}
+                loop
+                playsinline
+                preload="auto"
+              ></video>
+              ${isPageYouTube ? `
+                <div class="yt-cover-wrap">
+                  <iframe
+                    class="yt-cover-iframe cat-page-yt-iframe"
+                    src="${buildYouTubeEmbedUrl(pageYtId, true)}"
+                    allow="autoplay; encrypted-media"
+                    style="left: 50%; top: 50%;"
+                  ></iframe>
+                </div>
+              ` : ''}
+            </div>
+          ` : ''}
+
+          ${isMediaTextTemplate ? m2BlocksHtml : ''}
+
+          <div class="cat-page-editor-bar ${isEditorMode ? 'flex' : 'hidden'} absolute top-24 left-6 right-6 z-40 items-center justify-between flex-wrap gap-2 pointer-events-auto">
+            <div class="flex items-center flex-wrap gap-2">
+              <div class="flex items-center gap-2 px-3.5 py-1.5 rounded-full ${isTaupe ? 'bg-[#151515] text-[#b6ab9d]' : 'bg-[#b6ab9d] text-[#151515]'} text-xs font-semibold shadow-md">
+                <span class="font-dela">Page ${index + 1}</span>
+              </div>
+
+              <select
+                onchange="changePageTemplate('${page.id}', this.value)"
+                class="px-3 py-1.5 rounded-full bg-[#151515]/95 text-[#b6ab9d] border border-[#b6ab9d]/40 text-xs font-semibold shadow-md cursor-pointer focus:outline-none"
+                title="Choisir le modèle de cette page"
+              >
+                <option value="blank" ${page.template === 'blank' ? 'selected' : ''} class="bg-[#151515] text-[#b6ab9d]">Modèle : Fond uni</option>
+                <option value="fullscreen-video" ${isVideoTemplate ? 'selected' : ''} class="bg-[#151515] text-[#b6ab9d]">Modèle 1 : Vidéo Plein Écran</option>
+                <option value="media-text" ${isMediaTextTemplate ? 'selected' : ''} class="bg-[#151515] text-[#b6ab9d]">Modèle 2 : Cadre Vidéo & Texte</option>
+              </select>
+
+              <button
+                type="button"
+                onclick="togglePageBackgroundColor('${page.id}')"
+                class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#151515]/95 text-[#b6ab9d] border border-[#b6ab9d]/40 text-xs font-semibold shadow-md hover:scale-105 transition-transform"
+                title="Inverser la couleur de fond de cette page (Taupe #b6ab9d ↔ Noir #151515)"
+              >
+                <span class="w-3 h-3 rounded-full border border-white/30" style="background-color: ${isTaupe ? '#b6ab9d' : '#151515'};"></span>
+                <span>Fond : ${isTaupe ? 'Taupe' : 'Noir'} (Switcher)</span>
+              </button>
+
+              ${isMediaTextTemplate ? `
+                <button
+                  type="button"
+                  onclick="addM2BlockToPage('${page.id}', 'video')"
+                  class="flex items-center gap-1 px-3 py-1.5 rounded-full bg-[#b6ab9d] text-[#151515] border border-[#151515] text-xs font-bold shadow-md hover:scale-105 transition-transform"
+                  title="Ajouter un cadre vidéo sur cette page"
+                >
+                  <span>+ Cadre vidéo</span>
+                </button>
+                <button
+                  type="button"
+                  onclick="addM2BlockToPage('${page.id}', 'text')"
+                  class="flex items-center gap-1 px-3 py-1.5 rounded-full bg-[#b6ab9d] text-[#151515] border border-[#151515] text-xs font-bold shadow-md hover:scale-105 transition-transform"
+                  title="Ajouter une zone de texte sur cette page"
+                >
+                  <span>+ Zone de texte</span>
+                </button>
+              ` : ''}
+            </div>
+
+            <div class="flex items-center gap-1.5">
+              <button
+                type="button"
+                onclick="moveCategoryPage('${page.id}', -1)"
+                ${index === 0 ? 'disabled' : ''}
+                class="w-8 h-8 rounded-full ${isTaupe ? 'bg-[#151515] text-[#b6ab9d]' : 'bg-[#b6ab9d] text-[#151515]'} flex items-center justify-center text-xs font-bold shadow disabled:opacity-25 hover:scale-105 transition-transform"
+                title="Monter cette page"
+              >
+                ↑
+              </button>
+              <button
+                type="button"
+                onclick="moveCategoryPage('${page.id}', 1)"
+                ${index === cat.pages.length - 1 ? 'disabled' : ''}
+                class="w-8 h-8 rounded-full ${isTaupe ? 'bg-[#151515] text-[#b6ab9d]' : 'bg-[#b6ab9d] text-[#151515]'} flex items-center justify-center text-xs font-bold shadow disabled:opacity-25 hover:scale-105 transition-transform"
+                title="Descendre cette page"
+              >
+                ↓
+              </button>
+              ${cat.pages.length > 1 ? `
+                <button
+                  type="button"
+                  onclick="requestDeleteCategoryPage('${page.id}')"
+                  class="px-3 h-8 rounded-full ${isPendingDel ? 'bg-red-600 text-white' : (isTaupe ? 'bg-[#151515] text-red-400' : 'bg-[#b6ab9d] text-red-700')} flex items-center justify-center text-xs font-bold shadow hover:scale-105 transition-all"
+                  title="Supprimer cette page"
+                >
+                  ${isPendingDel ? 'Confirmer ✕' : '✕'}
+                </button>
+              ` : ''}
+            </div>
+          </div>
+
+          ${isVideoTemplate ? `
+            <div class="cat-page-editor-placeholder ${isEditorMode ? 'flex' : 'hidden'} relative z-20 flex-col items-center justify-center gap-3 p-5 rounded-2xl bg-[#151515]/90 border border-[#b6ab9d]/40 text-[#b6ab9d] shadow-2xl backdrop-blur-md max-w-md w-[90%] pointer-events-auto">
+              <div class="flex items-center gap-3 w-full">
+                <button
+                  type="button"
+                  onclick="openPageVideoEditModal('${page.id}')"
+                  class="w-12 h-12 shrink-0 rounded-full bg-[#b6ab9d] text-[#151515] flex items-center justify-center text-2xl font-bold shadow-lg hover:scale-105 transition-transform"
+                  title="Ajouter ou changer la vidéo plein écran"
+                >
+                  +
+                </button>
+                <div class="text-left">
+                  <div class="font-dela text-sm">Page ${index + 1} — Vidéo Plein Écran</div>
+                  <div class="text-[11px] opacity-75">
+                    ${hasCustomVideo ? 'Vidéo personnalisée chargée' : 'Aperçu intégré actif (clique sur + pour charger ta vidéo)'}
+                  </div>
+                </div>
+              </div>
+
+              <div class="w-full pt-2 border-t border-[#b6ab9d]/20">
+                <div class="flex items-center justify-between text-xs font-semibold mb-1">
+                  <span>Opacité de la vidéo</span>
+                  <span class="page-opacity-readout font-mono" data-page-id="${page.id}">${Math.round(opacityPercent)}%</span>
+                </div>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value="${opacityPercent}"
+                  data-page-id="${page.id}"
+                  class="colveur-slider page-opacity-slider"
+                  oninput="updatePageVideoOpacity('${page.id}', this.value)"
+                />
+              </div>
+
+              <div class="w-full pt-2 border-t border-[#b6ab9d]/20">
+                <div class="flex items-center justify-between text-xs font-semibold mb-1">
+                  <span>Volume audio (Boucle)</span>
+                  <div class="flex items-center gap-2">
+                    <span class="page-volume-readout font-mono" data-page-id="${page.id}">${isMuted ? 'MUET' : Math.round(volumePercent) + '%'}</span>
+                    <button
+                      type="button"
+                      onclick="togglePageVideoMute('${page.id}')"
+                      class="page-mute-btn px-2.5 py-0.5 rounded-lg bg-[#252525] border border-[#b6ab9d]/35 text-[11px] font-bold hover:border-[#b6ab9d]"
+                      data-page-id="${page.id}"
+                    >
+                      ${isMuted ? '🔇 Muet' : '🔊 Son ON'}
+                    </button>
+                  </div>
+                </div>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value="${volumePercent}"
+                  data-page-id="${page.id}"
+                  class="colveur-slider page-volume-slider"
+                  oninput="updatePageVideoVolume('${page.id}', this.value)"
+                />
+              </div>
+            </div>
+          ` : isMediaTextTemplate ? '' : `
+            <div class="cat-page-editor-placeholder ${isEditorMode ? 'flex' : 'hidden'} relative z-10 flex-col items-center justify-center text-center px-6 opacity-55 pointer-events-none select-none">
+              <span class="font-dela text-lg md:text-2xl mb-1">Page ${index + 1} — Page vierge (Fond uni)</span>
+              <span class="text-xs uppercase tracking-widest">Plein écran 100% • Fond ${colorName}</span>
+            </div>
+          `}
+        `;
+
+        if (isVideoTemplate) {
+          const simCanvas = section.querySelector('.cat-page-sim-canvas');
+          const videoEl = section.querySelector('.cat-page-fullscreen-video');
+
+          if (simCanvas) {
+            const simItem = {
+              canvas: simCanvas,
+              ctx: simCanvas.getContext('2d'),
+              theme: cat.theme || 'docu',
+              catId: cat.id,
+              time: index * 3.5,
+              isPlaying: true
+            };
+            pageVideoSimCanvases.push(simItem);
+            drawProceduralCinemaFrame(simItem, 0);
+          }
+
+          if (videoEl) {
+            videoEl.volume = Math.max(0, Math.min(1, volumePercent / 100));
+            videoEl.muted = isMuted;
+            videoEl.addEventListener('error', () => {
+              videoEl.classList.add('hidden');
+              if (simCanvas) simCanvas.classList.remove('hidden');
+            });
+          }
+        }
+
+        categoryPagesList.appendChild(section);
+      });
+
+      const lastPage = cat.pages[cat.pages.length - 1];
+      const nextIsTaupe = lastPage ? (lastPage.bgTheme === 'noir') : (cat.pages.length % 2 === 0);
+      const nextColorLabel = nextIsTaupe ? 'Taupe (#b6ab9d)' : 'Noir (#151515)';
+      categoryEditorFooter.dataset.bgTheme = nextIsTaupe ? 'taupe' : 'noir';
+      categoryEditorFooter.style.backgroundColor = nextIsTaupe ? '#b6ab9d' : '#151515';
+      categoryEditorFooter.style.color = nextIsTaupe ? '#151515' : '#b6ab9d';
+
+      const nextHintEl = document.getElementById('next-page-color-hint');
+      if (nextHintEl) {
+        nextHintEl.textContent = `Prochaine page vierge en fond ${nextColorLabel} (ou Noir automatique pour une Vidéo Plein Écran)`;
+      }
+
+      updateCategorySplitHeader();
+      syncCategoryFullscreenVideosPlayback();
+    }
+
+    function openCategoryPage(catId) {
+      const cat = categories.find(c => c.id === catId);
+      if (!cat) return;
+
+      activeCategoryPageId = catId;
+      pendingDeletePageId = null;
+
+      document.querySelectorAll('.cat-header-title').forEach(el => {
+        el.textContent = cat.title;
+      });
+
+      if (headerAutoHideTimer) {
+        clearTimeout(headerAutoHideTimer);
+        headerAutoHideTimer = null;
+      }
+      categoryPage.classList.remove('header-visible');
+
+      applyCategoryScrollModeUI();
+      renderCategoryPages(cat);
+
+      categoryScrollContainer.scrollTop = 0;
+      categoryPage.classList.add('is-open');
+      categoryPage.setAttribute('aria-hidden', 'false');
+
+      syncEditorTopbarContext();
+      updateCategorySplitHeader();
+      startSplitHeaderLoop();
+      syncCategoryFullscreenVideosPlayback();
+    }
+
+    function closeCategoryPage() {
+      if (headerAutoHideTimer) {
+        clearTimeout(headerAutoHideTimer);
+        headerAutoHideTimer = null;
+      }
+      categoryPage.classList.remove('header-visible');
+      categoryPage.classList.remove('is-open');
+      categoryPage.setAttribute('aria-hidden', 'true');
+
+      categoryPagesList.querySelectorAll('video').forEach(vid => {
+        vid.pause();
+      });
+
+      activeCategoryPageId = null;
+      pendingDeletePageId = null;
+      setBackButtonHover(false);
+      syncEditorTopbarContext();
+    }
+
+    function openAddPageTemplateModal() {
+      if (!activeCategoryPageId) return;
+      const cat = categories.find(c => c.id === activeCategoryPageId);
+      if (!cat) return;
+
+      const nextIndex = cat.pages.length;
+      const nextIsTaupe = nextIndex % 2 === 0;
+      const nextColorHex = nextIsTaupe ? '#b6ab9d' : '#151515';
+      const nextTextHex = nextIsTaupe ? '#151515' : '#b6ab9d';
+      const nextColorName = nextIsTaupe ? 'Taupe (#b6ab9d)' : 'Noir (#151515)';
+
+      const previewBox = document.getElementById('template-blank-preview');
+      if (previewBox) {
+        previewBox.style.backgroundColor = nextColorHex;
+        previewBox.innerHTML = `<span class="font-dela text-xs" style="color: ${nextTextHex}; opacity: 0.85;">Page ${nextIndex + 1}</span>`;
+      }
+
+      const infoEl = document.getElementById('modal-template-color-info');
+      if (infoEl) {
+        infoEl.innerHTML = `Cette nouvelle page (<strong>Page ${nextIndex + 1}</strong>) sera ajoutée en plein écran (100%) avec un fond <strong>${nextColorName}</strong>.`;
+      }
+
+      openModal('modal-add-page-template');
+    }
+
+    function addPageToActiveCategory(templateType) {
+      if (!activeCategoryPageId) return;
+      const cat = categories.find(c => c.id === activeCategoryPageId);
+      if (!cat) return;
+
+      const isVideoTpl = templateType === 'fullscreen-video';
+      const isM2Tpl = templateType === 'media-text';
+      const lastPage = cat.pages[cat.pages.length - 1];
+      const nextAlternatedTheme = lastPage ? (lastPage.bgTheme === 'noir' ? 'taupe' : 'noir') : (cat.pages.length % 2 === 0 ? 'taupe' : 'noir');
+
+      const newPage = normalizePageObject({
+        id: 'page-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
+        template: isVideoTpl ? 'fullscreen-video' : (isM2Tpl ? 'media-text' : 'blank'),
+        bgTheme: isVideoTpl ? 'noir' : nextAlternatedTheme,
+        videoOpacity: 80,
+        videoVolume: 80,
+        videoMuted: false,
+        blocks: createDefaultM2Blocks()
+      }, cat.pages.length);
+
+      cat.pages.push(newPage);
+      saveCategoriesToStorage();
+      closeModal('modal-add-page-template');
+      renderCategoryPages(cat);
+
+      const addedEl = categoryPagesList.querySelector(`.cat-page-section[data-page-id="${newPage.id}"]`);
+      if (addedEl) {
+        addedEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+
+    function changePageTemplate(pageId, newTemplate) {
+      if (!activeCategoryPageId) return;
+      const cat = categories.find(c => c.id === activeCategoryPageId);
+      if (!cat) return;
+
+      const page = cat.pages.find(p => p.id === pageId);
+      if (!page) return;
+
+      if (newTemplate === 'fullscreen-video') {
+        page.template = 'fullscreen-video';
+        page.title = 'Modèle 1 : Vidéo Plein Écran';
+        page.bgTheme = 'noir';
+      } else if (newTemplate === 'media-text') {
+        page.template = 'media-text';
+        page.title = 'Modèle 2 : Cadre Vidéo & Texte';
+        if (!Array.isArray(page.blocks) || page.blocks.length === 0) {
+          page.blocks = createDefaultM2Blocks();
+        }
+      } else {
+        page.template = 'blank';
+        page.title = 'Page vierge (Fond uni)';
+      }
+
+      saveCategoriesToStorage();
+      renderCategoryPages(cat);
+    }
+
+    function togglePageBackgroundColor(pageId) {
+      if (!activeCategoryPageId) return;
+      const cat = categories.find(c => c.id === activeCategoryPageId);
+      if (!cat) return;
+
+      const page = cat.pages.find(p => p.id === pageId);
+      if (!page) return;
+
+      page.bgTheme = page.bgTheme === 'taupe' ? 'noir' : 'taupe';
+      saveCategoriesToStorage();
+      renderCategoryPages(cat);
+    }
+
+    function updatePageVideoOpacity(pageId, valPercent) {
+      if (!activeCategoryPageId) return;
+      const cat = categories.find(c => c.id === activeCategoryPageId);
+      if (!cat) return;
+
+      const page = cat.pages.find(p => p.id === pageId);
+      const clamped = Math.max(0, Math.min(100, parseFloat(valPercent) || 0));
+      if (page) {
+        page.videoOpacity = clamped;
+        saveCategoriesToStorage();
+      }
+
+      const sec = categoryPagesList.querySelector(`.cat-page-section[data-page-id="${pageId}"]`);
+      if (sec) {
+        const layer = sec.querySelector('.cat-page-video-layer');
+        if (layer) layer.style.opacity = (clamped / 100).toFixed(2);
+      }
+
+      document.querySelectorAll(`.page-opacity-readout[data-page-id="${pageId}"]`).forEach(el => {
+        el.textContent = `${Math.round(clamped)}%`;
+      });
+      document.querySelectorAll(`.page-opacity-slider[data-page-id="${pageId}"]`).forEach(el => {
+        el.value = clamped;
+      });
+
+      if (activeEditPageId === pageId) {
+        const mLabel = document.getElementById('modal-page-opacity-label');
+        const mSlider = document.getElementById('modal-page-opacity-slider');
+        if (mLabel) mLabel.textContent = `${Math.round(clamped)}%`;
+        if (mSlider) mSlider.value = clamped;
+      }
+    }
+
+    function updatePageVideoVolume(pageId, valPercent) {
+      if (!activeCategoryPageId) return;
+      const cat = categories.find(c => c.id === activeCategoryPageId);
+      if (!cat) return;
+
+      const page = cat.pages.find(p => p.id === pageId);
+      const clamped = Math.max(0, Math.min(100, parseFloat(valPercent) || 0));
+      if (page) {
+        page.videoVolume = clamped;
+        if (clamped > 0 && page.videoMuted) {
+          page.videoMuted = false;
+        }
+        saveCategoriesToStorage();
+      }
+
+      const sec = categoryPagesList.querySelector(`.cat-page-section[data-page-id="${pageId}"]`);
+      if (sec) {
+        const vid = sec.querySelector('.cat-page-fullscreen-video');
+        if (vid) {
+          vid.volume = clamped / 100;
+          vid.muted = page ? Boolean(page.videoMuted) : false;
+        }
+        const ytIframe = sec.querySelector('.cat-page-yt-iframe');
+        if (ytIframe) {
+          sendYouTubeCommand(ytIframe, 'setVolume', [Math.round(clamped)]);
+          sendYouTubeCommand(ytIframe, (page && page.videoMuted) ? 'mute' : 'unMute');
+        }
+      }
+
+      refreshPageAudioUI(pageId);
+    }
+
+    function togglePageVideoMute(pageId) {
+      if (!activeCategoryPageId) return;
+      const cat = categories.find(c => c.id === activeCategoryPageId);
+      if (!cat) return;
+
+      const page = cat.pages.find(p => p.id === pageId);
+      if (!page) return;
+
+      page.videoMuted = !page.videoMuted;
+      saveCategoriesToStorage();
+
+      const sec = categoryPagesList.querySelector(`.cat-page-section[data-page-id="${pageId}"]`);
+      if (sec) {
+        const vid = sec.querySelector('.cat-page-fullscreen-video');
+        if (vid) {
+          vid.muted = Boolean(page.videoMuted);
+        }
+        const ytIframe = sec.querySelector('.cat-page-yt-iframe');
+        if (ytIframe) {
+          sendYouTubeCommand(ytIframe, page.videoMuted ? 'mute' : 'unMute');
+          if (!page.videoMuted) {
+            sendYouTubeCommand(ytIframe, 'setVolume', [Math.round(page.videoVolume ?? 80)]);
+          }
+        }
+      }
+
+      refreshPageAudioUI(pageId);
+    }
+
+    function refreshPageAudioUI(pageId) {
+      if (!activeCategoryPageId) return;
+      const cat = categories.find(c => c.id === activeCategoryPageId);
+      const page = cat && cat.pages ? cat.pages.find(p => p.id === pageId) : null;
+      if (!page) return;
+
+      const isMuted = Boolean(page.videoMuted);
+      const vol = Math.round(typeof page.videoVolume === 'number' ? page.videoVolume : 80);
+
+      document.querySelectorAll(`.page-volume-readout[data-page-id="${pageId}"]`).forEach(el => {
+        el.textContent = isMuted ? 'MUET' : `${vol}%`;
+      });
+      document.querySelectorAll(`.page-volume-slider[data-page-id="${pageId}"]`).forEach(el => {
+        el.value = vol;
+      });
+      document.querySelectorAll(`.page-mute-btn[data-page-id="${pageId}"]`).forEach(el => {
+        el.textContent = isMuted ? '🔇 Muet' : '🔊 Son ON';
+      });
+
+      if (activeEditPageId === pageId) {
+        const mVolLabel = document.getElementById('modal-page-volume-label');
+        const mVolSlider = document.getElementById('modal-page-volume-slider');
+        const mMuteBtn = document.getElementById('modal-page-mute-btn');
+        if (mVolLabel) mVolLabel.textContent = isMuted ? 'MUET' : `${vol}%`;
+        if (mVolSlider) mVolSlider.value = vol;
+        if (mMuteBtn) mMuteBtn.textContent = isMuted ? '🔇 Muet (Cliquer pour activer)' : '🔊 Son actif';
+      }
+    }
+
+    function openPageVideoEditModal(pageId) {
+      if (!activeCategoryPageId) return;
+      const cat = categories.find(c => c.id === activeCategoryPageId);
+      if (!cat) return;
+
+      const pageIndex = cat.pages.findIndex(p => p.id === pageId);
+      const page = cat.pages[pageIndex];
+      if (!page) return;
+
+      activeEditPageId = pageId;
+      document.getElementById('modal-page-video-title').textContent = `Page ${pageIndex + 1} — Vidéo Plein Écran`;
+      document.getElementById('edit-page-url-input').value = (page.videoUrl && !page.videoUrl.startsWith('blob:')) ? page.videoUrl : '';
+      document.getElementById('modal-page-opacity-slider').value = page.videoOpacity ?? 80;
+      document.getElementById('modal-page-opacity-label').textContent = `${Math.round(page.videoOpacity ?? 80)}%`;
+
+      refreshPageAudioUI(pageId);
+      openModal('modal-page-video-edit');
+    }
+
+    function handlePageLocalVideoUpload(event) {
+      const file = event.target.files && event.target.files[0];
+      if (!file || !activeCategoryPageId || !activeEditPageId) return;
+
+      const blobUrl = URL.createObjectURL(file);
+      const cat = categories.find(c => c.id === activeCategoryPageId);
+      const page = cat && cat.pages ? cat.pages.find(p => p.id === activeEditPageId) : null;
+      if (page) {
+        page.videoUrl = blobUrl;
+        page.bgTheme = 'noir';
+        renderCategoryPages(cat);
+      }
+      event.target.value = '';
+    }
+
+    function updateActiveEditPageOpacity(val) {
+      if (!activeEditPageId) return;
+      updatePageVideoOpacity(activeEditPageId, val);
+    }
+
+    function updateActiveEditPageVolume(val) {
+      if (!activeEditPageId) return;
+      updatePageVideoVolume(activeEditPageId, val);
+    }
+
+    function toggleActiveEditPageMute() {
+      if (!activeEditPageId) return;
+      togglePageVideoMute(activeEditPageId);
+    }
+
+    function savePageVideoModalChanges() {
+      if (!activeCategoryPageId || !activeEditPageId) return;
+      const cat = categories.find(c => c.id === activeCategoryPageId);
+      const page = cat && cat.pages ? cat.pages.find(p => p.id === activeEditPageId) : null;
+      if (!page) return;
+
+      const urlVal = document.getElementById('edit-page-url-input').value.trim();
+      if (urlVal && urlVal !== page.videoUrl) {
+        page.videoUrl = urlVal;
+      }
+
+      saveCategoriesToStorage();
+      renderCategoryPages(cat);
+      closeModal('modal-page-video-edit');
+    }
+
+    function moveCategoryPage(pageId, direction) {
+      if (!activeCategoryPageId) return;
+      const cat = categories.find(c => c.id === activeCategoryPageId);
+      if (!cat) return;
+
+      const idx = cat.pages.findIndex(p => p.id === pageId);
+      const targetIdx = idx + direction;
+      if (idx < 0 || targetIdx < 0 || targetIdx >= cat.pages.length) return;
+
+      const temp = cat.pages[idx];
+      cat.pages[idx] = cat.pages[targetIdx];
+      cat.pages[targetIdx] = temp;
+
+      saveCategoriesToStorage();
+      renderCategoryPages(cat);
+    }
+
+    function requestDeleteCategoryPage(pageId) {
+      if (!activeCategoryPageId) return;
+      const cat = categories.find(c => c.id === activeCategoryPageId);
+      if (!cat || cat.pages.length <= 1) return;
+
+      if (pendingDeletePageId === pageId) {
+        if (pendingDeleteTimeout) clearTimeout(pendingDeleteTimeout);
+        pendingDeletePageId = null;
+        cat.pages = cat.pages.filter(p => p.id !== pageId);
+        saveCategoriesToStorage();
+        renderCategoryPages(cat);
+      } else {
+        pendingDeletePageId = pageId;
+        renderCategoryPages(cat);
+        if (pendingDeleteTimeout) clearTimeout(pendingDeleteTimeout);
+        pendingDeleteTimeout = setTimeout(() => {
+          pendingDeletePageId = null;
+          if (activeCategoryPageId === cat.id) {
+            renderCategoryPages(cat);
+          }
+        }, 3000);
+      }
+    }
+
+    /*************************************************************************
+     * 5B. LOGIQUE DU MODÈLE 2 : DÉPLACEMENT, REDIMENSIONNEMENT, VIDÉO & TEXTE
+     *************************************************************************/
+    let m2DragState = null;
+
+    function findActivePageAndBlock(pageId, blockId) {
+      if (!activeCategoryPageId) return { cat: null, page: null, block: null };
+      const cat = categories.find(c => c.id === activeCategoryPageId);
+      if (!cat || !Array.isArray(cat.pages)) return { cat: null, page: null, block: null };
+      const page = cat.pages.find(p => p.id === pageId);
+      if (!page || !Array.isArray(page.blocks)) return { cat, page: null, block: null };
+      const block = page.blocks.find(b => b.id === blockId);
+      return { cat, page, block };
+    }
+
+    function handleM2StagePointerDown(e, pageId) {
+      if (!isEditorMode) return;
+      if (e.target.classList.contains('m2-canvas-stage')) {
+        selectedM2BlockId = null;
+        document.querySelectorAll('.m2-block.is-selected').forEach(el => el.classList.remove('is-selected'));
+      }
+    }
+
+    function selectM2Block(pageId, blockId) {
+      if (!isEditorMode) return;
+      selectedM2BlockId = blockId;
+      document.querySelectorAll('.m2-block').forEach(el => {
+        el.classList.toggle('is-selected', el.dataset.blockId === blockId);
+      });
+    }
+
+    function startM2BlockInteract(e, pageId, blockId, mode) {
+      if (!isEditorMode) return;
+      if (mode === 'move' && e.target.closest('.m2-text-content') && document.activeElement === e.target.closest('.m2-text-content')) {
+        selectM2Block(pageId, blockId);
+        return;
+      }
+      if (e.target.closest('button, input, select, .m2-player-controls')) return;
+
+      e.stopPropagation();
+      if (mode !== 'move') e.preventDefault();
+
+      selectM2Block(pageId, blockId);
+
+      const { page, block } = findActivePageAndBlock(pageId, blockId);
+      if (!page || !block) return;
+
+      const blockEl = document.querySelector(`.m2-block[data-page-id="${pageId}"][data-block-id="${blockId}"]`);
+      const stageEl = blockEl ? blockEl.closest('.m2-canvas-stage') : null;
+      if (!blockEl || !stageEl) return;
+
+      const stageRect = stageEl.getBoundingClientRect();
+
+      m2DragState = {
+        pageId,
+        blockId,
+        mode,
+        startX: e.clientX,
+        startY: e.clientY,
+        stageWidth: Math.max(1, stageRect.width),
+        stageHeight: Math.max(1, stageRect.height),
+        origX: block.x,
+        origY: block.y,
+        origW: block.w,
+        origH: block.h,
+        blockEl,
+        stageEl
+      };
+    }
+
+    window.addEventListener('pointermove', (e) => {
+      if (!m2DragState) return;
+      const { pageId, blockId, mode, startX, startY, stageWidth, stageHeight, origX, origY, origW, origH, blockEl, stageEl } = m2DragState;
+      const { block } = findActivePageAndBlock(pageId, blockId);
+      if (!block) return;
+
+      const dxPct = ((e.clientX - startX) / stageWidth) * 100;
+      const dyPct = ((e.clientY - startY) / stageHeight) * 100;
+
+      const guideV = stageEl.querySelector('.guide-v');
+      const guideH = stageEl.querySelector('.guide-h');
+      let showV = false;
+      let showH = false;
+
+      if (mode === 'move') {
+        let nextX = Math.max(0, Math.min(100 - origW, origX + dxPct));
+        let nextY = Math.max(0, Math.min(100 - origH, origY + dyPct));
+
+        const centerX = nextX + origW / 2;
+        const centerY = nextY + origH / 2;
+        if (Math.abs(centerX - 50) < 1.2) {
+          nextX = 50 - origW / 2;
+          showV = true;
+        }
+        if (Math.abs(centerY - 50) < 1.2) {
+          nextY = 50 - origH / 2;
+          showH = true;
+        }
+
+        block.x = Number(nextX.toFixed(2));
+        block.y = Number(nextY.toFixed(2));
+      } else {
+        const minW = block.type === 'text' ? 12 : 10;
+        const minH = block.type === 'text' ? 8 : 10;
+
+        let nx = origX;
+        let ny = origY;
+        let nw = origW;
+        let nh = origH;
+
+        if (mode.includes('e')) {
+          nw = Math.max(minW, Math.min(100 - origX, origW + dxPct));
+        }
+        if (mode.includes('s')) {
+          nh = Math.max(minH, Math.min(100 - origY, origH + dyPct));
+        }
+        if (mode.includes('w')) {
+          const maxDeltaX = origW - minW;
+          const clampedDx = Math.max(-origX, Math.min(maxDeltaX, dxPct));
+          nx = origX + clampedDx;
+          nw = origW - clampedDx;
+        }
+        if (mode.includes('n')) {
+          const maxDeltaY = origH - minH;
+          const clampedDy = Math.max(-origY, Math.min(maxDeltaY, dyPct));
+          ny = origY + clampedDy;
+          nh = origH - clampedDy;
+        }
+
+        block.x = Number(nx.toFixed(2));
+        block.y = Number(ny.toFixed(2));
+        block.w = Number(nw.toFixed(2));
+        block.h = Number(nh.toFixed(2));
+      }
+
+      blockEl.style.left = `${block.x}%`;
+      blockEl.style.top = `${block.y}%`;
+      blockEl.style.width = `${block.w}%`;
+      blockEl.style.height = `${block.h}%`;
+      blockEl.classList.toggle('toolbar-below', block.y < 18);
+
+      if (guideV) guideV.classList.toggle('is-visible', showV);
+      if (guideH) guideH.classList.toggle('is-visible', showH);
+    });
+
+    window.addEventListener('pointerup', () => {
+      if (!m2DragState) return;
+      const { stageEl } = m2DragState;
+      if (stageEl) {
+        stageEl.querySelectorAll('.m2-guide-line').forEach(g => g.classList.remove('is-visible'));
+      }
+      m2DragState = null;
+      saveCategoriesToStorage();
+    });
+
+    function addM2BlockToPage(pageId, blockType) {
+      if (!activeCategoryPageId) return;
+      const cat = categories.find(c => c.id === activeCategoryPageId);
+      const page = cat && cat.pages ? cat.pages.find(p => p.id === pageId) : null;
+      if (!page) return;
+
+      if (!Array.isArray(page.blocks)) page.blocks = createDefaultM2Blocks();
+
+      const offset = (page.blocks.length % 4) * 3.5;
+      const newBlock = blockType === 'text'
+        ? normalizeM2Block({
+            id: 'blk-txt-' + Date.now(),
+            type: 'text',
+            x: Math.min(65, 52 + offset),
+            y: Math.min(72, 38 + offset),
+            w: 30,
+            h: 16,
+            html: 'ZONE DE TEXTE',
+            fontSize: 26,
+            align: 'center'
+          }, 1)
+        : normalizeM2Block({
+            id: 'blk-vid-' + Date.now(),
+            type: 'video',
+            x: Math.min(55, 10 + offset),
+            y: Math.min(60, 28 + offset),
+            w: 34,
+            h: 38,
+            borderRadius: 42
+          }, 0);
+
+      page.blocks.push(newBlock);
+      selectedM2BlockId = newBlock.id;
+      saveCategoriesToStorage();
+      renderCategoryPages(cat);
+    }
+
+    function deleteM2Block(pageId, blockId) {
+      const { cat, page } = findActivePageAndBlock(pageId, blockId);
+      if (!cat || !page || page.blocks.length <= 1) return;
+      page.blocks = page.blocks.filter(b => b.id !== blockId);
+      if (selectedM2BlockId === blockId) selectedM2BlockId = null;
+      saveCategoriesToStorage();
+      renderCategoryPages(cat);
+    }
+
+    function applyM2VideoPresetRatio(pageId, blockId, ratioStr) {
+      const { cat, block } = findActivePageAndBlock(pageId, blockId);
+      if (!cat || !block) return;
+
+      const vw = window.innerWidth || 1920;
+      const vh = window.innerHeight || 1080;
+
+      if (ratioStr === '16:9') {
+        block.w = 40;
+        const pxW = (block.w / 100) * vw;
+        const pxH = pxW * (9 / 16);
+        block.h = Number(Math.min(82, (pxH / vh) * 100).toFixed(2));
+      } else if (ratioStr === '9:16') {
+        block.h = 66;
+        const pxH = (block.h / 100) * vh;
+        const pxW = pxH * (9 / 16);
+        block.w = Number(Math.min(55, (pxW / vw) * 100).toFixed(2));
+      } else if (ratioStr === '1:1') {
+        block.h = 50;
+        const pxH = (block.h / 100) * vh;
+        block.w = Number(Math.min(55, (pxH / vw) * 100).toFixed(2));
+      }
+
+      block.x = Math.max(2, Math.min(98 - block.w, block.x));
+      block.y = Math.max(2, Math.min(98 - block.h, block.y));
+      saveCategoriesToStorage();
+      renderCategoryPages(cat);
+    }
+
+    function toggleM2TextFormat(pageId, blockId, formatType) {
+      const { block } = findActivePageAndBlock(pageId, blockId);
+      if (!block) return;
+
+      const blockEl = document.querySelector(`.m2-block[data-page-id="${pageId}"][data-block-id="${blockId}"]`);
+      const textEl = blockEl ? blockEl.querySelector('.m2-text-content') : null;
+
+      const sel = window.getSelection();
+      const hasRangeSelection = sel && !sel.isCollapsed && textEl && textEl.contains(sel.anchorNode);
+
+      if (hasRangeSelection) {
+        document.execCommand(formatType, false, null);
+        block.html = textEl.innerHTML;
+      } else {
+        block[formatType] = !block[formatType];
+        if (textEl) {
+          textEl.classList.toggle(`is-${formatType}`, block[formatType]);
+        }
+        if (blockEl) {
+          renderCategoryPages(categories.find(c => c.id === activeCategoryPageId));
+        }
+      }
+      saveCategoriesToStorage();
+    }
+
+    function changeM2TextAlign(pageId, blockId, alignVal) {
+      const { cat, block } = findActivePageAndBlock(pageId, blockId);
+      if (!cat || !block) return;
+      block.align = alignVal;
+      saveCategoriesToStorage();
+      renderCategoryPages(cat);
+    }
+
+    function updateM2TextFontSize(pageId, blockId, sizePx) {
+      const { block } = findActivePageAndBlock(pageId, blockId);
+      if (!block) return;
+      const clamped = Math.max(12, Math.min(96, parseInt(sizePx, 10) || 28));
+      block.fontSize = clamped;
+      saveCategoriesToStorage();
+
+      const blockEl = document.querySelector(`.m2-block[data-page-id="${pageId}"][data-block-id="${blockId}"]`);
+      if (blockEl) {
+        const textEl = blockEl.querySelector('.m2-text-content');
+        const labelEl = blockEl.querySelector('.m2-fontsize-label');
+        if (textEl) textEl.style.fontSize = `${clamped}px`;
+        if (labelEl) labelEl.textContent = `${clamped}px`;
+      }
+    }
+
+    function saveM2TextInline(pageId, blockId, el) {
+      const { block } = findActivePageAndBlock(pageId, blockId);
+      if (!block || !el) return;
+      block.html = el.innerHTML;
+      saveCategoriesToStorage();
+    }
+
+    function openM2FrameVideoModal(pageId, blockId) {
+      const { block } = findActivePageAndBlock(pageId, blockId);
+      if (!block) return;
+
+      activeM2EditPageId = pageId;
+      activeM2EditBlockId = blockId;
+
+      document.getElementById('m2-frame-url-input').value = (block.videoUrl && !String(block.videoUrl).startsWith('blob:')) ? block.videoUrl : '';
+      document.getElementById('m2-frame-posx-slider').value = block.posX ?? 50;
+      document.getElementById('m2-frame-posx-label').textContent = `${Math.round(block.posX ?? 50)}%`;
+      document.getElementById('m2-frame-posy-slider').value = block.posY ?? 50;
+      document.getElementById('m2-frame-posy-label').textContent = `${Math.round(block.posY ?? 50)}%`;
+      document.getElementById('m2-frame-radius-slider').value = block.borderRadius ?? 42;
+      document.getElementById('m2-frame-radius-label').textContent = `${Math.round(block.borderRadius ?? 42)}px`;
+
+      openModal('modal-m2-frame-video');
+    }
+
+    function handleM2FrameLocalVideoUpload(event) {
+      const file = event.target.files && event.target.files[0];
+      if (!file || !activeM2EditPageId || !activeM2EditBlockId) return;
+
+      const blobUrl = URL.createObjectURL(file);
+      const { cat, block } = findActivePageAndBlock(activeM2EditPageId, activeM2EditBlockId);
+      if (cat && block) {
+        block.videoUrl = blobUrl;
+        renderCategoryPages(cat);
+      }
+      event.target.value = '';
+    }
+
+    function updateActiveM2FrameCrop(axis, val) {
+      if (!activeM2EditPageId || !activeM2EditBlockId) return;
+      const { block } = findActivePageAndBlock(activeM2EditPageId, activeM2EditBlockId);
+      if (!block) return;
+
+      const clamped = Math.max(0, Math.min(100, parseFloat(val) || 50));
+      if (axis === 'x') {
+        block.posX = clamped;
+        document.getElementById('m2-frame-posx-label').textContent = `${Math.round(clamped)}%`;
+      } else {
+        block.posY = clamped;
+        document.getElementById('m2-frame-posy-label').textContent = `${Math.round(clamped)}%`;
+      }
+
+      saveCategoriesToStorage();
+      const blockEl = document.querySelector(`.m2-block[data-page-id="${activeM2EditPageId}"][data-block-id="${activeM2EditBlockId}"]`);
+      if (blockEl) {
+        const vid = blockEl.querySelector('.m2-video-el');
+        if (vid) vid.style.objectPosition = `${block.posX ?? 50}% ${block.posY ?? 50}%`;
+        const ytIfr = blockEl.querySelector('.m2-yt-iframe');
+        if (ytIfr) {
+          ytIfr.style.left = `${100 - (block.posX ?? 50)}%`;
+          ytIfr.style.top = `${100 - (block.posY ?? 50)}%`;
+        }
+      }
+    }
+
+    function updateActiveM2FrameRadius(val) {
+      if (!activeM2EditPageId || !activeM2EditBlockId) return;
+      const { block } = findActivePageAndBlock(activeM2EditPageId, activeM2EditBlockId);
+      if (!block) return;
+
+      const clamped = Math.max(0, Math.min(140, parseInt(val, 10) || 0));
+      block.borderRadius = clamped;
+      document.getElementById('m2-frame-radius-label').textContent = `${clamped}px`;
+      saveCategoriesToStorage();
+
+      const blockEl = document.querySelector(`.m2-block[data-page-id="${activeM2EditPageId}"][data-block-id="${activeM2EditBlockId}"]`);
+      if (blockEl) {
+        const frame = blockEl.querySelector('.m2-video-frame');
+        if (frame) frame.style.borderRadius = `${clamped}px`;
+      }
+    }
+
+    function clearActiveM2FrameVideo() {
+      if (!activeM2EditPageId || !activeM2EditBlockId) return;
+      const { cat, block } = findActivePageAndBlock(activeM2EditPageId, activeM2EditBlockId);
+      if (!cat || !block) return;
+      block.videoUrl = '';
+      saveCategoriesToStorage();
+      renderCategoryPages(cat);
+      closeModal('modal-m2-frame-video');
+    }
+
+    function saveM2FrameVideoModal() {
+      if (!activeM2EditPageId || !activeM2EditBlockId) return;
+      const { cat, block } = findActivePageAndBlock(activeM2EditPageId, activeM2EditBlockId);
+      if (!cat || !block) return;
+
+      const urlVal = document.getElementById('m2-frame-url-input').value.trim();
+      if (urlVal && urlVal !== block.videoUrl) {
+        block.videoUrl = urlVal;
+      }
+      saveCategoriesToStorage();
+      renderCategoryPages(cat);
+      closeModal('modal-m2-frame-video');
+    }
+
+    function handleM2VideoClick(e, videoEl) {
+      if (isEditorMode) return;
+      e.stopPropagation();
+      videoEl.muted = !videoEl.muted;
+      if (videoEl.paused) {
+        videoEl.dataset.userPaused = 'false';
+        videoEl.play().catch(() => {});
+      }
+      syncM2PlayerUI(videoEl);
+    }
+
+    function toggleM2VideoPlayPause(btnEl) {
+      const frame = btnEl.closest('.m2-video-frame');
+      const videoEl = frame ? frame.querySelector('.m2-video-el') : null;
+      if (!videoEl) return;
+
+      if (videoEl.paused) {
+        videoEl.dataset.userPaused = 'false';
+        videoEl.play().catch(() => {});
+      } else {
+        videoEl.dataset.userPaused = 'true';
+        videoEl.pause();
+      }
+      syncM2PlayerUI(videoEl);
+    }
+
+    function toggleM2VideoSoundFromBar(btnEl) {
+      const frame = btnEl.closest('.m2-video-frame');
+      const videoEl = frame ? frame.querySelector('.m2-video-el') : null;
+      if (!videoEl) return;
+      videoEl.muted = !videoEl.muted;
+      syncM2PlayerUI(videoEl);
+    }
+
+    function handleM2VideoTimeUpdate(videoEl) {
+      const frame = videoEl.closest('.m2-video-frame');
+      if (!frame) return;
+      const slider = frame.querySelector('.m2-timeline-slider');
+      if (slider && videoEl.duration) {
+        slider.value = ((videoEl.currentTime / videoEl.duration) * 100).toFixed(1);
+      }
+      syncM2PlayerUI(videoEl);
+    }
+
+    function seekM2Video(sliderEl) {
+      const frame = sliderEl.closest('.m2-video-frame');
+      const videoEl = frame ? frame.querySelector('.m2-video-el') : null;
+      if (!videoEl || !videoEl.duration) return;
+      videoEl.currentTime = (parseFloat(sliderEl.value) / 100) * videoEl.duration;
+    }
+
+    function requestM2VideoFullscreen(btnEl) {
+      const frame = btnEl.closest('.m2-video-frame');
+      const videoEl = frame ? frame.querySelector('.m2-video-el') : null;
+      if (!videoEl) return;
+      if (videoEl.requestFullscreen) videoEl.requestFullscreen();
+      else if (videoEl.webkitRequestFullscreen) videoEl.webkitRequestFullscreen();
+    }
+
+    function syncM2PlayerUI(videoEl) {
+      const frame = videoEl.closest('.m2-video-frame');
+      if (!frame) return;
+      const playBtn = frame.querySelector('.m2-btn-play');
+      const muteBtn = frame.querySelector('.m2-btn-mute');
+      const toast = frame.querySelector('.m2-sound-toast');
+
+      frame.classList.toggle('is-paused', videoEl.paused);
+      if (playBtn) playBtn.textContent = videoEl.paused ? '▶' : '❚❚';
+      if (muteBtn) muteBtn.textContent = videoEl.muted ? '🔇' : '🔊';
+      if (toast) {
+        toast.textContent = videoEl.muted ? '🔇 Cliquer sur la vidéo pour le son' : '🔊 Son activé (cliquer pour couper)';
+      }
+    }
+
+    function handleM2YouTubeClick(e, wrapEl) {
+      if (isEditorMode) return;
+      e.stopPropagation();
+      const frame = wrapEl.closest('.m2-video-frame');
+      const iframe = frame ? frame.querySelector('.m2-yt-iframe') : null;
+      if (!iframe) return;
+
+      const isCurrentlyMuted = iframe.dataset.muted !== 'false';
+      if (isCurrentlyMuted) {
+        sendYouTubeCommand(iframe, 'unMute');
+        sendYouTubeCommand(iframe, 'setVolume', [100]);
+        iframe.dataset.muted = 'false';
+      } else {
+        sendYouTubeCommand(iframe, 'mute');
+        iframe.dataset.muted = 'true';
+      }
+      if (iframe.dataset.userPaused === 'true') {
+        sendYouTubeCommand(iframe, 'playVideo');
+        iframe.dataset.userPaused = 'false';
+      }
+      syncM2YouTubeUI(frame, iframe);
+    }
+
+    function toggleM2YouTubePlayPause(btnEl) {
+      const frame = btnEl.closest('.m2-video-frame');
+      const iframe = frame ? frame.querySelector('.m2-yt-iframe') : null;
+      if (!iframe) return;
+
+      const isPaused = iframe.dataset.userPaused === 'true';
+      if (isPaused) {
+        sendYouTubeCommand(iframe, 'playVideo');
+        iframe.dataset.userPaused = 'false';
+      } else {
+        sendYouTubeCommand(iframe, 'pauseVideo');
+        iframe.dataset.userPaused = 'true';
+      }
+      syncM2YouTubeUI(frame, iframe);
+    }
+
+    function toggleM2YouTubeSoundFromBar(btnEl) {
+      const frame = btnEl.closest('.m2-video-frame');
+      const iframe = frame ? frame.querySelector('.m2-yt-iframe') : null;
+      if (!iframe) return;
+
+      const isCurrentlyMuted = iframe.dataset.muted !== 'false';
+      if (isCurrentlyMuted) {
+        sendYouTubeCommand(iframe, 'unMute');
+        sendYouTubeCommand(iframe, 'setVolume', [100]);
+        iframe.dataset.muted = 'false';
+      } else {
+        sendYouTubeCommand(iframe, 'mute');
+        iframe.dataset.muted = 'true';
+      }
+      syncM2YouTubeUI(frame, iframe);
+    }
+
+    function requestM2FrameFullscreen(btnEl) {
+      const frame = btnEl.closest('.m2-video-frame');
+      if (!frame) return;
+      if (frame.requestFullscreen) frame.requestFullscreen();
+      else if (frame.webkitRequestFullscreen) frame.webkitRequestFullscreen();
+    }
+
+    function syncM2YouTubeUI(frame, iframe) {
+      if (!frame || !iframe) return;
+      const isPaused = iframe.dataset.userPaused === 'true';
+      const isMuted = iframe.dataset.muted !== 'false';
+      const playBtn = frame.querySelector('.m2-btn-play');
+      const muteBtn = frame.querySelector('.m2-btn-mute');
+      const toast = frame.querySelector('.m2-sound-toast');
+
+      frame.classList.toggle('is-paused', isPaused);
+      if (playBtn) playBtn.textContent = isPaused ? '▶' : '❚❚';
+      if (muteBtn) muteBtn.textContent = isMuted ? '🔇' : '🔊';
+      if (toast) {
+        toast.textContent = isMuted ? '🔇 Cliquer sur la vidéo pour le son' : '🔊 Son activé (cliquer pour couper)';
+      }
+    }
+
+    /*************************************************************************
+     * 6. GESTION DU MODE ÉDITEUR, EXPORT .ZIP NETLIFY & MODALES "+"
+     *************************************************************************/
+    let secretCornerHoldTimer = null;
+
+    function startSecretCornerHold() {
+      if (isEditorMode) return;
+      if (secretCornerHoldTimer) clearTimeout(secretCornerHoldTimer);
+      secretCornerHoldTimer = setTimeout(() => {
+        handleLockButtonClick();
+      }, 1500);
+    }
+
+    function cancelSecretCornerHold() {
+      if (secretCornerHoldTimer) {
+        clearTimeout(secretCornerHoldTimer);
+        secretCornerHoldTimer = null;
+      }
+    }
+
+    function handleLockButtonClick() {
+      if (isEditorMode) {
+        toggleEditorMode(false);
+      } else {
+        document.getElementById('editor-pin-input').value = '';
+        document.getElementById('login-error-msg').classList.add('hidden');
+        openModal('modal-login');
+        setTimeout(() => {
+          const pinInput = document.getElementById('editor-pin-input');
+          if (pinInput) pinInput.focus();
+        }, 50);
+      }
+    }
+
+    function submitEditorLogin(e) {
+      e.preventDefault();
+      const pin = document.getElementById('editor-pin-input').value.trim();
+      const err = document.getElementById('login-error-msg');
+
+      if (pin === EDITOR_SECRET_PIN) {
+        err.classList.add('hidden');
+        closeModal('modal-login');
+        toggleEditorMode(true);
+      } else {
+        err.classList.remove('hidden');
+      }
+    }
+
+    function openChangePinModal() {
+      const input = document.getElementById('new-editor-pin-input');
+      const feedback = document.getElementById('pin-saved-feedback');
+      if (input) input.value = EDITOR_SECRET_PIN;
+      if (feedback) feedback.classList.add('hidden');
+      openModal('modal-change-pin');
+    }
+
+    function saveNewEditorPin(e) {
+      e.preventDefault();
+      const newPin = document.getElementById('new-editor-pin-input').value.trim();
+      if (!newPin || newPin.length < 3) return;
+      EDITOR_SECRET_PIN = newPin;
+      try {
+        localStorage.setItem(STORAGE_KEY_EDITOR_PIN, EDITOR_SECRET_PIN);
+      } catch (err) {}
+      const feedback = document.getElementById('pin-saved-feedback');
+      if (feedback) feedback.classList.remove('hidden');
+    }
+
+    /**
+     * Génère le code HTML propre et léger avec toutes les modifications sauvegardées
+     */
+    function buildExportableHtmlString() {
+      const cleanCategories = categories.map(cat => ({
+        ...cat,
+        videoUrl: (cat.videoUrl && !String(cat.videoUrl).startsWith('blob:')) ? cat.videoUrl : '',
+        pages: (cat.pages || []).map((p, idx) => {
+          const norm = normalizePageObject(p, idx);
+          return {
+            ...norm,
+            videoUrl: (norm.videoUrl && !String(norm.videoUrl).startsWith('blob:')) ? norm.videoUrl : '',
+            blocks: (norm.blocks || []).map((b, bIdx) => ({
+              ...normalizeM2Block(b, bIdx),
+              videoUrl: (b.videoUrl && !String(b.videoUrl).startsWith('blob:')) ? b.videoUrl : ''
+            }))
+          };
+        })
+      }));
+
+      const cloneDoc = document.documentElement.cloneNode(true);
+
+      // Supprimer les styles dynamiques injectés par le CDN Tailwind pour garder un fichier léger et propre
+      const headStyles = cloneDoc.querySelectorAll('head style');
+      headStyles.forEach((st, idx) => {
+        if (idx > 0) st.remove();
+      });
+
+      const cloneBody = cloneDoc.querySelector('body');
+      if (cloneBody) {
+        cloneBody.classList.remove('editor-active');
+      }
+      const cloneTopbar = cloneDoc.querySelector('#editor-topbar');
+      if (cloneTopbar) {
+        cloneTopbar.classList.add('hidden');
+        cloneTopbar.classList.remove('flex');
+      }
+      const cloneAdminFloating = cloneDoc.querySelector('#admin-floating-controls');
+      if (cloneAdminFloating) {
+        cloneAdminFloating.classList.add('hidden');
+        cloneAdminFloating.classList.remove('flex');
+      }
+      cloneDoc.querySelectorAll('[id^="modal-"]').forEach(m => {
+        m.classList.add('hidden');
+        m.classList.remove('flex');
+      });
+      const cloneCatPage = cloneDoc.querySelector('#category-page');
+      if (cloneCatPage) {
+        cloneCatPage.classList.remove('is-open', 'header-visible');
+      }
+      const cloneTrack = cloneDoc.querySelector('#carousel-track');
+      if (cloneTrack) cloneTrack.innerHTML = '';
+      const clonePagesList = cloneDoc.querySelector('#category-pages-list');
+      if (clonePagesList) clonePagesList.innerHTML = '';
+      const cloneExportArea = cloneDoc.querySelector('#exported-html-textarea');
+      if (cloneExportArea) cloneExportArea.value = '';
+
+      let fullHtml = '<!DOCTYPE html>\n' + cloneDoc.outerHTML;
+
+      // Utilisation d'une fonction de remplacement pour éviter tout bug avec les caractères spéciaux ($)
+      fullHtml = fullHtml.replace(
+        /\/\* __COLVEUR_CONFIG_START__ \*\/[\s\S]*?\/\* __COLVEUR_CONFIG_END__ \*\//,
+        () => `/* __COLVEUR_CONFIG_START__ */\n    let EDITOR_SECRET_PIN = ${JSON.stringify(EDITOR_SECRET_PIN)};\n    /* __COLVEUR_CONFIG_END__ */`
+      );
+
+      fullHtml = fullHtml.replace(
+        /\/\* __COLVEUR_DATA_START__ \*\/[\s\S]*?\/\* __COLVEUR_DATA_END__ \*\//,
+        () => `/* __COLVEUR_DATA_START__ */\n    const DEFAULT_CATEGORIES = ${JSON.stringify(cleanCategories, null, 2)};\n    /* __COLVEUR_DATA_END__ */`
+      );
+
+      return fullHtml;
+    }
+
+    /**
+     * Crée une archive .ZIP standard (contenant index.html à la racine) en pur JavaScript
+     * pour pouvoir glisser-déposer directement le .ZIP dans Netlify sans erreur "Request ID".
+     */
+    function createSingleFileZipBlob(filename, contentStr) {
+      const encoder = new TextEncoder();
+      const fileData = encoder.encode(contentStr);
+      const nameBytes = encoder.encode(filename);
+
+      // Table CRC32
+      const crcTable = new Uint32Array(256);
+      for (let n = 0; n < 256; n++) {
+        let c = n;
+        for (let k = 0; k < 8; k++) {
+          c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+        }
+        crcTable[n] = c >>> 0;
+      }
+      let crc = 0xFFFFFFFF;
+      for (let i = 0; i < fileData.length; i++) {
+        crc = (crc >>> 8) ^ crcTable[(crc ^ fileData[i]) & 0xFF];
+      }
+      crc = (crc ^ 0xFFFFFFFF) >>> 0;
+
+      const localHeaderLen = 30 + nameBytes.length;
+      const centralHeaderLen = 46 + nameBytes.length;
+      const endRecordLen = 22;
+      const totalLen = localHeaderLen + fileData.length + centralHeaderLen + endRecordLen;
+
+      const buf = new ArrayBuffer(totalLen);
+      const view = new DataView(buf);
+      const bytes = new Uint8Array(buf);
+      let offset = 0;
+
+      // 1. Local File Header
+      view.setUint32(offset, 0x04034b50, true); offset += 4;
+      view.setUint16(offset, 20, true); offset += 2;
+      view.setUint16(offset, 0, true); offset += 2;
+      view.setUint16(offset, 0, true); offset += 2;
+      view.setUint16(offset, 0, true); offset += 2;
+      view.setUint16(offset, 0x0021, true); offset += 2;
+      view.setUint32(offset, crc, true); offset += 4;
+      view.setUint32(offset, fileData.length, true); offset += 4;
+      view.setUint32(offset, fileData.length, true); offset += 4;
+      view.setUint16(offset, nameBytes.length, true); offset += 2;
+      view.setUint16(offset, 0, true); offset += 2;
+      bytes.set(nameBytes, offset); offset += nameBytes.length;
+
+      // Données de index.html
+      bytes.set(fileData, offset); offset += fileData.length;
+
+      // 2. Central Directory Header
+      const centralDirOffset = offset;
+      view.setUint32(offset, 0x02014b50, true); offset += 4;
+      view.setUint16(offset, 20, true); offset += 2;
+      view.setUint16(offset, 20, true); offset += 2;
+      view.setUint16(offset, 0, true); offset += 2;
+      view.setUint16(offset, 0, true); offset += 2;
+      view.setUint16(offset, 0, true); offset += 2;
+      view.setUint16(offset, 0x0021, true); offset += 2;
+      view.setUint32(offset, crc, true); offset += 4;
+      view.setUint32(offset, fileData.length, true); offset += 4;
+      view.setUint32(offset, fileData.length, true); offset += 4;
+      view.setUint16(offset, nameBytes.length, true); offset += 2;
+      view.setUint16(offset, 0, true); offset += 2;
+      view.setUint16(offset, 0, true); offset += 2;
+      view.setUint16(offset, 0, true); offset += 2;
+      view.setUint16(offset, 0, true); offset += 2;
+      view.setUint32(offset, 0, true); offset += 4;
+      view.setUint32(offset, 0, true); offset += 4;
+      bytes.set(nameBytes, offset); offset += nameBytes.length;
+
+      // 3. End of Central Directory Record
+      view.setUint32(offset, 0x06054b50, true); offset += 4;
+      view.setUint16(offset, 0, true); offset += 2;
+      view.setUint16(offset, 0, true); offset += 2;
+      view.setUint16(offset, 1, true); offset += 2;
+      view.setUint16(offset, 1, true); offset += 2;
+      view.setUint32(offset, centralHeaderLen, true); offset += 4;
+      view.setUint32(offset, centralDirOffset, true); offset += 4;
+      view.setUint16(offset, 0, true); offset += 2;
+
+      return new Blob([buf], { type: 'application/zip' });
+    }
+
+    function openExportCodeModal() {
+      const htmlStr = buildExportableHtmlString();
+      const area = document.getElementById('exported-html-textarea');
+      if (area) area.value = htmlStr;
+      const copyBtn = document.getElementById('btn-copy-exported-code');
+      if (copyBtn) copyBtn.textContent = '📋 Copier le code';
+      openModal('modal-export-code');
+    }
+
+    function copyExportedHtmlCode() {
+      const area = document.getElementById('exported-html-textarea');
+      if (!area) return;
+      area.select();
+      area.setSelectionRange(0, 999999);
+      document.execCommand('copy');
+      const copyBtn = document.getElementById('btn-copy-exported-code');
+      if (copyBtn) {
+        copyBtn.textContent = '✓ Code copié !';
+      }
+    }
+
+    function downloadNetlifyReadyZip() {
+      const htmlStr = buildExportableHtmlString();
+      const zipBlob = createSingleFileZipBlob('index.html', htmlStr);
+      const url = URL.createObjectURL(zipBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'site-colveur-netlify.zip';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    function downloadUpdatedHtmlFile() {
+      const htmlStr = buildExportableHtmlString();
+      const blob = new Blob([htmlStr], { type: 'text/html;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'index.html';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    function toggleEditorMode(enable) {
+      isEditorMode = enable;
+      const topbar = document.getElementById('editor-topbar');
+      const adminFloating = document.getElementById('admin-floating-controls');
+      const lockIcon = document.getElementById('lock-icon');
+      const lockLabel = document.getElementById('lock-label');
+      const pageEditorBars = document.querySelectorAll('.cat-page-editor-bar');
+      const pagePlaceholders = document.querySelectorAll('.cat-page-editor-placeholder');
+
+      if (enable) {
+        document.body.classList.add('editor-active');
+        topbar.classList.remove('hidden');
+        topbar.classList.add('flex');
+        if (adminFloating) {
+          adminFloating.classList.remove('hidden');
+          adminFloating.classList.add('flex');
+        }
+        lockIcon.textContent = '🔓';
+        lockLabel.textContent = 'Quitter Éditeur';
+        pageEditorBars.forEach(el => {
+          el.classList.remove('hidden');
+          el.classList.add('flex');
+        });
+        pagePlaceholders.forEach(el => {
+          el.classList.remove('hidden');
+          el.classList.add('flex');
+        });
+      } else {
+        document.body.classList.remove('editor-active');
+        topbar.classList.add('hidden');
+        topbar.classList.remove('flex');
+        if (adminFloating) {
+          adminFloating.classList.add('hidden');
+          adminFloating.classList.remove('flex');
+        }
+        lockIcon.textContent = '🔒';
+        lockLabel.textContent = 'Mode Éditeur';
+        pendingDeletePageId = null;
+        selectedM2BlockId = null;
+        pageEditorBars.forEach(el => {
+          el.classList.add('hidden');
+          el.classList.remove('flex');
+        });
+        pagePlaceholders.forEach(el => {
+          el.classList.add('hidden');
+          el.classList.remove('flex');
+        });
+      }
+
+      if (activeCategoryPageId) {
+        const activeCat = categories.find(c => c.id === activeCategoryPageId);
+        if (activeCat) renderCategoryPages(activeCat);
+      }
+
+      syncEditorTopbarContext();
+      updateCategorySplitHeader();
+    }
+
+    window.addEventListener('keydown', (e) => {
+      if (e.shiftKey && (e.key === 'E' || e.key === 'e')) {
+        const tag = document.activeElement && document.activeElement.tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+        e.preventDefault();
+        handleLockButtonClick();
+      }
+    });
+
+    function openCategoryEditModal(catId) {
+      const cat = categories.find(c => c.id === catId);
+      if (!cat) return;
+
+      activeEditCatId = catId;
+      document.getElementById('modal-video-cat-name').textContent = cat.title;
+      document.getElementById('edit-cat-title-input').value = cat.title;
+      document.getElementById('edit-cat-url-input').value = cat.videoUrl.startsWith('blob:') ? '' : cat.videoUrl;
+      document.getElementById('modal-pos-x-slider').value = cat.posX;
+      document.getElementById('modal-pos-x-label').textContent = `${Math.round(cat.posX)}%`;
+
+      const delBtn = document.getElementById('btn-delete-category');
+      delBtn.style.display = categories.length > 2 ? 'inline-block' : 'none';
+
+      openModal('modal-video-edit');
+    }
+
+    function handleLocalVideoUpload(event) {
+      const file = event.target.files && event.target.files[0];
+      if (!file || !activeEditCatId) return;
+
+      const blobUrl = URL.createObjectURL(file);
+      const cat = categories.find(c => c.id === activeEditCatId);
+      if (cat) {
+        cat.videoUrl = blobUrl;
+        applyCategoryVideoUpdate(cat.id, blobUrl);
+      }
+      event.target.value = '';
+    }
+
+    function applyCategoryVideoUpdate(catId, newUrl) {
+      const ytId = extractYouTubeId(newUrl);
+      const isYt = Boolean(ytId);
+
+      document.querySelectorAll(`.diag-column[data-cat-id="${catId}"]`).forEach(col => {
+        const vid = col.querySelector('.diag-video');
+        const ytWrap = col.querySelector('.diag-yt-wrap');
+        const ytIframe = col.querySelector('.diag-yt-iframe');
+        const sim = col.querySelector('.diag-sim-canvas');
+
+        if (newUrl && isYt) {
+          sim.classList.add('hidden');
+          vid.classList.add('hidden');
+          vid.removeAttribute('src');
+          if (ytWrap && ytIframe) {
+            ytWrap.classList.remove('hidden');
+            ytIframe.src = buildYouTubeEmbedUrl(ytId, false);
+          }
+        } else if (newUrl) {
+          sim.classList.add('hidden');
+          if (ytWrap && ytIframe) {
+            ytWrap.classList.add('hidden');
+            ytIframe.removeAttribute('src');
+          }
+          vid.classList.remove('hidden');
+          vid.src = newUrl;
+          vid.load();
+        } else {
+          vid.classList.add('hidden');
+          if (ytWrap && ytIframe) {
+            ytWrap.classList.add('hidden');
+            ytIframe.removeAttribute('src');
+          }
+          sim.classList.remove('hidden');
+        }
+      });
+    }
+
+    function saveCategoryModalChanges() {
+      if (!activeEditCatId) return;
+      const cat = categories.find(c => c.id === activeEditCatId);
+      if (!cat) return;
+
+      const newTitle = document.getElementById('edit-cat-title-input').value.trim();
+      const newUrl = document.getElementById('edit-cat-url-input').value.trim();
+
+      if (newTitle) {
+        cat.title = newTitle;
+        document.querySelectorAll(`.diag-column[data-cat-id="${cat.id}"] .diag-title`).forEach(el => {
+          el.textContent = newTitle;
+        });
+        if (activeCategoryPageId === cat.id) {
+          document.querySelectorAll('.cat-header-title').forEach(el => {
+            el.textContent = newTitle;
+          });
+        }
+      }
+
+      if (newUrl && newUrl !== cat.videoUrl) {
+        cat.videoUrl = newUrl;
+        applyCategoryVideoUpdate(cat.id, newUrl);
+      }
+
+      saveCategoriesToStorage();
+      closeModal('modal-video-edit');
+    }
+
+    function deleteActiveCategory() {
+      if (!activeEditCatId || categories.length <= 2) return;
+      categories = categories.filter(c => c.id !== activeEditCatId);
+      activeEditCatId = null;
+      saveCategoriesToStorage();
+      closeModal('modal-video-edit');
+      buildInfiniteCarousel();
+    }
+
+    function openAddCategoryModal() {
+      document.getElementById('new-cat-name-input').value = '';
+      openModal('modal-add-category');
+    }
+
+    function confirmAddCategory(e) {
+      e.preventDefault();
+      const name = document.getElementById('new-cat-name-input').value.trim();
+      if (!name) return;
+
+      const themes = ['docu', 'event', 'reseaux'];
+      const newCat = {
+        id: 'cat-' + Date.now(),
+        title: name,
+        theme: themes[categories.length % themes.length],
+        videoUrl: '',
+        posX: 50,
+        pages: createDefaultPages()
+      };
+
+      categories.push(newCat);
+      saveCategoriesToStorage();
+      closeModal('modal-add-category');
+      buildInfiniteCarousel();
+    }
+
+    function openModal(id) {
+      const m = document.getElementById(id);
+      if (!m) return;
+      m.classList.remove('hidden');
+      m.classList.add('flex');
+    }
+
+    function closeModal(id) {
+      const m = document.getElementById(id);
+      if (!m) return;
+      m.classList.add('hidden');
+      m.classList.remove('flex');
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    /*************************************************************************
+     * 7. INITIALISATION AU CHARGEMENT
+     *************************************************************************/
+    window.addEventListener('DOMContentLoaded', () => {
+      applyCategoryScrollModeUI();
+      buildInfiniteCarousel();
+      requestAnimationFrame(animateCarouselLoop);
+      startIntroAnimation(false);
+    });
+  </script>
+</body>
+</html>
