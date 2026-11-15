@@ -1450,7 +1450,7 @@
 
       <div class="flex items-center gap-4">
         <span class="text-xs uppercase tracking-widest font-semibold text-[#151515]/60">Catégorie</span>
-        <span class="cat-header-title font-dela text-2xl md:text-4xl text-[#151515]">Docu</span>
+        <span class="cat-header-title font-dela text-2xl md:text-4xl text-[#151515]">Event</span>
       </div>
     </header>
 
@@ -1465,7 +1465,7 @@
 
       <div class="flex items-center gap-4">
         <span class="text-xs uppercase tracking-widest font-semibold text-[#b6ab9d]/60">Catégorie</span>
-        <span class="cat-header-title font-dela text-2xl md:text-4xl text-[#b6ab9d]">Docu</span>
+        <span class="cat-header-title font-dela text-2xl md:text-4xl text-[#b6ab9d]">Event</span>
       </div>
     </header>
 
@@ -1617,7 +1617,7 @@
           <label class="cursor-pointer flex flex-col items-center justify-center gap-2">
             <span class="w-12 h-12 rounded-full bg-[#b6ab9d] text-[#151515] flex items-center justify-center text-2xl font-bold shadow-md hover:scale-105 transition-transform">+</span>
             <span class="text-sm font-semibold">Choisir une vidéo sur ton ordinateur (.MP4, .MOV, .WEBM)</span>
-            <span class="text-xs opacity-65">La vidéo s'adapte immédiatement dans la colonne diagonale</span>
+            <span id="cat-local-file-badge" class="text-xs text-emerald-400 font-semibold">Sera envoyée automatiquement sur ton site via « 🚀 Publier en 1 clic »</span>
             <input id="edit-cat-file-input" type="file" accept="video/*" class="hidden" onchange="handleLocalVideoUpload(event)">
           </label>
         </div>
@@ -1984,7 +1984,7 @@
       </div>
 
       <!-- Zone de statut en direct -->
-      <div id="gh-publish-status" class="p-3.5 rounded-xl text-xs font-medium leading-relaxed border bg-white/5 text-[#b6ab9d] border-[#b6ab9d]/25">⏳ Connexion à GitHub et préparation de <code>index.html</code>...</div>
+      <div id="gh-publish-status" class="p-3.5 rounded-xl text-xs font-medium leading-relaxed border bg-white/5 text-[#b6ab9d] border-[#b6ab9d]/25">⏳ Mise à jour de <code>index.html</code> sur GitHub...</div>
 
       <div class="flex items-center justify-between gap-3 pt-2">
         <button type="button" onclick="closeModal('modal-github-publish')" class="px-4 py-2.5 rounded-xl text-xs hover:bg-white/5">
@@ -2170,7 +2170,7 @@
     "posX": 50,
     "pages": [
       {
-        "id": "page-d3b8l2y",
+        "id": "page-h7biigp",
         "template": "media-text",
         "title": "Modèle 2 : Cadre Vidéo & Texte",
         "bgTheme": "taupe",
@@ -2180,7 +2180,7 @@
         "videoMuted": false,
         "blocks": [
           {
-            "id": "blk-vid-095wga",
+            "id": "blk-vid-lel5ok",
             "type": "video",
             "x": 6.2,
             "y": 33.5,
@@ -2192,7 +2192,7 @@
             "posY": 50
           },
           {
-            "id": "blk-txt-wam93x",
+            "id": "blk-txt-jlrbvq",
             "type": "text",
             "x": 59.5,
             "y": 44.5,
@@ -2209,7 +2209,7 @@
         ]
       },
       {
-        "id": "page-d1u3lrw",
+        "id": "page-4t5n3ev",
         "template": "blank",
         "title": "Page vierge (Fond uni)",
         "bgTheme": "noir",
@@ -2219,7 +2219,7 @@
         "videoMuted": false,
         "blocks": [
           {
-            "id": "blk-vid-3rjpci",
+            "id": "blk-vid-mweyzg",
             "type": "video",
             "x": 6.2,
             "y": 33.5,
@@ -2231,7 +2231,7 @@
             "posY": 50
           },
           {
-            "id": "blk-txt-iripp2",
+            "id": "blk-txt-7l27kb",
             "type": "text",
             "x": 59.5,
             "y": 44.5,
@@ -2257,7 +2257,7 @@
     "posX": 50,
     "pages": [
       {
-        "id": "page-qcs3ifi",
+        "id": "page-hfz5b2f",
         "template": "media-text",
         "title": "Modèle 2 : Cadre Vidéo & Texte",
         "bgTheme": "taupe",
@@ -2267,7 +2267,7 @@
         "videoMuted": false,
         "blocks": [
           {
-            "id": "blk-vid-quggjq",
+            "id": "blk-vid-khpin6",
             "type": "video",
             "x": 6.2,
             "y": 33.5,
@@ -2279,7 +2279,7 @@
             "posY": 50
           },
           {
-            "id": "blk-txt-80gvcw",
+            "id": "blk-txt-dkeot1",
             "type": "text",
             "x": 59.5,
             "y": 44.5,
@@ -2296,7 +2296,7 @@
         ]
       },
       {
-        "id": "page-0qz400e",
+        "id": "page-jn0i87a",
         "template": "blank",
         "title": "Page vierge (Fond uni)",
         "bgTheme": "noir",
@@ -2306,7 +2306,7 @@
         "videoMuted": false,
         "blocks": [
           {
-            "id": "blk-vid-06hnok",
+            "id": "blk-vid-oa7uug",
             "type": "video",
             "x": 6.2,
             "y": 33.5,
@@ -2318,7 +2318,7 @@
             "posY": 50
           },
           {
-            "id": "blk-txt-0001z4",
+            "id": "blk-txt-2mkabk",
             "type": "text",
             "x": 59.5,
             "y": 44.5,
@@ -2344,7 +2344,7 @@
     "posX": 50,
     "pages": [
       {
-        "id": "page-bq4ppja",
+        "id": "page-c4bwpv0",
         "template": "media-text",
         "title": "Modèle 2 : Cadre Vidéo & Texte",
         "bgTheme": "taupe",
@@ -2354,7 +2354,7 @@
         "videoMuted": false,
         "blocks": [
           {
-            "id": "blk-vid-3vqsrp",
+            "id": "blk-vid-yowdnu",
             "type": "video",
             "x": 6.2,
             "y": 33.5,
@@ -2366,7 +2366,7 @@
             "posY": 50
           },
           {
-            "id": "blk-txt-zkyd2w",
+            "id": "blk-txt-qx4cwj",
             "type": "text",
             "x": 59.5,
             "y": 44.5,
@@ -2383,7 +2383,7 @@
         ]
       },
       {
-        "id": "page-rmy5f79",
+        "id": "page-joa5qpt",
         "template": "blank",
         "title": "Page vierge (Fond uni)",
         "bgTheme": "noir",
@@ -2393,7 +2393,7 @@
         "videoMuted": false,
         "blocks": [
           {
-            "id": "blk-vid-gvprgq",
+            "id": "blk-vid-wgi3xb",
             "type": "video",
             "x": 6.2,
             "y": 33.5,
@@ -2405,7 +2405,7 @@
             "posY": 50
           },
           {
-            "id": "blk-txt-zi3i81",
+            "id": "blk-txt-7uz9iy",
             "type": "text",
             "x": 59.5,
             "y": 44.5,
@@ -2496,6 +2496,9 @@
     let selectedM2BlockId = null;
     let pendingDeletePageId = null;
     let pendingDeleteTimeout = null;
+
+    // File d'attente des fichiers vidéos locaux (.mp4) choisis depuis le PC à envoyer sur GitHub/Netlify
+    const pendingVideoUploads = {};
 
     const pageVideoSimCanvases = [];
 
@@ -4340,6 +4343,10 @@
       if (!file || !activeCategoryPageId || !activeEditPageId) return;
 
       const blobUrl = URL.createObjectURL(file);
+      const safeExt = (file.name.split('.').pop() || 'mp4').toLowerCase().replace(/[^a-z0-9]/g, '') || 'mp4';
+      const repoPath = `videos/page-${activeEditPageId}.${safeExt}`;
+      pendingVideoUploads[blobUrl] = { file, repoPath, name: file.name };
+
       const cat = categories.find(c => c.id === activeCategoryPageId);
       const page = cat && cat.pages ? cat.pages.find(p => p.id === activeEditPageId) : null;
       if (page) {
@@ -4347,6 +4354,8 @@
         page.bgTheme = 'noir';
         renderCategoryPages(cat);
       }
+      const urlInput = document.getElementById('edit-page-url-input');
+      if (urlInput) urlInput.value = repoPath;
       event.target.value = '';
     }
 
@@ -4731,11 +4740,17 @@
       if (!file || !activeM2EditPageId || !activeM2EditBlockId) return;
 
       const blobUrl = URL.createObjectURL(file);
+      const safeExt = (file.name.split('.').pop() || 'mp4').toLowerCase().replace(/[^a-z0-9]/g, '') || 'mp4';
+      const repoPath = `videos/cadre-${activeM2EditBlockId}.${safeExt}`;
+      pendingVideoUploads[blobUrl] = { file, repoPath, name: file.name };
+
       const { cat, block } = findActivePageAndBlock(activeM2EditPageId, activeM2EditBlockId);
       if (cat && block) {
         block.videoUrl = blobUrl;
         renderCategoryPages(cat);
       }
+      const urlInput = document.getElementById('m2-frame-url-input');
+      if (urlInput) urlInput.value = repoPath;
       event.target.value = '';
     }
 
@@ -5179,18 +5194,27 @@
     /**
      * Génère le code HTML propre et léger avec toutes les modifications sauvegardées
      */
+    function resolveExportVideoUrl(url) {
+      if (!url) return '';
+      const str = String(url);
+      if (str.startsWith('blob:')) {
+        return pendingVideoUploads[str] ? pendingVideoUploads[str].repoPath : '';
+      }
+      return str;
+    }
+
     function buildExportableHtmlString() {
       const cleanCategories = categories.map(cat => ({
         ...cat,
-        videoUrl: (cat.videoUrl && !String(cat.videoUrl).startsWith('blob:')) ? cat.videoUrl : '',
+        videoUrl: resolveExportVideoUrl(cat.videoUrl),
         pages: (cat.pages || []).map((p, idx) => {
           const norm = normalizePageObject(p, idx);
           return {
             ...norm,
-            videoUrl: (norm.videoUrl && !String(norm.videoUrl).startsWith('blob:')) ? norm.videoUrl : '',
+            videoUrl: resolveExportVideoUrl(norm.videoUrl),
             blocks: (norm.blocks || []).map((b, bIdx) => ({
               ...normalizeM2Block(b, bIdx),
-              videoUrl: (b.videoUrl && !String(b.videoUrl).startsWith('blob:')) ? b.videoUrl : ''
+              videoUrl: resolveExportVideoUrl(b.videoUrl)
             }))
           };
         })
@@ -5336,6 +5360,58 @@
       return btoa(binary);
     }
 
+    function arrayBufferToBase64(buffer) {
+      const bytes = new Uint8Array(buffer);
+      let binary = '';
+      const chunkSize = 0x8000;
+      for (let i = 0; i < bytes.length; i += chunkSize) {
+        binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunkSize));
+      }
+      return btoa(binary);
+    }
+
+    async function uploadBinaryFileToGitHub(owner, repo, branch, token, repoPath, fileObj) {
+      const apiUrl = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${repoPath}`;
+      const headers = {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/vnd.github+json'
+      };
+
+      let currentSha = null;
+      const getRes = await fetch(`${apiUrl}?ref=${encodeURIComponent(branch)}&t=${Date.now()}`, {
+        method: 'GET',
+        headers
+      });
+      if (getRes.status === 200) {
+        const info = await getRes.json();
+        currentSha = info.sha;
+      }
+
+      const buffer = await fileObj.arrayBuffer();
+      const base64Data = arrayBufferToBase64(buffer);
+
+      const payload = {
+        message: `Upload vidéo ${repoPath}`,
+        content: base64Data,
+        branch: branch
+      };
+      if (currentSha) payload.sha = currentSha;
+
+      const putRes = await fetch(apiUrl, {
+        method: 'PUT',
+        headers: {
+          ...headers,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!putRes.ok) {
+        const errJson = await putRes.json().catch(() => ({}));
+        throw new Error(errJson.message || `Impossible d'envoyer la vidéo ${fileObj.name} (${putRes.status}). Vérifie qu'elle fait moins de 25 Mo.`);
+      }
+    }
+
     async function publishDirectlyToGitHub() {
       const owner = (document.getElementById('gh-owner-input').value || '').trim();
       const repo = (document.getElementById('gh-repo-input').value || '').trim().replace(/\.git$/i, '');
@@ -5370,9 +5446,33 @@
         pushBtn.disabled = true;
         pushBtn.innerHTML = '<span>⏳ Envoi sur GitHub en cours...</span>';
       }
-      setStatus('info', '⏳ Connexion à GitHub et préparation de <code>index.html</code>...');
+      setStatus('info', '⏳ Connexion à GitHub et préparation...');
 
       try {
+        // 0. Envoyer d'abord toutes les vidéos locales (.mp4) choisies depuis l'ordinateur
+        const pendingEntries = Object.entries(pendingVideoUploads);
+        for (let i = 0; i < pendingEntries.length; i++) {
+          const [blobUrl, item] = pendingEntries[i];
+          const sizeMB = (item.file.size / (1024 * 1024)).toFixed(1);
+          setStatus('info', `⏳ Envoi de la vidéo <strong>${escapeHtml(item.name)}</strong> (${sizeMB} Mo) vers ton site (${i + 1}/${pendingEntries.length})...`);
+          await uploadBinaryFileToGitHub(owner, repo, branch, token, item.repoPath, item.file);
+
+          // Remplacer le blobUrl temporaire par le vrai chemin définitif (ex: videos/accueil-cat-docu.mp4)
+          categories.forEach(cat => {
+            if (cat.videoUrl === blobUrl) cat.videoUrl = item.repoPath;
+            (cat.pages || []).forEach(p => {
+              if (p.videoUrl === blobUrl) p.videoUrl = item.repoPath;
+              (p.blocks || []).forEach(b => {
+                if (b.videoUrl === blobUrl) b.videoUrl = item.repoPath;
+              });
+            });
+          });
+          delete pendingVideoUploads[blobUrl];
+        }
+        saveCategoriesToStorage();
+
+        setStatus('info', '⏳ Mise à jour de <code>index.html</code> sur GitHub...');
+
         const apiUrl = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/index.html`;
         const headers = {
           'Authorization': `Bearer ${token}`,
@@ -5646,9 +5746,19 @@
       activeEditCatId = catId;
       document.getElementById('modal-video-cat-name').textContent = cat.title;
       document.getElementById('edit-cat-title-input').value = cat.title;
-      document.getElementById('edit-cat-url-input').value = cat.videoUrl.startsWith('blob:') ? '' : cat.videoUrl;
+      const pendingItem = pendingVideoUploads[cat.videoUrl];
+      document.getElementById('edit-cat-url-input').value = pendingItem
+        ? pendingItem.repoPath
+        : (cat.videoUrl.startsWith('blob:') ? '' : cat.videoUrl);
       document.getElementById('modal-pos-x-slider').value = cat.posX;
       document.getElementById('modal-pos-x-label').textContent = `${Math.round(cat.posX)}%`;
+
+      const badge = document.getElementById('cat-local-file-badge');
+      if (badge) {
+        badge.textContent = pendingItem
+          ? `✓ Fichier prêt : ${pendingItem.name} (clique sur 🚀 Publier en 1 clic)`
+          : 'Sera envoyée automatiquement sur ton site via « 🚀 Publier en 1 clic »';
+      }
 
       const delBtn = document.getElementById('btn-delete-category');
       delBtn.style.display = categories.length > 2 ? 'inline-block' : 'none';
@@ -5661,10 +5771,21 @@
       if (!file || !activeEditCatId) return;
 
       const blobUrl = URL.createObjectURL(file);
+      const safeExt = (file.name.split('.').pop() || 'mp4').toLowerCase().replace(/[^a-z0-9]/g, '') || 'mp4';
+      const repoPath = `videos/accueil-${activeEditCatId}.${safeExt}`;
+      pendingVideoUploads[blobUrl] = { file, repoPath, name: file.name };
+
       const cat = categories.find(c => c.id === activeEditCatId);
       if (cat) {
         cat.videoUrl = blobUrl;
         applyCategoryVideoUpdate(cat.id, blobUrl);
+      }
+
+      const urlInput = document.getElementById('edit-cat-url-input');
+      if (urlInput) urlInput.value = repoPath;
+      const badge = document.getElementById('cat-local-file-badge');
+      if (badge) {
+        badge.textContent = `✓ Fichier prêt : ${file.name} (enregistre puis clique sur 🚀 Publier en 1 clic)`;
       }
       event.target.value = '';
     }
@@ -5728,8 +5849,13 @@
       }
 
       if (newUrl && newUrl !== cat.videoUrl) {
-        cat.videoUrl = newUrl;
-        applyCategoryVideoUpdate(cat.id, newUrl);
+        const isPendingRepoPath = cat.videoUrl.startsWith('blob:') &&
+          pendingVideoUploads[cat.videoUrl] &&
+          pendingVideoUploads[cat.videoUrl].repoPath === newUrl;
+        if (!isPendingRepoPath) {
+          cat.videoUrl = newUrl;
+          applyCategoryVideoUpdate(cat.id, newUrl);
+        }
       }
 
       saveCategoriesToStorage();
