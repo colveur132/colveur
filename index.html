@@ -1,7 +1,611 @@
 <!DOCTYPE html>
-<html lang="fr" style="--col-base-width: 626px;"><head>
+<html lang="fr" style="--col-base-width: 496.6666666666667px;"><head><base href="https://1262416271-atari-embeds.googleusercontent.com/embeds/6b07ff58ef6c9af0cc04f606a89001fe/inner-frame-minified.html?jsh=m%3B%2F_%2Fscs%2Fabc-static%2F_%2Fjs%2Fk%3Dgapi.lb.fr.NwStCmsbVJ4.O%2Fd%3D1%2Frs%3DAHpOoo_6HDxoiWLkgSC_FQfcFOPTefeGBg%2Fm%3D__features__" target="_blank">
+      <script>
+        (function() {
+          if (window.__atariInitRender) {
+            window.__atariInitRender(false);
+            return;
+          }
+          var isLiquid = false;
+          var guardsInstalled = false;
+          var LOCAL_DOWNLOAD_URL_RE = /^(?:blob|data):/i;
+          var PROTOCOL_RELATIVE_RE = /^[\/\\]{2}/;
+          var FORBIDDEN_TAG_RE = /^(?:iframe|frame|object|embed)$/i;
+          var XLINK_NS = 'http://www.w3.org/1999/xlink';
+          var origPreventDefault = Event.prototype.preventDefault;
+          var origStopPropagation = Event.prototype.stopPropagation;
+          var origStopImmediatePropagation =
+              Event.prototype.stopImmediatePropagation;
+          var origAddEventListener = EventTarget.prototype.addEventListener;
+          var origRemoveEventListener =
+              EventTarget.prototype.removeEventListener;
+          var origWindowStop = window.stop ? window.stop.bind(window) : null;
+          var origElementRemove = Element.prototype.remove;
+          var origGetAttribute = Element.prototype.getAttribute;
+          var origGetAttributeNS = Element.prototype.getAttributeNS;
+          var origHasAttribute = Element.prototype.hasAttribute;
+          var origHasAttributeNS = Element.prototype.hasAttributeNS;
+          var origSetAttribute = Element.prototype.setAttribute;
+          var origSetAttributeNS = Element.prototype.setAttributeNS;
+          var origSetAttributeNode = Element.prototype.setAttributeNode;
+          var origSetAttributeNodeNS = Element.prototype.setAttributeNodeNS;
+          var origRemoveAttribute = Element.prototype.removeAttribute;
+          var origRemoveAttributeNS = Element.prototype.removeAttributeNS;
+          var origComposedPath = Event.prototype.composedPath;
+          var origCreateElement = Document.prototype.createElement;
+          var origCreateElementNS = Document.prototype.createElementNS;
+          var validatingEvents =
+              typeof WeakSet !== 'undefined' ? new WeakSet() : null;
+          var activeDeferredListeners = null;
+          var inProgrammaticClick = 0;
+
+          function isLinkElement(el) {
+            var tag = el && el.tagName && el.tagName.toLowerCase();
+            return tag === 'a' || tag === 'area';
+          }
+
+          function hasLinkHref(link) {
+            return origHasAttribute.call(link, 'href') ||
+                origHasAttributeNS.call(link, XLINK_NS, 'href');
+          }
+
+          // Returns the href of an HTML or SVG link, which may only have the
+          // legacy xlink:href attribute.
+          function getLinkHref(link) {
+            return origGetAttribute.call(link, 'href') ||
+                origGetAttributeNS.call(link, XLINK_NS, 'href');
+          }
+
+          function removeLinkHref(link) {
+            origRemoveAttribute.call(link, 'href');
+            origRemoveAttributeNS.call(link, XLINK_NS, 'href');
+          }
+
+          // Returns whether the link downloads a file that the app created,
+          // which doesn't send data to other sites.
+          function isLocalDownloadLink(link, href) {
+            return origHasAttribute.call(link, 'download') &&
+                LOCAL_DOWNLOAD_URL_RE.test(href);
+          }
+
+          function isRefreshValue(val) {
+            return String(val || '').trim().toLowerCase() === 'refresh';
+          }
+
+          function purgeMetaRefresh(root) {
+            if (!root || !root.querySelectorAll) return;
+            var metas = root.querySelectorAll('meta[http-equiv]');
+            for (var i = 0; i < metas.length; i++) {
+              if (isRefreshValue(
+                  origGetAttribute.call(metas[i], 'http-equiv'))) {
+                origElementRemove.call(metas[i]);
+              }
+            }
+            var frames = root.querySelectorAll('iframe, frame, object, embed');
+            for (var j = 0; j < frames.length; j++) {
+              origElementRemove.call(frames[j]);
+            }
+          }
+
+          function getParentOrHost(node) {
+            if (!node) return null;
+            if (node.parentElement) return node.parentElement;
+            var parent = node.parentNode;
+            return parent && parent.host ? parent.host : null;
+          }
+
+          function findLinkFromNode(startNode, requireHref) {
+            var el = startNode;
+            while (el && el !== document) {
+              if (isLinkElement(el) && (!requireHref || hasLinkHref(el))) {
+                return el;
+              }
+              el = getParentOrHost(el);
+            }
+            return null;
+          }
+
+          function findLinkFromEvent(e) {
+            if (origComposedPath) {
+              try {
+                var path = origComposedPath.call(e);
+                for (var i = 0; i < path.length; i++) {
+                  var node = path[i];
+                  if (isLinkElement(node) && hasLinkHref(node)) {
+                    return node;
+                  }
+                }
+              } catch (err) {}
+            }
+            return findLinkFromNode(e.target, true);
+          }
+
+          // Keeps the app from opening popups, navigating its frame, and
+          // adding meta refresh tags. document.open() keeps the window, its
+          // prototypes, and the document, so these are installed once per
+          // frame rather than on every render.
+          function installNavigationGuards() {
+            try {
+              Object.defineProperty(window, 'open', {
+                value: function() {
+                  return null;
+                },
+                writable: false,
+                configurable: false
+              });
+            } catch (err) {
+              window.open = function() {
+                return null;
+              };
+            }
+            if (window.navigation && window.navigation.addEventListener) {
+              origAddEventListener.call(
+                  window.navigation, 'navigate', function(e) {
+                    if (!e.cancelable || e.destination.sameDocument) return;
+                    if (e.downloadRequest !== null &&
+                        LOCAL_DOWNLOAD_URL_RE.test(e.destination.url)) {
+                      return;
+                    }
+                    origPreventDefault.call(e);
+                  }, true);
+            }
+            var iframeWinDesc = typeof HTMLIFrameElement !== 'undefined' &&
+                Object.getOwnPropertyDescriptor(
+                    HTMLIFrameElement.prototype, 'contentWindow');
+            if (iframeWinDesc && iframeWinDesc.get) {
+              Object.defineProperty(
+                  HTMLIFrameElement.prototype, 'contentWindow', {
+                    get: function() {
+                      return null;
+                    },
+                    configurable: false,
+                    enumerable: true
+                  });
+            }
+            var iframeDocDesc = typeof HTMLIFrameElement !== 'undefined' &&
+                Object.getOwnPropertyDescriptor(
+                    HTMLIFrameElement.prototype, 'contentDocument');
+            if (iframeDocDesc && iframeDocDesc.get) {
+              Object.defineProperty(
+                  HTMLIFrameElement.prototype, 'contentDocument', {
+                    get: function() {
+                      return null;
+                    },
+                    configurable: false,
+                    enumerable: true
+                  });
+            }
+            Document.prototype.createElement = function(tagName, options) {
+              if (FORBIDDEN_TAG_RE.test(String(tagName || ''))) {
+                return origCreateElement.call(this, 'div', options);
+              }
+              return origCreateElement.apply(this, arguments);
+            };
+            if (origCreateElementNS) {
+              Document.prototype.createElementNS = function(ns, qName, opts) {
+                var local = String(qName || '').split(':').pop();
+                if (FORBIDDEN_TAG_RE.test(local)) {
+                  return origCreateElement.call(this, 'div');
+                }
+                return origCreateElementNS.apply(this, arguments);
+              };
+            }
+            var origClick = HTMLElement.prototype.click;
+            HTMLElement.prototype.click = function() {
+              var link = findLinkFromNode(this, true);
+              if (link) {
+                var clickHref = (getLinkHref(link) || '').trim();
+                if (!clickHref.startsWith('#') &&
+                    !isLocalDownloadLink(link, clickHref)) {
+                  return;
+                }
+              }
+              inProgrammaticClick++;
+              try {
+                return origClick.apply(this, arguments);
+              } finally {
+                inProgrammaticClick--;
+              }
+            };
+            function isMetaRefreshAttr(el, name, value) {
+              return el && el.tagName &&
+                  el.tagName.toLowerCase() === 'meta' &&
+                  String(name || '').trim().toLowerCase() === 'http-equiv' &&
+                  isRefreshValue(value);
+            }
+            function validateIfActiveLink(el) {
+              if (!activeDeferredListeners || !isLinkElement(el) ||
+                  !hasLinkHref(el)) {
+                return;
+              }
+              var curHref = (getLinkHref(el) || '').trim();
+              if (!curHref.startsWith('#')) {
+                handleLiquidExternalLink(
+                    activeDeferredListeners.event, el, curHref,
+                    activeDeferredListeners.programmatic);
+              }
+            }
+            Element.prototype.setAttribute = function(name, value) {
+              if (isMetaRefreshAttr(this, name, value)) {
+                origElementRemove.call(this);
+                return;
+              }
+              var res = origSetAttribute.apply(this, arguments);
+              if (String(name || '').toLowerCase() === 'href') {
+                validateIfActiveLink(this);
+              }
+              return res;
+            };
+            if (origSetAttributeNS) {
+              Element.prototype.setAttributeNS = function(ns, name, value) {
+                var local = String(name || '');
+                if (local.includes(':')) local = local.split(':').pop();
+                if (isMetaRefreshAttr(this, local, value)) {
+                  origElementRemove.call(this);
+                  return;
+                }
+                var res = origSetAttributeNS.apply(this, arguments);
+                if (local.toLowerCase() === 'href') {
+                  validateIfActiveLink(this);
+                }
+                return res;
+              };
+            }
+            if (origSetAttributeNode) {
+              Element.prototype.setAttributeNode = function(attr) {
+                if (attr && isMetaRefreshAttr(this, attr.name, attr.value)) {
+                  origElementRemove.call(this);
+                  return null;
+                }
+                var res = origSetAttributeNode.apply(this, arguments);
+                if (attr && String(attr.name || '').toLowerCase() === 'href') {
+                  validateIfActiveLink(this);
+                }
+                return res;
+              };
+            }
+            if (origSetAttributeNodeNS) {
+              Element.prototype.setAttributeNodeNS = function(attr) {
+                var name = attr && (attr.localName || attr.name);
+                if (attr && isMetaRefreshAttr(this, name, attr.value)) {
+                  origElementRemove.call(this);
+                  return null;
+                }
+                var res = origSetAttributeNodeNS.apply(this, arguments);
+                if (String(name || '').toLowerCase() === 'href') {
+                  validateIfActiveLink(this);
+                }
+                return res;
+              };
+            }
+            function wrapHrefSetter(ctor) {
+              if (!ctor || !ctor.prototype) return;
+              var hrefDesc = Object.getOwnPropertyDescriptor(
+                  ctor.prototype, 'href');
+              if (hrefDesc && hrefDesc.set) {
+                Object.defineProperty(ctor.prototype, 'href', {
+                  get: hrefDesc.get,
+                  set: function(value) {
+                    hrefDesc.set.call(this, value);
+                    validateIfActiveLink(this);
+                  },
+                  configurable: true,
+                  enumerable: true
+                });
+              }
+            }
+            if (typeof HTMLAnchorElement !== 'undefined') {
+              wrapHrefSetter(HTMLAnchorElement);
+            }
+            if (typeof HTMLAreaElement !== 'undefined') {
+              wrapHrefSetter(HTMLAreaElement);
+            }
+            if (typeof HTMLMetaElement !== 'undefined') {
+              var desc = Object.getOwnPropertyDescriptor(
+                  HTMLMetaElement.prototype, 'httpEquiv');
+              if (desc && desc.set) {
+                Object.defineProperty(HTMLMetaElement.prototype, 'httpEquiv', {
+                  get: desc.get,
+                  set: function(value) {
+                    if (isRefreshValue(value)) {
+                      origElementRemove.call(this);
+                      return;
+                    }
+                    desc.set.call(this, value);
+                  },
+                  configurable: true,
+                  enumerable: true
+                });
+              }
+            }
+            Event.prototype.stopPropagation = function() {
+              if (validatingEvents && validatingEvents.has(this)) {
+                return;
+              }
+              return origStopPropagation.apply(this, arguments);
+            };
+            Event.prototype.stopImmediatePropagation = function() {
+              if (validatingEvents && validatingEvents.has(this)) {
+                return;
+              }
+              return origStopImmediatePropagation.apply(this, arguments);
+            };
+            var cancelBubbleDesc = Object.getOwnPropertyDescriptor(
+                Event.prototype, 'cancelBubble');
+            if (cancelBubbleDesc && cancelBubbleDesc.set) {
+              Object.defineProperty(Event.prototype, 'cancelBubble', {
+                get: cancelBubbleDesc.get,
+                set: function(val) {
+                  if (val && validatingEvents && validatingEvents.has(this)) {
+                    return;
+                  }
+                  cancelBubbleDesc.set.call(this, val);
+                },
+                configurable: true,
+                enumerable: true
+              });
+            }
+            function wrapAddEventListener(origFn) {
+              return function(type, listener, options) {
+                var res = origFn.apply(this, arguments);
+                if (activeDeferredListeners &&
+                    type === activeDeferredListeners.type) {
+                  origRemoveEventListener.call(
+                      window, activeDeferredListeners.type,
+                      activeDeferredListeners.fn, false);
+                  origAddEventListener.call(
+                      window, activeDeferredListeners.type,
+                      activeDeferredListeners.fn, false);
+                }
+                return res;
+              };
+            }
+            var origWinAdd = window.addEventListener || origAddEventListener;
+            EventTarget.prototype.addEventListener =
+                wrapAddEventListener(origAddEventListener);
+            if (typeof Window !== 'undefined' && Window.prototype) {
+              try {
+                Window.prototype.addEventListener =
+                    wrapAddEventListener(origWinAdd);
+              } catch (err) {}
+            }
+            try {
+              window.addEventListener = wrapAddEventListener(origWinAdd);
+            } catch (err) {}
+            function observeMutations(target) {
+              if (!target || typeof MutationObserver === 'undefined') return;
+              new MutationObserver(function(mutations) {
+                if (activeDeferredListeners) {
+                  for (var i = 0; i < mutations.length; i++) {
+                    var m = mutations[i];
+                    if (m.type === 'attributes' &&
+                        isLinkElement(m.target) &&
+                        hasLinkHref(m.target)) {
+                      var mHref = (getLinkHref(m.target) || '').trim();
+                      if (!mHref.startsWith('#')) {
+                        handleLiquidExternalLink(
+                            activeDeferredListeners.event, m.target, mHref,
+                            activeDeferredListeners.programmatic);
+                      }
+                    }
+                  }
+                }
+                purgeMetaRefresh(target);
+              }).observe(target, {
+                childList: true,
+                subtree: true,
+                attributes: true,
+                attributeFilter: ['http-equiv', 'href']
+              });
+            }
+            observeMutations(document);
+            if (Element.prototype.attachShadow) {
+              var origAttachShadow = Element.prototype.attachShadow;
+              Element.prototype.attachShadow = function() {
+                var sr = origAttachShadow.apply(this, arguments);
+                observeMutations(sr);
+                return sr;
+              };
+            }
+          }
+
+          // Returns the URL of an absolute or protocol-relative href, or null.
+          function parseAbsoluteUrl(href) {
+            var candidate =
+                PROTOCOL_RELATIVE_RE.test(href) ? 'https:' + href : href;
+            try {
+              return new URL(candidate);
+            } catch (err) {
+              return null;
+            }
+          }
+
+          // Opens the link in a new tab through the Google redirector, which
+          // warns users before they leave for another site.
+          function routeThroughRedirector(link, url) {
+            var redirectUrl = url.href;
+            if (url.origin !== 'https://www.google.com' ||
+                url.pathname !== '/url' ||
+                !url.searchParams.has('q')) {
+              redirectUrl = 'https://www.google.com/url?q=' +
+                  encodeURIComponent(url.href);
+            }
+            origSetAttribute.call(link, 'href', redirectUrl);
+            origRemoveAttributeNS.call(link, XLINK_NS, 'href');
+            origSetAttribute.call(link, 'target', '_blank');
+            origSetAttribute.call(link, 'rel', 'noopener noreferrer');
+          }
+
+          // Lets Liquid App links open web pages only through the redirector,
+          // and blocks links with other protocols, such as javascript:.
+          // Context menu events rewrite or remove the link attribute so that
+          // "Open link in new tab" also goes through the redirector or is
+          // disabled.
+          function handleLiquidExternalLink(e, link, href, programmatic) {
+            if (isLocalDownloadLink(link, href)) return;
+            if (programmatic || inProgrammaticClick > 0) {
+              removeLinkHref(link);
+              origPreventDefault.call(e);
+              origStopPropagation.call(e);
+              return;
+            }
+            var url = parseAbsoluteUrl(href);
+            var protocol = url ? url.protocol : '';
+            if (protocol === 'http:' || protocol === 'https:') {
+              routeThroughRedirector(link, url);
+            } else if (protocol !== 'mailto:' && protocol !== 'tel:') {
+              if (e.type === 'contextmenu') {
+                removeLinkHref(link);
+              } else {
+                origPreventDefault.call(e);
+                origStopPropagation.call(e);
+              }
+            }
+          }
+
+          function validateLiquidLinkAfterBubble(e, anchor, programmatic) {
+            if (validatingEvents) {
+              validatingEvents.add(e);
+            }
+            var state = {
+              type: e.type,
+              fn: onBubble,
+              event: e,
+              programmatic: programmatic
+            };
+            activeDeferredListeners = state;
+            function checkTarget(ev) {
+              var targetLink = anchor || findLinkFromEvent(ev);
+              if (!targetLink || !hasLinkHref(targetLink)) return;
+              var latestHref = (getLinkHref(targetLink) || '').trim();
+              if (!latestHref.startsWith('#')) {
+                handleLiquidExternalLink(
+                    ev, targetLink, latestHref, programmatic);
+              }
+            }
+            Promise.resolve().then(function() {
+              checkTarget(e);
+              if (activeDeferredListeners === state) {
+                activeDeferredListeners = null;
+              }
+            });
+            function onBubble(ev) {
+              origRemoveEventListener.call(window, ev.type, onBubble, false);
+              checkTarget(ev);
+            }
+            origAddEventListener.call(window, e.type, onBubble, false);
+          }
+
+          function handleLinkClick(e) {
+            var programmatic = inProgrammaticClick > 0;
+            // Find the nearest ancestor link (handles nested icons, spans,
+            // svgs, and shadow DOM).
+            var anchor = findLinkFromEvent(e);
+            if (!anchor) {
+              if (isLiquid) {
+                validateLiquidLinkAfterBubble(e, null, programmatic);
+              }
+              return;
+            }
+
+            if (isLiquid) {
+              validateLiquidLinkAfterBubble(e, anchor, programmatic);
+            }
+            var href = (getLinkHref(anchor) || '').trim();
+            if (!href.startsWith('#')) {
+              if (isLiquid) {
+                handleLiquidExternalLink(e, anchor, href, programmatic);
+              }
+              return;
+            }
+            if (e.type === 'contextmenu') return;
+
+            // Prevent default <base target="_blank"> navigation to a new blank tab.
+            origPreventDefault.call(e);
+            if (!isLiquid) {
+              origStopPropagation.call(e);
+            }
+
+            // Handle empty anchor or top anchor.
+            if (href === '#' || href === '#top') {
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+              return;
+            }
+
+            // Resolve target element by id, falling back to legacy name attribute.
+            var targetId = href.slice(1);
+            try {
+              targetId = decodeURIComponent(targetId);
+            } catch (err) {}
+
+            var targetEl = document.getElementById(targetId);
+            if (!targetEl) {
+              try {
+                var escaped = window.CSS && CSS.escape ? CSS.escape(targetId) : targetId.replace(/["\\]/g, '\\$&');
+                targetEl = document.querySelector('[name="' + escaped + '"]');
+              } catch (err) {}
+            }
+
+            // Smoothly scroll to the target within the embed and update URL hash history.
+            if (targetEl) {
+              targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              if (window.history && window.history.pushState) {
+                window.history.pushState(null, '', href);
+              }
+            }
+          }
+
+          function initRender(nextIsLiquid) {
+            isLiquid = isLiquid || !!nextIsLiquid;
+            if (isLiquid) {
+              if (!guardsInstalled) {
+                guardsInstalled = true;
+                installNavigationGuards();
+              } else {
+                try {
+                  window.addEventListener =
+                      EventTarget.prototype.addEventListener;
+                } catch (err) {}
+              }
+              // document.open() removes the window's listeners, so this is
+              // added on every render.
+              origAddEventListener.call(window, 'beforeunload', function(e) {
+                origPreventDefault.call(e);
+                if (origWindowStop) {
+                  origWindowStop();
+                }
+              }, true);
+              purgeMetaRefresh(document);
+            }
+            // Listen during capturing phase to preempt <base target="_blank">.
+            origAddEventListener.call(
+                document, 'click', handleLinkClick, true);
+            if (isLiquid) {
+              origAddEventListener.call(
+                  document, 'auxclick', handleLinkClick, true);
+              origAddEventListener.call(
+                  document, 'contextmenu', handleLinkClick, true);
+            }
+          }
+
+          try {
+            Object.defineProperty(window, '__atariInitRender', {
+              value: initRender,
+              writable: false,
+              configurable: false
+            });
+          } catch (err) {
+            window.__atariInitRender = initRender;
+          }
+          initRender(false);
+        })();
+      </script>
+    
+
+
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
   <title>Colveur — Portfolio Vidéo</title>
 
   <!-- Tailwind CSS -->
@@ -168,6 +772,18 @@
       border: 0;
       pointer-events: none;
       transform: translate(-50%, -50%);
+    }
+
+    /* Dans les pages catégories (Modèle 1 plein écran), adapter au 16:9 de l'écran sans sur-zoom */
+    .cat-page-yt-iframe {
+      width: max(100vw, 177.78vh) !important;
+      height: max(100vh, 56.25vw) !important;
+    }
+
+    /* Dans les cadres du Modèle 2, afficher 100% de la vidéo sans zoomer dedans */
+    .m2-yt-iframe {
+      width: 100% !important;
+      height: 100% !important;
     }
 
     /* Titres des catégories : 100% nets (hors skewX), opacité 100% permanente, zéro glow */
@@ -708,14 +1324,14 @@
   <!-- =====================================================================
        1. ÉCRAN D'INTRODUCTION "COLVEUR" (3 SECONDES OU CLIC -> ZOOM DANS LE "V")
        ===================================================================== -->
-  <canvas id="intro-canvas" class="is-hidden"></canvas>
+  <canvas id="intro-canvas" width="2980" height="1806" class="is-hidden"></canvas>
   <div id="intro-bottom-hint" class="is-hidden">Cliquer pour lancer l'animation</div>
 
   <!-- =====================================================================
        2. ACCUEIL PRINCIPAL : CARROUSEL DIAGONAL INFINI & FLÈCHES LATÉRALES
        ===================================================================== -->
   <main id="carousel-viewport" aria-label="Catégories du portfolio" class="">
-    <div id="carousel-track" style="transform: translate3d(-3756px, 0px, 0px);" class=""></div>
+    <div id="carousel-track" class="" style="transform: translate3d(-2980px, 0px, 0px);"></div>
 
     <button type="button" class="carousel-arrow-btn arrow-left" aria-label="Catégorie précédente" onclick="nudgeCarousel(-1)">
       <svg class="w-6 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 48">
@@ -738,7 +1354,7 @@
     <!-- Définitions SVG invisibles qui découpent les 2 versions du header fixe au pixel près -->
     <svg width="0" height="0" style="position:fixed; pointer-events:none;" aria-hidden="true">
       <defs>
-        <clipPath id="clip-taupe-header" clipPathUnits="userSpaceOnUse"><rect x="0" y="0.00" width="1878" height="132.00"></rect></clipPath>
+        <clipPath id="clip-taupe-header" clipPathUnits="userSpaceOnUse"><rect x="0" y="0.00" width="1490" height="132.00"></rect></clipPath>
         <clipPath id="clip-noir-header" clipPathUnits="userSpaceOnUse"></clipPath>
       </defs>
     </svg>
@@ -1191,7 +1807,7 @@
   </div>
 
   <!-- Modale d'Exportation du Code Final (pour Netlify / Google Sites) -->
-  <div id="modal-export-code" class="fixed inset-0 z-[90] hidden items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+  <div id="modal-export-code" class="fixed inset-0 z-[90] items-center justify-center bg-black/80 backdrop-blur-sm p-4 hidden">
     <div class="w-full max-w-2xl rounded-2xl bg-[#151515] border border-[#b6ab9d]/40 p-6 text-[#b6ab9d] shadow-2xl space-y-4">
       <div class="flex items-center justify-between">
         <div>
@@ -1222,9 +1838,7 @@
         </div>
 
         <div class="flex items-center gap-2 ml-auto">
-          <button type="button" id="btn-copy-exported-code" onclick="copyExportedHtmlCode()" class="px-4 py-2.5 rounded-xl bg-[#b6ab9d] text-[#151515] font-bold text-xs hover:brightness-110 transition-all">
-            📋 Copier le code
-          </button>
+          <button type="button" id="btn-copy-exported-code" onclick="copyExportedHtmlCode()" class="px-4 py-2.5 rounded-xl bg-[#b6ab9d] text-[#151515] font-bold text-xs hover:brightness-110 transition-all">📋 Copier le code</button>
         </div>
       </div>
     </div>
@@ -1242,10 +1856,10 @@
       </div>
 
       <!-- Résumé rapide quand c'est déjà configuré -->
-      <div id="gh-configured-banner" class="items-center justify-between gap-3 p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-xs flex">
+      <div id="gh-configured-banner" class="hidden items-center justify-between gap-3 p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-xs">
         <div>
           <span class="text-emerald-400 font-bold">✓ Connecté au dépôt :</span>
-          <span id="gh-connected-repo-label" class="font-mono ml-1 text-[#b6ab9d]">colveur132/colveur (main)</span>
+          <span id="gh-connected-repo-label" class="font-mono ml-1 text-[#b6ab9d]"></span>
         </div>
         <button type="button" onclick="toggleGitHubConfigForm(true)" class="px-2.5 py-1 rounded-lg bg-[#252525] hover:bg-[#333] text-[11px] font-semibold">
           ⚙️ Modifier config
@@ -1253,7 +1867,7 @@
       </div>
 
       <!-- Formulaire de configuration GitHub (à remplir une seule fois) -->
-      <div id="gh-config-form-wrap" class="space-y-3.5 bg-[#1e1e1e] p-4 rounded-xl border border-[#b6ab9d]/20 hidden">
+      <div id="gh-config-form-wrap" class="space-y-3.5 bg-[#1e1e1e] p-4 rounded-xl border border-[#b6ab9d]/20">
         <div class="text-xs text-[#b6ab9d]/85 leading-relaxed space-y-1">
           <p class="font-bold text-[#b6ab9d]">Configuration unique (enregistrée sur ton navigateur uniquement) :</p>
           <p class="text-[11px] opacity-80">
@@ -1308,7 +1922,7 @@
      * 0. CODE SECRET DU MODE ÉDITEUR (MODIFIABLE ICI OU VIA LE BOUTON "🔑 CODE")
      *************************************************************************/
     /* __COLVEUR_CONFIG_START__ */
-    let EDITOR_SECRET_PIN = "395253";
+    let EDITOR_SECRET_PIN = "2026";
     let DEFAULT_HOVER_MODE = "eat";
     let DEFAULT_RESTING_OPACITY = 0.4;
     let DEFAULT_SCROLL_MODE = "free";
@@ -1335,7 +1949,13 @@
 
     function buildYouTubeEmbedUrl(ytId, autoplay = false) {
       if (!ytId) return '';
-      return `https://www.youtube-nocookie.com/embed/${ytId}?enablejsapi=1&autoplay=${autoplay ? 1 : 0}&mute=1&loop=1&playlist=${ytId}&controls=0&rel=0&modestbranding=1&playsinline=1&iv_load_policy=3&disablekb=1`;
+      let originParam = '';
+      try {
+        if (window.location && window.location.origin && /^https?:\/\//i.test(window.location.origin)) {
+          originParam = `&origin=${encodeURIComponent(window.location.origin)}&widget_referrer=${encodeURIComponent(window.location.href)}`;
+        }
+      } catch (e) {}
+      return `https://www.youtube.com/embed/${ytId}?enablejsapi=1&autoplay=${autoplay ? 1 : 0}&mute=1&loop=1&playlist=${ytId}&controls=0&rel=0&modestbranding=1&playsinline=1&iv_load_policy=3&disablekb=1${originParam}`;
     }
 
     function sendYouTubeCommand(iframeEl, funcName, args = []) {
@@ -1362,8 +1982,8 @@
           type: 'video',
           x: 6.2,
           y: 33.5,
-          w: 39.8,
-          h: 41.5,
+          w: 40.0,
+          h: 40.0,
           borderRadius: 42,
           videoUrl: '',
           posX: 50,
@@ -1468,7 +2088,7 @@
     "posX": 50,
     "pages": [
       {
-        "id": "page-428f8j2",
+        "id": "page-wq28bp6",
         "template": "media-text",
         "title": "Modèle 2 : Cadre Vidéo & Texte",
         "bgTheme": "taupe",
@@ -1478,19 +2098,19 @@
         "videoMuted": false,
         "blocks": [
           {
-            "id": "blk-vid-m0a0x1",
+            "id": "blk-vid-5gvl6h",
             "type": "video",
             "x": 6.2,
             "y": 33.5,
-            "w": 39.8,
-            "h": 41.5,
+            "w": 40,
+            "h": 40,
             "borderRadius": 42,
             "videoUrl": "",
             "posX": 50,
             "posY": 50
           },
           {
-            "id": "blk-txt-m2r537",
+            "id": "blk-txt-2i6lgr",
             "type": "text",
             "x": 59.5,
             "y": 44.5,
@@ -1507,7 +2127,7 @@
         ]
       },
       {
-        "id": "page-y2bjqg6",
+        "id": "page-hbijf70",
         "template": "blank",
         "title": "Page vierge (Fond uni)",
         "bgTheme": "noir",
@@ -1517,19 +2137,19 @@
         "videoMuted": false,
         "blocks": [
           {
-            "id": "blk-vid-vge0c4",
+            "id": "blk-vid-25rm0y",
             "type": "video",
             "x": 6.2,
             "y": 33.5,
-            "w": 39.8,
-            "h": 41.5,
+            "w": 40,
+            "h": 40,
             "borderRadius": 42,
             "videoUrl": "",
             "posX": 50,
             "posY": 50
           },
           {
-            "id": "blk-txt-ch4ear",
+            "id": "blk-txt-t4v00j",
             "type": "text",
             "x": 59.5,
             "y": 44.5,
@@ -1555,7 +2175,7 @@
     "posX": 50,
     "pages": [
       {
-        "id": "page-j1lk844",
+        "id": "page-cmirz7c",
         "template": "media-text",
         "title": "Modèle 2 : Cadre Vidéo & Texte",
         "bgTheme": "taupe",
@@ -1565,19 +2185,19 @@
         "videoMuted": false,
         "blocks": [
           {
-            "id": "blk-vid-otshss",
+            "id": "blk-vid-de4qxx",
             "type": "video",
             "x": 6.2,
             "y": 33.5,
-            "w": 39.8,
-            "h": 41.5,
+            "w": 40,
+            "h": 40,
             "borderRadius": 42,
             "videoUrl": "https://www.youtube.com/watch?v=qfn4HOqPWBA",
             "posX": 50,
             "posY": 50
           },
           {
-            "id": "blk-txt-oo4hth",
+            "id": "blk-txt-ttrk26",
             "type": "text",
             "x": 59.5,
             "y": 44.5,
@@ -1594,7 +2214,7 @@
         ]
       },
       {
-        "id": "page-yo9wm89",
+        "id": "page-wqlzbpx",
         "template": "blank",
         "title": "Page vierge (Fond uni)",
         "bgTheme": "noir",
@@ -1604,19 +2224,19 @@
         "videoMuted": false,
         "blocks": [
           {
-            "id": "blk-vid-qcxenl",
+            "id": "blk-vid-1sgppm",
             "type": "video",
             "x": 6.2,
             "y": 33.5,
-            "w": 39.8,
-            "h": 41.5,
+            "w": 40,
+            "h": 40,
             "borderRadius": 42,
             "videoUrl": "",
             "posX": 50,
             "posY": 50
           },
           {
-            "id": "blk-txt-a6sabg",
+            "id": "blk-txt-mg9376",
             "type": "text",
             "x": 59.5,
             "y": 44.5,
@@ -1642,7 +2262,7 @@
     "posX": 50,
     "pages": [
       {
-        "id": "page-lp5vif8",
+        "id": "page-j4bgdvy",
         "template": "media-text",
         "title": "Modèle 2 : Cadre Vidéo & Texte",
         "bgTheme": "taupe",
@@ -1652,19 +2272,19 @@
         "videoMuted": false,
         "blocks": [
           {
-            "id": "blk-vid-tc3z55",
+            "id": "blk-vid-iantm4",
             "type": "video",
             "x": 6.2,
             "y": 33.5,
-            "w": 39.8,
-            "h": 41.5,
+            "w": 40,
+            "h": 40,
             "borderRadius": 42,
             "videoUrl": "",
             "posX": 50,
             "posY": 50
           },
           {
-            "id": "blk-txt-gm6ww3",
+            "id": "blk-txt-6oo1jp",
             "type": "text",
             "x": 59.5,
             "y": 44.5,
@@ -1681,7 +2301,7 @@
         ]
       },
       {
-        "id": "page-b12gayh",
+        "id": "page-80t2h2a",
         "template": "blank",
         "title": "Page vierge (Fond uni)",
         "bgTheme": "noir",
@@ -1691,19 +2311,19 @@
         "videoMuted": false,
         "blocks": [
           {
-            "id": "blk-vid-oo8o3k",
+            "id": "blk-vid-i0wybu",
             "type": "video",
             "x": 6.2,
             "y": 33.5,
-            "w": 39.8,
-            "h": 41.5,
+            "w": 40,
+            "h": 40,
             "borderRadius": 42,
             "videoUrl": "",
             "posX": 50,
             "posY": 50
           },
           {
-            "id": "blk-txt-ecr3f3",
+            "id": "blk-txt-pksyae",
             "type": "text",
             "x": 59.5,
             "y": 44.5,
@@ -2247,7 +2867,9 @@
                     <iframe
                       class="yt-cover-iframe diag-yt-iframe"
                       ${isYouTube ? `src="${buildYouTubeEmbedUrl(ytId, false)}"` : ''}
-                      allow="autoplay; encrypted-media"
+                      referrerpolicy="strict-origin-when-cross-origin"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                      allowfullscreen
                       style="left: ${100 - cat.posX}%; top: 50%;"
                     ></iframe>
                   </div>
@@ -2855,12 +3477,18 @@
                             onclick="handleM2YouTubeClick(event, this)"
                           >
                             <iframe
+                              id="yt-m2-${blk.id}"
                               class="yt-cover-iframe m2-yt-iframe"
                               src="${buildYouTubeEmbedUrl(blkYtId, true)}"
-                              allow="autoplay; encrypted-media; fullscreen"
+                              referrerpolicy="strict-origin-when-cross-origin"
+                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
+                              allowfullscreen
                               data-muted="true"
                               data-user-paused="false"
-                              style="left:${100 - (blk.posX ?? 50)}%; top:${100 - (blk.posY ?? 50)}%;"
+                              data-duration="0"
+                              data-current-time="0"
+                              onload="registerM2YouTubeBridge(this)"
+                              style="left: 50%; top: 50%; transform: translate(${((50 - (blk.posX ?? 50)) * 0.5).toFixed(1)}%, ${((50 - (blk.posY ?? 50)) * 0.5).toFixed(1)}%) translate(-50%, -50%);"
                             ></iframe>
                           </div>
 
@@ -2881,7 +3509,21 @@
                               title="Activer / Couper le son"
                             >🔇</button>
 
-                            <span class="text-[10px] opacity-70 flex-1 text-center truncate">YouTube HD</span>
+                            <input
+                              type="range"
+                              min="0"
+                              max="100"
+                              value="0"
+                              step="0.2"
+                              class="m2-timeline-slider colveur-slider flex-1 h-1"
+                              onpointerdown="this.dataset.dragging='true'"
+                              onpointerup="this.dataset.dragging='false'"
+                              oninput="seekM2YouTube(this)"
+                              onchange="this.dataset.dragging='false'; seekM2YouTube(this)"
+                              title="Revenir en arrière ou avancer dans la vidéo"
+                            />
+
+                            <span class="m2-time-readout text-[10px] font-mono opacity-80 shrink-0">0:00</span>
 
                             <button
                               type="button"
@@ -2929,8 +3571,10 @@
                               step="0.5"
                               class="m2-timeline-slider colveur-slider flex-1 h-1"
                               oninput="seekM2Video(this)"
-                              title="Avancer dans la vidéo"
+                              title="Revenir en arrière ou avancer dans la vidéo"
                             />
+
+                            <span class="m2-time-readout text-[10px] font-mono opacity-80 shrink-0">0:00</span>
 
                             <button
                               type="button"
@@ -3099,7 +3743,9 @@
                   <iframe
                     class="yt-cover-iframe cat-page-yt-iframe"
                     src="${buildYouTubeEmbedUrl(pageYtId, true)}"
-                    allow="autoplay; encrypted-media"
+                    referrerpolicy="strict-origin-when-cross-origin"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
+                    allowfullscreen
                     style="left: 50%; top: 50%;"
                   ></iframe>
                 </div>
@@ -4014,8 +4660,9 @@
         if (vid) vid.style.objectPosition = `${block.posX ?? 50}% ${block.posY ?? 50}%`;
         const ytIfr = blockEl.querySelector('.m2-yt-iframe');
         if (ytIfr) {
-          ytIfr.style.left = `${100 - (block.posX ?? 50)}%`;
-          ytIfr.style.top = `${100 - (block.posY ?? 50)}%`;
+          const offsetX = ((50 - (block.posX ?? 50)) * 0.5).toFixed(1);
+          const offsetY = ((50 - (block.posY ?? 50)) * 0.5).toFixed(1);
+          ytIfr.style.transform = `translate(${offsetX}%, ${offsetY}%) translate(-50%, -50%)`;
         }
       }
     }
@@ -4099,8 +4746,12 @@
       const frame = videoEl.closest('.m2-video-frame');
       if (!frame) return;
       const slider = frame.querySelector('.m2-timeline-slider');
+      const timeLabel = frame.querySelector('.m2-time-readout');
       if (slider && videoEl.duration) {
         slider.value = ((videoEl.currentTime / videoEl.duration) * 100).toFixed(1);
+      }
+      if (timeLabel && videoEl.duration) {
+        timeLabel.textContent = `${formatMediaSeconds(videoEl.currentTime)} / ${formatMediaSeconds(videoEl.duration)}`;
       }
       syncM2PlayerUI(videoEl);
     }
@@ -4211,6 +4862,93 @@
       if (muteBtn) muteBtn.textContent = isMuted ? '🔇' : '🔊';
       if (toast) {
         toast.textContent = isMuted ? '🔇 Cliquer sur la vidéo pour le son' : '🔊 Son activé (cliquer pour couper)';
+      }
+    }
+
+    function formatMediaSeconds(sec) {
+      if (!sec || !isFinite(sec) || sec < 0) return '0:00';
+      const total = Math.floor(sec);
+      const mins = Math.floor(total / 60);
+      const rem = total % 60;
+      return `${mins}:${rem < 10 ? '0' : ''}${rem}`;
+    }
+
+    function registerM2YouTubeBridge(iframeEl) {
+      if (!iframeEl) return;
+      const sendListening = () => {
+        if (!iframeEl.contentWindow) return;
+        try {
+          iframeEl.contentWindow.postMessage(JSON.stringify({
+            event: 'listening',
+            id: iframeEl.id || 'yt-player',
+            channel: 'widget'
+          }), '*');
+        } catch (e) {}
+      };
+      sendListening();
+      setTimeout(sendListening, 600);
+      setTimeout(sendListening, 1600);
+    }
+
+    window.addEventListener('message', (event) => {
+      if (!event.data || typeof event.data !== 'string') return;
+      let data;
+      try {
+        data = JSON.parse(event.data);
+      } catch (e) {
+        return;
+      }
+      if (!data || data.event !== 'infoDelivery' || !data.info) return;
+
+      let targetIframe = null;
+      if (data.id) {
+        targetIframe = document.getElementById(data.id);
+      }
+      if (!targetIframe) {
+        document.querySelectorAll('.m2-yt-iframe').forEach(ifr => {
+          if (ifr.contentWindow === event.source) targetIframe = ifr;
+        });
+      }
+      if (!targetIframe) return;
+
+      if (typeof data.info.duration === 'number' && data.info.duration > 0) {
+        targetIframe.dataset.duration = String(data.info.duration);
+      }
+      if (typeof data.info.currentTime === 'number') {
+        targetIframe.dataset.currentTime = String(data.info.currentTime);
+      }
+
+      const dur = parseFloat(targetIframe.dataset.duration) || 0;
+      const cur = parseFloat(targetIframe.dataset.currentTime) || 0;
+      const frame = targetIframe.closest('.m2-video-frame');
+      if (!frame || dur <= 0) return;
+
+      const slider = frame.querySelector('.m2-timeline-slider');
+      const timeLabel = frame.querySelector('.m2-time-readout');
+
+      if (slider && slider.dataset.dragging !== 'true') {
+        slider.value = Math.min(100, Math.max(0, (cur / dur) * 100)).toFixed(2);
+      }
+      if (timeLabel) {
+        timeLabel.textContent = `${formatMediaSeconds(cur)} / ${formatMediaSeconds(dur)}`;
+      }
+    });
+
+    function seekM2YouTube(sliderEl) {
+      const frame = sliderEl.closest('.m2-video-frame');
+      const iframe = frame ? frame.querySelector('.m2-yt-iframe') : null;
+      if (!iframe) return;
+
+      registerM2YouTubeBridge(iframe);
+      const dur = parseFloat(iframe.dataset.duration) || 120;
+      const targetSec = (parseFloat(sliderEl.value) / 100) * dur;
+      iframe.dataset.currentTime = String(targetSec);
+
+      sendYouTubeCommand(iframe, 'seekTo', [targetSec, true]);
+
+      const timeLabel = frame.querySelector('.m2-time-readout');
+      if (timeLabel && parseFloat(iframe.dataset.duration) > 0) {
+        timeLabel.textContent = `${formatMediaSeconds(targetSec)} / ${formatMediaSeconds(dur)}`;
       }
     }
 
@@ -4923,233 +5661,60 @@
   </script>
 
 
-<script async="" src="/.netlify/scripts/hud?variant=owner-private" data-nf-variant="owner-private" data-netlify-site-id="6f7f2756-51b1-4117-b20d-c404f5a1ad24" data-app-host="app.netlify.com"></script>
-<iframe id="nl-hud-frame" title="Netlify" srcdoc="&lt;!doctype html&gt;&lt;html&gt;&lt;head&gt;&lt;meta charset=&quot;utf-8&quot;&gt;&lt;meta name=&quot;color-scheme&quot; content=&quot;dark&quot;&gt;&lt;style&gt;
-    :root{--nl-vw:1878px;--nl-vh:1000px}
-    *{box-sizing:border-box}
-    html,body{margin:0;padding:0;background:transparent;overflow:hidden}
-    body{display:flex;align-items:flex-end;justify-content:flex-end;height:100vh;
-      padding:8px 18px 18px 8px;
-      font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:14px;line-height:1.5;color:#f4f9f9;-webkit-font-smoothing:antialiased}
-    .nl-wrap{display:flex;flex-direction:column;align-items:flex-end;gap:10px;width:max-content;max-width:calc(var(--nl-vw,100vw) - 26px)}
-    button{font-family:inherit;cursor:pointer}
-    :focus-visible{outline:2px solid #32e6e2;outline-offset:2px;border-radius:6px}
-    .nl-icon-btn{position:relative;flex:none;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;border-radius:8px;border:1px solid transparent;background:transparent;color:#d5e3e6;transition:background .15s ease,color .15s ease}
-    .nl-icon-btn:hover{background:rgba(255,255,255,0.08);color:#f4f9f9}
-    .nl-tap::after{content:&quot;&quot;;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
-      width:max(100%,44px);height:max(100%,44px)}
-    @keyframes nl-rise{from{opacity:0;transform:translateY(10px) scale(.97)}to{opacity:1;transform:none}}
-    @media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition:none!important}}
-  
-      .nl-popover{display:none;width:min(320px,calc(var(--nl-vw,100vw) - 26px));max-height:calc(var(--nl-vh,100vh) - 90px);overflow-y:auto;background:linear-gradient(180deg,#132832 0%,#0e1e25 100%);border:1px solid rgba(255,255,255,0.09);border-radius:18px;transform-origin:bottom right;animation:nl-rise .28s cubic-bezier(.34,1.4,.4,1) both}
-      .nl-popover.open{display:block}
-      .nl-popover-head{display:flex;align-items:center;gap:9px;padding:13px 12px 5px 16px}
-      .nl-popover-icon{display:inline-flex;color:#32e6e2}
-      .nl-popover-title{flex:1;font-size:13.5px;font-weight:700;letter-spacing:-0.01em;color:#f4f9f9}
-      .nl-popover-body{padding:0 16px 12px}
-      .nl-task{display:flex;align-items:center;gap:10px;padding:11px 0}
-      .nl-task+.nl-task{border-top:1px solid rgba(255,255,255,0.06)}
-      .nl-task-meta{flex:1;min-width:0}
-      .nl-task-title{font-size:13.5px;font-weight:650;color:#f4f9f9}
-      .nl-task-desc{font-size:11.5px;color:#a9bdc2}
-      .nl-task-run{flex:none;display:inline-flex;align-items:center;gap:6px;text-decoration:none;border:1px solid rgba(50,230,226,0.35);background:transparent;color:#32e6e2;font-size:12px;font-weight:700;border-radius:999px;padding:6px 13px;transition:background .15s ease,transform .15s cubic-bezier(.34,1.4,.4,1)}
-      .nl-task-run:hover{background:rgba(5,189,186,0.12);transform:translateY(-1px)}
-      .nl-bar,.nl-mini{-webkit-user-select:none;user-select:none}
-      .nl-bar{display:flex;align-items:center;gap:2px;white-space:nowrap;border:1px solid rgba(255,255,255,0.09);background:linear-gradient(180deg,#142b34,#0e1e25);border-radius:999px;padding:7px 8px 7px 14px;color:#f4f9f9}
-      .nl-logo{flex:none;margin-right:8px;display:inline-flex}
-      .nl-status{display:inline-flex;align-items:center;gap:5px;border:0;background:transparent;font-family:inherit;font-size:12.5px;font-weight:700;letter-spacing:0.01em;color:#fbbf24;padding:6px 5px;border-radius:8px;transition:background .15s ease}
-      .nl-status:hover,.nl-status[aria-expanded='true']{background:rgba(251,191,36,0.12)}
-      .nl-tip{display:none;align-self:flex-start;width:min(300px,calc(var(--nl-vw,100vw) - 26px));background:linear-gradient(180deg,#132832 0%,#0e1e25 100%);border:1px solid rgba(255,255,255,0.09);border-radius:14px;padding:12px 14px;font-size:12px;line-height:1.5;color:#d5e3e6;animation:nl-rise .2s cubic-bezier(.34,1.4,.4,1) both}
-      .nl-tip.open{display:block}
-      .nl-tip a{display:flex;width:fit-content;align-items:center;gap:4px;margin-top:8px;color:#32e6e2;text-decoration:none;font-weight:650}
-      .nl-tip a:hover{text-decoration:underline}
-      .nl-sep{width:1px;height:18px;background:rgba(255,255,255,0.09);margin:0 10px 0 12px;flex:none}
-      .nl-btn{display:inline-flex;align-items:center;gap:7px;text-decoration:none;border:0;background:transparent;color:#d5e3e6;font-family:inherit;font-size:13px;font-weight:600;padding:8px 12px;border-radius:999px;transition:background .15s ease,color .15s ease}
-      .nl-btn svg{color:#32e6e2}
-      .nl-btn:hover{background:rgba(255,255,255,0.07);color:#f4f9f9}
-      .nl-btn[aria-expanded='true']{background:rgba(255,255,255,0.1);color:#f4f9f9}
-      .nl-publish{display:inline-flex;align-items:center;gap:7px;text-decoration:none;margin-left:6px;background:#05bdba;color:#02191b;font-size:13px;font-weight:700;padding:8px 15px;border-radius:999px;transition:background .15s ease,transform .15s cubic-bezier(.34,1.4,.4,1)}
-      .nl-publish:hover{background:#32e6e2;transform:translateY(-1px)}
-      .nl-min{margin-left:6px}
+      <script>
+        (function() {
+          // The root element's background fills the whole page. As in CSS,
+          // the body's background is used when the root element has none.
+          function getPageBackgroundColor() {
+            var docStyle = window.getComputedStyle(document.documentElement);
+            var color = docStyle.backgroundColor;
+            if ((color === 'rgba(0, 0, 0, 0)' || color === 'transparent') &&
+                docStyle.backgroundImage === 'none' && document.body) {
+              color = window.getComputedStyle(document.body).backgroundColor;
+            }
+            return color || '';
+          }
 
-      /* ——— Minimized ——— */
-      .nl-bar,.nl-mini{min-height:52px}
-      .nl-mini{display:none;align-items:center;gap:2px;border:1px solid rgba(255,255,255,0.09);background:linear-gradient(180deg,#142b34,#0e1e25);border-radius:999px;padding:5px 5px 5px 13px;cursor:pointer}
-      .nl-mini-state .nl-mini{display:flex}
-      .nl-mini-state .nl-bar,.nl-mini-state .nl-popover,.nl-mini-state .nl-tip{display:none}
-      .nl-mini-brand{display:inline-flex;align-items:center;gap:7px;padding-right:8px}
-      .nl-mini-lock{display:inline-flex;color:#fbbf24}
+          var lastReportedColor = '';
+          function reportBackgroundColor() {
+            try {
+              var color = getPageBackgroundColor();
+              if (color === lastReportedColor) return;
+              lastReportedColor = color;
+              window.parent.postMessage({
+                type: 'ATARI_CODE_EMBED_BACKGROUND_COLOR',
+                backgroundColor: color
+              }, '*');
+            } catch (e) {}
+          }
 
-      /* ——— Narrow layout ——— */
-      .nl-narrow .nl-shrinks{position:absolute;width:1px;height:1px;overflow:hidden;
-        clip-path:inset(50%);white-space:nowrap}
-      .nl-narrow .nl-status{gap:0}
-      .nl-narrow .nl-bar{padding:6px 6px 6px 10px}
-      .nl-narrow .nl-logo{margin-right:6px}
-      .nl-narrow .nl-sep{margin:0 6px 0 8px}
-      .nl-narrow .nl-btn{padding:8px 9px}
-      .nl-narrow .nl-publish{margin-left:4px;padding:8px 11px}
-    &lt;/style&gt;&lt;/head&gt;&lt;body&gt;
-      &lt;div class=&quot;nl-wrap&quot;&gt;
-        &lt;section class=&quot;nl-popover&quot; id=&quot;nl-pop&quot; aria-label=&quot;Pre-launch tools&quot;&gt;
-          &lt;div class=&quot;nl-popover-head&quot;&gt;
-            &lt;span class=&quot;nl-popover-icon&quot;&gt;&lt;svg width=&quot;15&quot; height=&quot;15&quot; viewBox=&quot;0 0 16 16&quot; fill=&quot;currentColor&quot; aria-hidden=&quot;true&quot;&gt;&lt;path fill-rule=&quot;evenodd&quot; clip-rule=&quot;evenodd&quot; d=&quot;M7.98407 9.625L8.58935 11.0952C8.62792 11.1889 8.71922 11.25 8.82053 11.25H9.77587C9.88268 11.25 9.95527 11.1415 9.91454 11.0428L7.3828 4.90468C7.3442 4.81107 7.25294 4.75 7.15169 4.75H6.34295C6.24163 4.75 6.15033 4.81115 6.11177 4.90484L3.58524 11.0429C3.54461 11.1416 3.61719 11.25 3.72395 11.25H4.67399C4.7753 11.25 4.86659 11.1889 4.90516 11.0952L5.51045 9.625H7.98407ZM7.46943 8.375L6.74726 6.62092L6.02508 8.375H7.46943Z&quot;/&gt;&lt;path d=&quot;M10.75 11.25C10.6119 11.25 10.5 11.1381 10.5 11V5C10.5 4.86193 10.6119 4.75 10.75 4.75H11.5C11.6381 4.75 11.75 4.86193 11.75 5V11C11.75 11.1381 11.6381 11.25 11.5 11.25H10.75Z&quot;/&gt;&lt;path fill-rule=&quot;evenodd&quot; clip-rule=&quot;evenodd&quot; d=&quot;M0 5.5C0 2.73858 2.23858 0.5 5 0.5H11C13.7614 0.5 16 2.73858 16 5.5V10.5C16 13.2614 13.7614 15.5 11 15.5H5C2.23858 15.5 0 13.2614 0 10.5V5.5ZM5 1.75H11C13.0711 1.75 14.75 3.42893 14.75 5.5V10.5C14.75 12.5711 13.0711 14.25 11 14.25H5C2.92893 14.25 1.25 12.5711 1.25 10.5V5.5C1.25 3.42893 2.92893 1.75 5 1.75Z&quot;/&gt;&lt;/svg&gt;&lt;/span&gt;
-            &lt;span class=&quot;nl-popover-title&quot;&gt;Pre-launch tools&lt;/span&gt;
-            &lt;button type=&quot;button&quot; class=&quot;nl-icon-btn nl-tap&quot; id=&quot;nl-pop-close&quot; aria-label=&quot;Close&quot;&gt;&lt;svg width=&quot;14&quot; height=&quot;14&quot; viewBox=&quot;0 0 16 16&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;1.9&quot; stroke-linecap=&quot;round&quot; aria-hidden=&quot;true&quot;&gt;&lt;path d=&quot;M4.5 4.5 11.5 11.5M11.5 4.5 4.5 11.5&quot;/&gt;&lt;/svg&gt;&lt;/button&gt;
-          &lt;/div&gt;
-          &lt;div class=&quot;nl-popover-body&quot;&gt;
-            
-      &lt;div class=&quot;nl-task&quot;&gt;
-        &lt;div class=&quot;nl-task-meta&quot;&gt;&lt;div class=&quot;nl-task-title&quot;&gt;SEO / GEO audit&lt;/div&gt;&lt;div class=&quot;nl-task-desc&quot;&gt;Check that Google and AI assistants can find and read your site.&lt;/div&gt;&lt;/div&gt;
-        &lt;a class=&quot;nl-task-run&quot; href=&quot;https://app.netlify.com/projects/6f7f2756-51b1-4117-b20d-c404f5a1ad24/overview?promptTemplate=d7bd9353-a6a3-442d-86f0-9b15488f68c3&amp;from_hud=private&amp;hud_action=ar_task&quot; target=&quot;_blank&quot; rel=&quot;noopener&quot;&gt;&lt;svg width=&quot;12&quot; height=&quot;12&quot; viewBox=&quot;0 0 16 16&quot; fill=&quot;currentColor&quot; aria-hidden=&quot;true&quot;&gt;&lt;path d=&quot;M5.68 9.925 4.607 8.85l-.013-.379 1.1-1.1.38.012 1.075 1.075.012.379-1.1 1.1zM9.96 9.925 8.886 8.85l-.013-.379 1.1-1.1.38.012 1.075 1.075.012.379-1.1 1.1z&quot;/&gt;&lt;path fill-rule=&quot;evenodd&quot; clip-rule=&quot;evenodd&quot; d=&quot;M9.005 2.52v1.296h2.657a3.19 3.19 0 0 1 3.191 3.192v3.356a3.19 3.19 0 0 1-3.191 3.191H4.338a3.19 3.19 0 0 1-3.191-3.19V7.007a3.19 3.19 0 0 1 3.191-3.192h2.836V2.52l.229-.245h1.373zM4.338 5.316c-.934 0-1.691.758-1.691 1.692v3.356c0 .934.758 1.691 1.691 1.691h7.324c.933 0 1.69-.757 1.691-1.69V7.007c0-.934-.757-1.692-1.691-1.692z&quot;/&gt;&lt;/svg&gt; Run&lt;/a&gt;
-      &lt;/div&gt;
-            
-      &lt;div class=&quot;nl-task&quot;&gt;
-        &lt;div class=&quot;nl-task-meta&quot;&gt;&lt;div class=&quot;nl-task-title&quot;&gt;Performance check&lt;/div&gt;&lt;div class=&quot;nl-task-desc&quot;&gt;See how fast your pages load, and what is slowing them down.&lt;/div&gt;&lt;/div&gt;
-        &lt;a class=&quot;nl-task-run&quot; href=&quot;https://app.netlify.com/projects/6f7f2756-51b1-4117-b20d-c404f5a1ad24/overview?promptTemplate=f8ef80a5-be9b-494d-9fac-a4ac5d5689a4&amp;from_hud=private&amp;hud_action=ar_task&quot; target=&quot;_blank&quot; rel=&quot;noopener&quot;&gt;&lt;svg width=&quot;12&quot; height=&quot;12&quot; viewBox=&quot;0 0 16 16&quot; fill=&quot;currentColor&quot; aria-hidden=&quot;true&quot;&gt;&lt;path d=&quot;M5.68 9.925 4.607 8.85l-.013-.379 1.1-1.1.38.012 1.075 1.075.012.379-1.1 1.1zM9.96 9.925 8.886 8.85l-.013-.379 1.1-1.1.38.012 1.075 1.075.012.379-1.1 1.1z&quot;/&gt;&lt;path fill-rule=&quot;evenodd&quot; clip-rule=&quot;evenodd&quot; d=&quot;M9.005 2.52v1.296h2.657a3.19 3.19 0 0 1 3.191 3.192v3.356a3.19 3.19 0 0 1-3.191 3.191H4.338a3.19 3.19 0 0 1-3.191-3.19V7.007a3.19 3.19 0 0 1 3.191-3.192h2.836V2.52l.229-.245h1.373zM4.338 5.316c-.934 0-1.691.758-1.691 1.692v3.356c0 .934.758 1.691 1.691 1.691h7.324c.933 0 1.69-.757 1.691-1.69V7.007c0-.934-.757-1.692-1.691-1.692z&quot;/&gt;&lt;/svg&gt; Run&lt;/a&gt;
-      &lt;/div&gt;
-            
-      &lt;div class=&quot;nl-task&quot;&gt;
-        &lt;div class=&quot;nl-task-meta&quot;&gt;&lt;div class=&quot;nl-task-title&quot;&gt;Security audit&lt;/div&gt;&lt;div class=&quot;nl-task-desc&quot;&gt;Look for common weak spots, like out-of-date code or open settings.&lt;/div&gt;&lt;/div&gt;
-        &lt;a class=&quot;nl-task-run&quot; href=&quot;https://app.netlify.com/projects/6f7f2756-51b1-4117-b20d-c404f5a1ad24/overview?promptTemplate=5f50f746-2ba1-4a3d-8a47-1a515f4420eb&amp;from_hud=private&amp;hud_action=ar_task&quot; target=&quot;_blank&quot; rel=&quot;noopener&quot;&gt;&lt;svg width=&quot;12&quot; height=&quot;12&quot; viewBox=&quot;0 0 16 16&quot; fill=&quot;currentColor&quot; aria-hidden=&quot;true&quot;&gt;&lt;path d=&quot;M5.68 9.925 4.607 8.85l-.013-.379 1.1-1.1.38.012 1.075 1.075.012.379-1.1 1.1zM9.96 9.925 8.886 8.85l-.013-.379 1.1-1.1.38.012 1.075 1.075.012.379-1.1 1.1z&quot;/&gt;&lt;path fill-rule=&quot;evenodd&quot; clip-rule=&quot;evenodd&quot; d=&quot;M9.005 2.52v1.296h2.657a3.19 3.19 0 0 1 3.191 3.192v3.356a3.19 3.19 0 0 1-3.191 3.191H4.338a3.19 3.19 0 0 1-3.191-3.19V7.007a3.19 3.19 0 0 1 3.191-3.192h2.836V2.52l.229-.245h1.373zM4.338 5.316c-.934 0-1.691.758-1.691 1.692v3.356c0 .934.758 1.691 1.691 1.691h7.324c.933 0 1.69-.757 1.691-1.69V7.007c0-.934-.757-1.692-1.691-1.692z&quot;/&gt;&lt;/svg&gt; Run&lt;/a&gt;
-      &lt;/div&gt;
-          &lt;/div&gt;
-        &lt;/section&gt;
-        &lt;div class=&quot;nl-mini&quot; id=&quot;nl-mini&quot;&gt;
-          &lt;span class=&quot;nl-mini-brand&quot;&gt;&lt;svg width=&quot;18&quot; height=&quot;18&quot; viewBox=&quot;0 0 32 32&quot; fill=&quot;none&quot; aria-hidden=&quot;true&quot;&gt;
-    &lt;path fill=&quot;#fff&quot; d=&quot;M17.9922 18.3225H14.005L13.6746 17.9921V14.005L14.005 13.6746H17.9922L18.3226 14.005V17.9921L17.9922 18.3225Z&quot;/&gt;
-    &lt;g fill=&quot;#05BDBA&quot;&gt;
-      &lt;path d=&quot;M9.6958 24.3311H9.35705L7.6661 22.6401V22.3041L10.2511 19.7164L12.042 19.7191L12.2808 19.9552V21.7461L9.6958 24.3311Z&quot;/&gt;
-      &lt;path d=&quot;M7.6661 9.69576V9.35701L9.35705 7.66606H9.6958L12.2808 10.2511V12.0392L12.042 12.2808H10.2511L7.6661 9.69576Z&quot;/&gt;
-      &lt;path d=&quot;M10.0457 17.4369H0.205466L0 17.2314V14.7658L0.205466 14.5603H10.0457L10.2511 14.7658V17.2314L10.0457 17.4369Z&quot;/&gt;
-      &lt;path d=&quot;M31.7945 17.4369H21.9544L21.7489 17.2314V14.7658L21.9544 14.5603H31.7945L32 14.7658V17.2314L31.7945 17.4369Z&quot;/&gt;
-      &lt;path d=&quot;M14.5631 10.0456V2.66547L14.7686 2.46001H17.2343L17.4396 2.66547V10.0456L17.2343 10.2511H14.7686L14.5631 10.0456Z&quot;/&gt;
-      &lt;path d=&quot;M14.5631 29.3316V21.9515L14.7686 21.746H17.2343L17.4396 21.9515V29.3316L17.2343 29.5371H14.7686L14.5631 29.3316Z&quot;/&gt;
-    &lt;/g&gt;&lt;/svg&gt;&lt;span class=&quot;nl-mini-lock&quot;&gt;&lt;svg width=&quot;13&quot; height=&quot;13&quot; viewBox=&quot;0 0 16 16&quot; fill=&quot;currentColor&quot; fill-rule=&quot;evenodd&quot; aria-hidden=&quot;true&quot;&gt;&lt;path d=&quot;M8 1.5A3.5 3.5 0 0 0 4.5 5v2H4A1.5 1.5 0 0 0 2.5 8.5v4A1.5 1.5 0 0 0 4 14h8a1.5 1.5 0 0 0 1.5-1.5v-4A1.5 1.5 0 0 0 12 7h-.5V5A3.5 3.5 0 0 0 8 1.5zm2 5.5V5a2 2 0 1 0-4 0v2h4z&quot;/&gt;&lt;/svg&gt;&lt;/span&gt;&lt;/span&gt;
-          &lt;button type=&quot;button&quot; class=&quot;nl-icon-btn nl-tap nl-mini-open&quot; id=&quot;nl-mini-open&quot;
-                  aria-label=&quot;Show Netlify site tools&quot;&gt;&lt;svg width=&quot;14&quot; height=&quot;14&quot; viewBox=&quot;0 0 16 16&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;1.7&quot; stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; aria-hidden=&quot;true&quot;&gt;&lt;path d=&quot;M12 4.5 8.5 8 12 11.5M7.5 4.5 4 8 7.5 11.5&quot;/&gt;&lt;/svg&gt;&lt;/button&gt;
-          &lt;button type=&quot;button&quot; class=&quot;nl-icon-btn nl-tap nl-mini-hide&quot; id=&quot;nl-mini-hide&quot;
-                  aria-label=&quot;Hide Netlify tools on this site&quot;&gt;&lt;svg width=&quot;14&quot; height=&quot;14&quot; viewBox=&quot;0 0 16 16&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;1.9&quot; stroke-linecap=&quot;round&quot; aria-hidden=&quot;true&quot;&gt;&lt;path d=&quot;M4.5 4.5 11.5 11.5M11.5 4.5 4.5 11.5&quot;/&gt;&lt;/svg&gt;&lt;/button&gt;
-        &lt;/div&gt;
-        &lt;section class=&quot;nl-tip&quot; id=&quot;nl-tip&quot; aria-label=&quot;Project visibility&quot;&gt;
-          This project is private - only your team and people you invite can view it.
-          &lt;a href=&quot;https://docs.netlify.com/manage/security/secure-access-to-sites/project-visibility/&quot;
-             target=&quot;_blank&quot; rel=&quot;noopener&quot;&gt;Learn more &lt;span aria-hidden=&quot;true&quot;&gt;&amp;#8599;&lt;/span&gt;&lt;/a&gt;
-        &lt;/section&gt;
-        &lt;div class=&quot;nl-bar&quot; role=&quot;toolbar&quot; aria-label=&quot;Netlify site tools&quot;&gt;
-          &lt;span class=&quot;nl-logo&quot;&gt;&lt;svg width=&quot;20&quot; height=&quot;20&quot; viewBox=&quot;0 0 32 32&quot; fill=&quot;none&quot; aria-hidden=&quot;true&quot;&gt;
-    &lt;path fill=&quot;#fff&quot; d=&quot;M17.9922 18.3225H14.005L13.6746 17.9921V14.005L14.005 13.6746H17.9922L18.3226 14.005V17.9921L17.9922 18.3225Z&quot;/&gt;
-    &lt;g fill=&quot;#05BDBA&quot;&gt;
-      &lt;path d=&quot;M9.6958 24.3311H9.35705L7.6661 22.6401V22.3041L10.2511 19.7164L12.042 19.7191L12.2808 19.9552V21.7461L9.6958 24.3311Z&quot;/&gt;
-      &lt;path d=&quot;M7.6661 9.69576V9.35701L9.35705 7.66606H9.6958L12.2808 10.2511V12.0392L12.042 12.2808H10.2511L7.6661 9.69576Z&quot;/&gt;
-      &lt;path d=&quot;M10.0457 17.4369H0.205466L0 17.2314V14.7658L0.205466 14.5603H10.0457L10.2511 14.7658V17.2314L10.0457 17.4369Z&quot;/&gt;
-      &lt;path d=&quot;M31.7945 17.4369H21.9544L21.7489 17.2314V14.7658L21.9544 14.5603H31.7945L32 14.7658V17.2314L31.7945 17.4369Z&quot;/&gt;
-      &lt;path d=&quot;M14.5631 10.0456V2.66547L14.7686 2.46001H17.2343L17.4396 2.66547V10.0456L17.2343 10.2511H14.7686L14.5631 10.0456Z&quot;/&gt;
-      &lt;path d=&quot;M14.5631 29.3316V21.9515L14.7686 21.746H17.2343L17.4396 21.9515V29.3316L17.2343 29.5371H14.7686L14.5631 29.3316Z&quot;/&gt;
-    &lt;/g&gt;&lt;/svg&gt;&lt;/span&gt;
-          &lt;button type=&quot;button&quot; class=&quot;nl-status&quot; id=&quot;nl-status&quot;
-                  aria-expanded=&quot;false&quot; aria-controls=&quot;nl-tip&quot;&gt;&lt;svg width=&quot;13&quot; height=&quot;13&quot; viewBox=&quot;0 0 16 16&quot; fill=&quot;currentColor&quot; fill-rule=&quot;evenodd&quot; aria-hidden=&quot;true&quot;&gt;&lt;path d=&quot;M8 1.5A3.5 3.5 0 0 0 4.5 5v2H4A1.5 1.5 0 0 0 2.5 8.5v4A1.5 1.5 0 0 0 4 14h8a1.5 1.5 0 0 0 1.5-1.5v-4A1.5 1.5 0 0 0 12 7h-.5V5A3.5 3.5 0 0 0 8 1.5zm2 5.5V5a2 2 0 1 0-4 0v2h4z&quot;/&gt;&lt;/svg&gt;&lt;span class=&quot;nl-shrinks&quot;&gt;Private&lt;/span&gt;&lt;/button&gt;
-          &lt;span class=&quot;nl-sep&quot; aria-hidden=&quot;true&quot;&gt;&lt;/span&gt;
-          &lt;a class=&quot;nl-btn&quot; href=&quot;https://app.netlify.com/projects/6f7f2756-51b1-4117-b20d-c404f5a1ad24/overview?modal=share&amp;from_hud=private&amp;hud_action=share&quot; target=&quot;_blank&quot; rel=&quot;noopener&quot;&gt;&lt;svg width=&quot;15&quot; height=&quot;15&quot; viewBox=&quot;0 0 16 16&quot; fill=&quot;currentColor&quot; aria-hidden=&quot;true&quot;&gt;&lt;path fill-rule=&quot;evenodd&quot; clip-rule=&quot;evenodd&quot; d=&quot;M7.5636 8C6.94548 8.31953 6.24382 8.5 5.5 8.5C4.75618 8.5 4.05452 8.31953 3.4364 8H1.5L0.5 9V13L1.5 14H9.5L10.5 13V9L9.5 8H7.5636ZM8.87868 9.5H7.90075C7.16414 9.82186 6.35125 10 5.5 10C4.64875 10 3.83586 9.82186 3.09925 9.5H2.12132L2 9.62132V12.3787L2.12132 12.5H8.87868L9 12.3787V9.62132L8.87868 9.5Z&quot;/&gt;&lt;path d=&quot;M13.9999 10.1213V11.8463L12.2043 11.8481L12.0039 12.0357V13.1606L12.2043 13.3481H13.7955L13.7975 13.3463H14.7024L15.4999 12.5V9.5L14.5001 8.5001L12.2043 8.49976L12.0039 8.68726V9.81225L12.2043 9.99976L13.8786 10L13.9999 10.1213Z&quot;/&gt;&lt;path fill-rule=&quot;evenodd&quot; clip-rule=&quot;evenodd&quot; d=&quot;M5.5 7C6.88071 7 8 5.88071 8 4.5C8 3.11929 6.88071 2 5.5 2C4.11929 2 3 3.11929 3 4.5C3 5.88071 4.11929 7 5.5 7ZM5.5 5.5C6.05228 5.5 6.5 5.05228 6.5 4.5C6.5 3.94772 6.05228 3.5 5.5 3.5C4.94772 3.5 4.5 3.94772 4.5 4.5C4.5 5.05228 4.94772 5.5 5.5 5.5Z&quot;/&gt;&lt;path fill-rule=&quot;evenodd&quot; clip-rule=&quot;evenodd&quot; d=&quot;M13.7 5.1C13.7 6.25937 12.7594 7.2 11.6 7.2C10.4406 7.2 9.5 6.25937 9.5 5.1C9.5 3.94062 10.4406 3 11.6 3C12.7594 3 13.7 3.94062 13.7 5.1ZM11.6 5.7C11.9309 5.7 12.2 5.43095 12.2 5.1C12.2 4.76905 11.9309 4.5 11.6 4.5C11.2691 4.5 11 4.76905 11 5.1C11 5.43095 11.2691 5.7 11.6 5.7Z&quot;/&gt;&lt;/svg&gt;
-            &lt;span class=&quot;nl-shrinks&quot;&gt;Share&lt;/span&gt;&lt;/a&gt;
-          &lt;button type=&quot;button&quot; class=&quot;nl-btn&quot; id=&quot;nl-tools&quot; aria-expanded=&quot;false&quot; aria-controls=&quot;nl-pop&quot;&gt;&lt;svg width=&quot;15&quot; height=&quot;15&quot; viewBox=&quot;0 0 16 16&quot; fill=&quot;currentColor&quot; aria-hidden=&quot;true&quot;&gt;&lt;path fill-rule=&quot;evenodd&quot; clip-rule=&quot;evenodd&quot; d=&quot;M7.98407 9.625L8.58935 11.0952C8.62792 11.1889 8.71922 11.25 8.82053 11.25H9.77587C9.88268 11.25 9.95527 11.1415 9.91454 11.0428L7.3828 4.90468C7.3442 4.81107 7.25294 4.75 7.15169 4.75H6.34295C6.24163 4.75 6.15033 4.81115 6.11177 4.90484L3.58524 11.0429C3.54461 11.1416 3.61719 11.25 3.72395 11.25H4.67399C4.7753 11.25 4.86659 11.1889 4.90516 11.0952L5.51045 9.625H7.98407ZM7.46943 8.375L6.74726 6.62092L6.02508 8.375H7.46943Z&quot;/&gt;&lt;path d=&quot;M10.75 11.25C10.6119 11.25 10.5 11.1381 10.5 11V5C10.5 4.86193 10.6119 4.75 10.75 4.75H11.5C11.6381 4.75 11.75 4.86193 11.75 5V11C11.75 11.1381 11.6381 11.25 11.5 11.25H10.75Z&quot;/&gt;&lt;path fill-rule=&quot;evenodd&quot; clip-rule=&quot;evenodd&quot; d=&quot;M0 5.5C0 2.73858 2.23858 0.5 5 0.5H11C13.7614 0.5 16 2.73858 16 5.5V10.5C16 13.2614 13.7614 15.5 11 15.5H5C2.23858 15.5 0 13.2614 0 10.5V5.5ZM5 1.75H11C13.0711 1.75 14.75 3.42893 14.75 5.5V10.5C14.75 12.5711 13.0711 14.25 11 14.25H5C2.92893 14.25 1.25 12.5711 1.25 10.5V5.5C1.25 3.42893 2.92893 1.75 5 1.75Z&quot;/&gt;&lt;/svg&gt;
-            &lt;span class=&quot;nl-shrinks&quot;&gt;Pre-launch tools&lt;/span&gt;&lt;/button&gt;
-          &lt;a class=&quot;nl-publish&quot; href=&quot;https://app.netlify.com/projects/6f7f2756-51b1-4117-b20d-c404f5a1ad24/overview?modal=go-live&amp;from_hud=private&amp;hud_action=make_public&quot; target=&quot;_blank&quot; rel=&quot;noopener&quot;&gt;&lt;svg width=&quot;15&quot; height=&quot;15&quot; viewBox=&quot;0 0 16 16&quot; fill=&quot;currentColor&quot; aria-hidden=&quot;true&quot;&gt;&lt;path d=&quot;M11.072 6C10.8557 5.99995 10.6443 5.93576 10.4644 5.81554C10.2846 5.69533 10.1444 5.52449 10.0617 5.32463C9.97895 5.12477 9.95733 4.90486 9.99956 4.69271C10.0418 4.48056 10.146 4.2857 10.299 4.13276C10.4519 3.97982 10.6468 3.87568 10.859 3.8335C11.0711 3.79132 11.291 3.81299 11.4909 3.89578C11.6907 3.97857 11.8615 4.11876 11.9817 4.29862C12.1019 4.47848 12.166 4.68994 12.166 4.90625C12.1658 5.19633 12.0505 5.47447 11.8454 5.67956C11.6402 5.88464 11.3621 5.9999 11.072 6Z&quot;/&gt;&lt;path fill-rule=&quot;evenodd&quot; clip-rule=&quot;evenodd&quot; d=&quot;M3.59279 4.5H6.77473L8.48034 2.74577L10.1619 1L14.4308 1.00686L15 1.59031V6.01763L11.5291 9.61732L11.78 12.4852L11.1608 13.7165L8.58695 15.2986L7.59043 14.7959L7.31674 11.6676L4.624 8.875H1.65598L1.06836 7.92609L2.42011 5.22418L3.59279 4.5ZM8.7673 11.037L8.96573 13.305L10.0122 12.6618L10.2486 12.1917L10.1476 11.037L8.7673 11.037ZM8.43037 10.6616L12.036 6.93056L13.5 5.41225V2.50537L10.7987 2.50103L10.0283 3.30089L5.69627 7.82603L8.43037 10.6616ZM5.27424 7.38834L5.35943 6H4.01862L3.57089 6.27649L3.02131 7.375H5.26138L5.27424 7.38834Z&quot;/&gt;&lt;path d=&quot;M2.05008 10.9935L3.79156 9.6874L4.81429 10.7954L3.17932 12.0216L2.95615 13.1374L4.07201 12.9143L5.28155 11.3016L6.31603 12.4222L5.10008 14.0435L4.64717 14.3289L2.14717 14.8289L1.26465 13.9464L1.76465 11.4464L2.05008 10.9935Z&quot;/&gt;&lt;/svg&gt; Make public&lt;/a&gt;
-          &lt;button type=&quot;button&quot; class=&quot;nl-icon-btn nl-tap nl-min&quot; id=&quot;nl-min&quot;
-                  aria-label=&quot;Minimize Netlify tools&quot;&gt;&lt;svg width=&quot;14&quot; height=&quot;14&quot; viewBox=&quot;0 0 16 16&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;1.7&quot; stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; aria-hidden=&quot;true&quot;&gt;&lt;path d=&quot;M4 4.5 7.5 8 4 11.5M8.5 4.5 12 8 8.5 11.5&quot;/&gt;&lt;/svg&gt;&lt;/button&gt;
-        &lt;/div&gt;
-      &lt;/div&gt;
-      &lt;script&gt;
-        
-    function nlSend(){
-      var wrap=document.querySelector('.nl-wrap'),boxes=[];
-      for(var i=0;i&lt;wrap.children.length;i++){
-        var c=wrap.children[i];
-        if(!c.offsetWidth||!c.offsetHeight)continue;
-        boxes.push({x:c.offsetLeft-wrap.offsetLeft+8,
-                    y:c.offsetTop-wrap.offsetTop+8,
-                    w:c.offsetWidth,h:c.offsetHeight});
-      }
-      parent.postMessage({nlHud:'resize',
-        width:wrap.offsetWidth+26,
-        height:wrap.offsetHeight+26,
-        boxes:boxes},'*');
-    }
-    function nlSendSoon(){requestAnimationFrame(nlSend);}
-    window.addEventListener('load',nlSend);
-    window.addEventListener('message',function(e){
-      if(e.source!==parent||!e.data||e.data.nlHud!=='viewport')return;
-      var s=document.documentElement.style;
-      s.setProperty('--nl-vw',e.data.w+'px');
-      s.setProperty('--nl-vh',e.data.h+'px');
-      document.documentElement.classList.toggle('nl-narrow',e.data.w&lt;600);
-      nlSendSoon();
-    });
-    var nlCoarse=window.matchMedia('(pointer: coarse)').matches;
-    function nlSubmit(form){
-      if(form.requestSubmit)return form.requestSubmit();
-      if(form.checkValidity&amp;&amp;!form.checkValidity())
-        return form.reportValidity&amp;&amp;form.reportValidity();
-      form.submit();
-    }
-  
-        var btn=document.getElementById('nl-tools'),pop=document.getElementById('nl-pop');
-        function setOpen(open){
-          pop.classList.toggle('open',open);
-          btn.setAttribute('aria-expanded',open?'true':'false');
-          nlSendSoon();
-        }
-        btn.addEventListener('click',function(){setOpen(!pop.classList.contains('open'));});
-        document.getElementById('nl-pop-close').addEventListener('click',function(){setOpen(false);btn.focus();});
-
-        var statusBtn=document.getElementById('nl-status'),tip=document.getElementById('nl-tip'),tipTimer=null;
-        function setTip(open){
-          tip.classList.toggle('open',open);
-          statusBtn.setAttribute('aria-expanded',open?'true':'false');
-          nlSendSoon();
-        }
-        function openTip(){clearTimeout(tipTimer);setTip(true);}
-        function closeTipSoon(){clearTimeout(tipTimer);tipTimer=setTimeout(function(){setTip(false);},200);}
-        if(!nlCoarse){
-          statusBtn.addEventListener('mouseenter',openTip);
-          statusBtn.addEventListener('mouseleave',closeTipSoon);
-          tip.addEventListener('mouseenter',openTip);
-          tip.addEventListener('mouseleave',closeTipSoon);
-        }
-        statusBtn.addEventListener('focus',function(){
-          var keyboard;
-          try{keyboard=statusBtn.matches(':focus-visible');}catch(e){keyboard=!nlCoarse;}
-          if(keyboard)openTip();
-        });
-        statusBtn.addEventListener('blur',closeTipSoon);
-        statusBtn.addEventListener('click',function(){
-          clearTimeout(tipTimer);
-          setTip(nlCoarse ? !tip.classList.contains('open') : true);
-        });
-
-        var root=document.documentElement;
-        function setStage(value){
-          root.classList.toggle('nl-mini-state',value==='mini');
-          if(value==='mini'){setOpen(false);setTip(false);}
-          parent.postMessage({nlHud:'state',value:value},'*');
-          nlSendSoon();
-        }
-        document.getElementById('nl-min').addEventListener('click',function(){
-          setStage('mini');
-          document.getElementById('nl-mini-open').focus();
-        });
-        document.getElementById('nl-mini').addEventListener('click',function(e){
-          if(e.target.closest('#nl-mini-hide'))return;
-          setStage('');
-          document.getElementById('nl-min').focus();
-        });
-        document.getElementById('nl-mini-hide').addEventListener('click',function(){
-          parent.postMessage({nlHud:'state',value:'hidden'},'*');
-        });
-        document.addEventListener('keydown',function(e){
-          if(e.key!=='Escape')return;
-          if(tip.classList.contains('open')){setTip(false);statusBtn.focus();return;}
-          if(pop.classList.contains('open')){setOpen(false);btn.focus();}
-        });
-      &lt;/script&gt;
-    &lt;/body&gt;&lt;/html&gt;" style="position: fixed; bottom: 0px; right: 0px; border: 0px; margin: 0px; padding: 0px; background: transparent; color-scheme: dark; z-index: 2147483645; width: 573px; height: 78px; clip-path: path(&quot;M 3 3 H 560 V 65 H 3 Z&quot;);" data-nl-ready="1"></iframe></body></html>
+          // The page background usually changes through an attribute on html
+          // or body (for example a theme class), a style sheet in head, or the
+          // system color scheme.
+          if (typeof MutationObserver !== 'undefined') {
+            var observer = new MutationObserver(reportBackgroundColor);
+            observer.observe(document.documentElement, {attributes: true});
+            if (document.body) {
+              observer.observe(document.body, {attributes: true});
+            }
+            if (document.head) {
+              observer.observe(document.head, {
+                attributes: true,
+                childList: true,
+                subtree: true,
+                characterData: true
+              });
+            }
+          }
+          var colorSchemeQuery =
+              window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)');
+          if (colorSchemeQuery && colorSchemeQuery.addEventListener) {
+            colorSchemeQuery.addEventListener('change', reportBackgroundColor);
+          }
+          window.addEventListener('load', reportBackgroundColor);
+          window.addEventListener('transitionend', reportBackgroundColor);
+          window.addEventListener('animationend', reportBackgroundColor);
+          reportBackgroundColor();
+        })();
+      </script>
+    </body></html>
