@@ -714,7 +714,7 @@
   <!-- =====================================================================
        2. ACCUEIL PRINCIPAL : CARROUSEL DIAGONAL INFINI & FLÈCHES LATÉRALES
        ===================================================================== -->
-  <main id="carousel-viewport" aria-label="Catégories du portfolio">
+  <main id="carousel-viewport" aria-label="Catégories du portfolio" class="">
     <div id="carousel-track" style="transform: translate3d(-3756px, 0px, 0px);" class=""></div>
 
     <button type="button" class="carousel-arrow-btn arrow-left" aria-label="Catégorie précédente" onclick="nudgeCarousel(-1)">
@@ -734,11 +734,11 @@
        3. PAGE DE DESTINATION CATÉGORIE (PAGES PLEIN ÉCRAN ALTERNÉES TAUPE/NOIR
           + HEADER FIXE À INVERSION BICOLORE DYNAMIQUE)
        ===================================================================== -->
-  <section id="category-page" aria-hidden="true">
+  <section id="category-page" aria-hidden="false" class="">
     <!-- Définitions SVG invisibles qui découpent les 2 versions du header fixe au pixel près -->
     <svg width="0" height="0" style="position:fixed; pointer-events:none;" aria-hidden="true">
       <defs>
-        <clipPath id="clip-taupe-header" clipPathUnits="userSpaceOnUse"></clipPath>
+        <clipPath id="clip-taupe-header" clipPathUnits="userSpaceOnUse"><rect x="0" y="0.00" width="1878" height="132.00"></rect></clipPath>
         <clipPath id="clip-noir-header" clipPathUnits="userSpaceOnUse"></clipPath>
       </defs>
     </svg>
@@ -754,7 +754,7 @@
 
       <div class="flex items-center gap-4">
         <span class="text-xs uppercase tracking-widest font-semibold text-[#151515]/60">Catégorie</span>
-        <span class="cat-header-title font-dela text-2xl md:text-4xl text-[#151515]">Docu</span>
+        <span class="cat-header-title font-dela text-2xl md:text-4xl text-[#151515]">Event</span>
       </div>
     </header>
 
@@ -769,7 +769,7 @@
 
       <div class="flex items-center gap-4">
         <span class="text-xs uppercase tracking-widest font-semibold text-[#b6ab9d]/60">Catégorie</span>
-        <span class="cat-header-title font-dela text-2xl md:text-4xl text-[#b6ab9d]">Docu</span>
+        <span class="cat-header-title font-dela text-2xl md:text-4xl text-[#b6ab9d]">Event</span>
       </div>
     </header>
 
@@ -778,14 +778,12 @@
       <div id="category-pages-list"></div>
 
       <!-- Bouton "+" en bas pour ajouter une nouvelle page (uniquement visible en Mode Éditeur) -->
-      <div id="category-editor-footer" class="w-full py-16 px-6 flex-col items-center justify-center gap-3 border-t border-current/15 transition-colors">
+      <div id="category-editor-footer" class="w-full py-16 px-6 flex-col items-center justify-center gap-3 border-t border-current/15 transition-colors" data-bg-theme="taupe" style="background-color: rgb(182, 171, 157); color: rgb(21, 21, 21);">
         <button type="button" onclick="openAddPageTemplateModal()" class="group flex items-center gap-3 px-7 py-4 rounded-full bg-[#b6ab9d] text-[#151515] border-2 border-[#151515] font-dela text-base shadow-2xl hover:scale-105 active:scale-95 transition-all">
           <span class="w-8 h-8 rounded-full bg-[#151515] text-[#b6ab9d] flex items-center justify-center text-xl font-bold leading-none group-hover:rotate-90 transition-transform">+</span>
           <span>Ajouter une page</span>
         </button>
-        <span id="next-page-color-hint" class="text-xs font-medium opacity-75">
-          La prochaine page sera ajoutée en fond Taupe (#b6ab9d)
-        </span>
+        <span id="next-page-color-hint" class="text-xs font-medium opacity-75">Prochaine page vierge en fond Taupe (#b6ab9d) (ou Noir automatique pour une Vidéo Plein Écran)</span>
       </div>
     </div>
   </section>
@@ -800,7 +798,7 @@
     </div>
 
     <!-- Contrôles spécifiques à l'accueil (masqués quand on est dans une sous-page catégorie) -->
-    <div id="editor-home-controls" class="flex items-center flex-wrap gap-2 md:gap-3">
+    <div id="editor-home-controls" class="items-center flex-wrap gap-2 md:gap-3 hidden">
       <div class="flex items-center gap-1.5 bg-[#222222] px-2.5 py-1 rounded-xl border border-[#b6ab9d]/15">
         <span class="text-[11px] opacity-75">Effet survol :</span>
         <select id="hover-mode-select" class="bg-transparent text-xs font-semibold text-[#b6ab9d] focus:outline-none cursor-pointer" onchange="changeHoverMode(this.value)">
@@ -823,7 +821,7 @@
     </div>
 
     <!-- Contrôles spécifiques aux sous-pages catégories (Scroll Libre vs Scroll Aimanté) -->
-    <div id="editor-category-controls" class="hidden items-center flex-wrap gap-2 md:gap-3">
+    <div id="editor-category-controls" class="items-center flex-wrap gap-2 md:gap-3 flex">
       <div class="flex items-center gap-1.5 bg-[#222222] px-2.5 py-1 rounded-xl border border-[#b6ab9d]/15">
         <span class="text-[11px] opacity-75">Navigation :</span>
         <select id="category-scroll-mode-select" class="bg-transparent text-xs font-semibold text-[#b6ab9d] focus:outline-none cursor-pointer" onchange="changeCategoryScrollMode(this.value)">
@@ -1037,7 +1035,7 @@
   </div>
 
   <!-- Modale "+" pour configurer un Cadre Vidéo du Modèle 2 (Fichier/URL + Recadrage interne X/Y + Formats) -->
-  <div id="modal-m2-frame-video" class="fixed inset-0 z-[85] hidden items-center justify-center bg-black/75 backdrop-blur-sm p-4">
+  <div id="modal-m2-frame-video" class="fixed inset-0 z-[85] items-center justify-center bg-black/75 backdrop-blur-sm p-4 hidden">
     <div class="w-full max-w-lg rounded-2xl bg-[#151515] border border-[#b6ab9d]/40 p-6 text-[#b6ab9d] shadow-2xl space-y-5">
       <div class="flex items-center justify-between">
         <div>
@@ -1244,10 +1242,10 @@
       </div>
 
       <!-- Résumé rapide quand c'est déjà configuré -->
-      <div id="gh-configured-banner" class="hidden items-center justify-between gap-3 p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-xs">
+      <div id="gh-configured-banner" class="items-center justify-between gap-3 p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-xs flex">
         <div>
           <span class="text-emerald-400 font-bold">✓ Connecté au dépôt :</span>
-          <span id="gh-connected-repo-label" class="font-mono ml-1 text-[#b6ab9d]"></span>
+          <span id="gh-connected-repo-label" class="font-mono ml-1 text-[#b6ab9d]">colveur132/colveur (main)</span>
         </div>
         <button type="button" onclick="toggleGitHubConfigForm(true)" class="px-2.5 py-1 rounded-lg bg-[#252525] hover:bg-[#333] text-[11px] font-semibold">
           ⚙️ Modifier config
@@ -1255,7 +1253,7 @@
       </div>
 
       <!-- Formulaire de configuration GitHub (à remplir une seule fois) -->
-      <div id="gh-config-form-wrap" class="space-y-3.5 bg-[#1e1e1e] p-4 rounded-xl border border-[#b6ab9d]/20">
+      <div id="gh-config-form-wrap" class="space-y-3.5 bg-[#1e1e1e] p-4 rounded-xl border border-[#b6ab9d]/20 hidden">
         <div class="text-xs text-[#b6ab9d]/85 leading-relaxed space-y-1">
           <p class="font-bold text-[#b6ab9d]">Configuration unique (enregistrée sur ton navigateur uniquement) :</p>
           <p class="text-[11px] opacity-80">
@@ -1574,7 +1572,7 @@
             "w": 39.8,
             "h": 41.5,
             "borderRadius": 42,
-            "videoUrl": "",
+            "videoUrl": "https://www.youtube.com/watch?v=qfn4HOqPWBA",
             "posX": 50,
             "posY": 50
           },
