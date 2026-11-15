@@ -1102,7 +1102,19 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      transform: translateZ(0);
+      -webkit-mask-image: -webkit-radial-gradient(white, black);
       transition: background-color 0.3s ease;
+    }
+
+    /* Anneau de contour interne qui suit parfaitement les angles arrondis */
+    .m2-video-frame::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      pointer-events: none;
+      z-index: 16;
     }
 
     .cat-page-section.theme-taupe .m2-video-frame {
@@ -1110,9 +1122,77 @@
       color: #b6ab9d;
     }
 
+    .cat-page-section.theme-taupe .m2-video-frame::after {
+      box-shadow: inset 0 0 0 2.5px #151515;
+    }
+
     .cat-page-section.theme-noir .m2-video-frame {
       background-color: #b6ab9d;
       color: #151515;
+    }
+
+    .cat-page-section.theme-noir .m2-video-frame::after {
+      box-shadow: inset 0 0 0 2.5px #b6ab9d;
+    }
+
+    /* En plein écran, supprimer l'arrondi et le contour pour occuper 100% de l'écran */
+    .m2-video-frame:fullscreen,
+    .m2-video-frame:-webkit-full-screen {
+      border-radius: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+    }
+
+    .m2-video-frame:fullscreen::after,
+    .m2-video-frame:-webkit-full-screen::after {
+      display: none;
+    }
+
+    /* Menu déroulant de la roue crantée (Qualité vidéo) */
+    .m2-quality-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .m2-quality-menu {
+      position: absolute;
+      bottom: calc(100% + 10px);
+      right: 0;
+      background: rgba(21, 21, 21, 0.96);
+      border: 1px solid rgba(182, 171, 157, 0.35);
+      border-radius: 12px;
+      padding: 5px;
+      display: none;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 96px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.55);
+      z-index: 35;
+    }
+
+    .m2-quality-menu.is-open {
+      display: flex;
+    }
+
+    .m2-quality-opt {
+      text-align: left;
+      padding: 5px 9px;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #b6ab9d;
+      transition: background 0.15s ease;
+    }
+
+    .m2-quality-opt:hover {
+      background: rgba(182, 171, 157, 0.18);
+    }
+
+    .m2-quality-opt.is-active {
+      background: #b6ab9d;
+      color: #151515;
+      font-weight: 700;
     }
 
     .m2-video-el {
@@ -1370,7 +1450,7 @@
 
       <div class="flex items-center gap-4">
         <span class="text-xs uppercase tracking-widest font-semibold text-[#151515]/60">Catégorie</span>
-        <span class="cat-header-title font-dela text-2xl md:text-4xl text-[#151515]">Event</span>
+        <span class="cat-header-title font-dela text-2xl md:text-4xl text-[#151515]">Docu</span>
       </div>
     </header>
 
@@ -1385,7 +1465,7 @@
 
       <div class="flex items-center gap-4">
         <span class="text-xs uppercase tracking-widest font-semibold text-[#b6ab9d]/60">Catégorie</span>
-        <span class="cat-header-title font-dela text-2xl md:text-4xl text-[#b6ab9d]">Event</span>
+        <span class="cat-header-title font-dela text-2xl md:text-4xl text-[#b6ab9d]">Docu</span>
       </div>
     </header>
 
@@ -1651,7 +1731,7 @@
   </div>
 
   <!-- Modale "+" pour configurer un Cadre Vidéo du Modèle 2 (Fichier/URL + Recadrage interne X/Y + Formats) -->
-  <div id="modal-m2-frame-video" class="fixed inset-0 z-[85] items-center justify-center bg-black/75 backdrop-blur-sm p-4 hidden">
+  <div id="modal-m2-frame-video" class="fixed inset-0 z-[85] hidden items-center justify-center bg-black/75 backdrop-blur-sm p-4">
     <div class="w-full max-w-lg rounded-2xl bg-[#151515] border border-[#b6ab9d]/40 p-6 text-[#b6ab9d] shadow-2xl space-y-5">
       <div class="flex items-center justify-between">
         <div>
@@ -1807,7 +1887,7 @@
   </div>
 
   <!-- Modale d'Exportation du Code Final (pour Netlify / Google Sites) -->
-  <div id="modal-export-code" class="fixed inset-0 z-[90] items-center justify-center bg-black/80 backdrop-blur-sm p-4 hidden">
+  <div id="modal-export-code" class="fixed inset-0 z-[90] hidden items-center justify-center bg-black/80 backdrop-blur-sm p-4">
     <div class="w-full max-w-2xl rounded-2xl bg-[#151515] border border-[#b6ab9d]/40 p-6 text-[#b6ab9d] shadow-2xl space-y-4">
       <div class="flex items-center justify-between">
         <div>
@@ -1838,7 +1918,9 @@
         </div>
 
         <div class="flex items-center gap-2 ml-auto">
-          <button type="button" id="btn-copy-exported-code" onclick="copyExportedHtmlCode()" class="px-4 py-2.5 rounded-xl bg-[#b6ab9d] text-[#151515] font-bold text-xs hover:brightness-110 transition-all">📋 Copier le code</button>
+          <button type="button" id="btn-copy-exported-code" onclick="copyExportedHtmlCode()" class="px-4 py-2.5 rounded-xl bg-[#b6ab9d] text-[#151515] font-bold text-xs hover:brightness-110 transition-all">
+            📋 Copier le code
+          </button>
         </div>
       </div>
     </div>
@@ -2088,7 +2170,7 @@
     "posX": 50,
     "pages": [
       {
-        "id": "page-wq28bp6",
+        "id": "page-d3b8l2y",
         "template": "media-text",
         "title": "Modèle 2 : Cadre Vidéo & Texte",
         "bgTheme": "taupe",
@@ -2098,7 +2180,7 @@
         "videoMuted": false,
         "blocks": [
           {
-            "id": "blk-vid-5gvl6h",
+            "id": "blk-vid-095wga",
             "type": "video",
             "x": 6.2,
             "y": 33.5,
@@ -2110,7 +2192,7 @@
             "posY": 50
           },
           {
-            "id": "blk-txt-2i6lgr",
+            "id": "blk-txt-wam93x",
             "type": "text",
             "x": 59.5,
             "y": 44.5,
@@ -2127,7 +2209,7 @@
         ]
       },
       {
-        "id": "page-hbijf70",
+        "id": "page-d1u3lrw",
         "template": "blank",
         "title": "Page vierge (Fond uni)",
         "bgTheme": "noir",
@@ -2137,7 +2219,7 @@
         "videoMuted": false,
         "blocks": [
           {
-            "id": "blk-vid-25rm0y",
+            "id": "blk-vid-3rjpci",
             "type": "video",
             "x": 6.2,
             "y": 33.5,
@@ -2149,7 +2231,7 @@
             "posY": 50
           },
           {
-            "id": "blk-txt-t4v00j",
+            "id": "blk-txt-iripp2",
             "type": "text",
             "x": 59.5,
             "y": 44.5,
@@ -2175,7 +2257,7 @@
     "posX": 50,
     "pages": [
       {
-        "id": "page-cmirz7c",
+        "id": "page-qcs3ifi",
         "template": "media-text",
         "title": "Modèle 2 : Cadre Vidéo & Texte",
         "bgTheme": "taupe",
@@ -2185,19 +2267,19 @@
         "videoMuted": false,
         "blocks": [
           {
-            "id": "blk-vid-de4qxx",
+            "id": "blk-vid-quggjq",
             "type": "video",
             "x": 6.2,
             "y": 33.5,
             "w": 40,
             "h": 40,
             "borderRadius": 42,
-            "videoUrl": "https://www.youtube.com/watch?v=qfn4HOqPWBA",
+            "videoUrl": "",
             "posX": 50,
             "posY": 50
           },
           {
-            "id": "blk-txt-ttrk26",
+            "id": "blk-txt-80gvcw",
             "type": "text",
             "x": 59.5,
             "y": 44.5,
@@ -2214,7 +2296,7 @@
         ]
       },
       {
-        "id": "page-wqlzbpx",
+        "id": "page-0qz400e",
         "template": "blank",
         "title": "Page vierge (Fond uni)",
         "bgTheme": "noir",
@@ -2224,7 +2306,7 @@
         "videoMuted": false,
         "blocks": [
           {
-            "id": "blk-vid-1sgppm",
+            "id": "blk-vid-06hnok",
             "type": "video",
             "x": 6.2,
             "y": 33.5,
@@ -2236,7 +2318,7 @@
             "posY": 50
           },
           {
-            "id": "blk-txt-mg9376",
+            "id": "blk-txt-0001z4",
             "type": "text",
             "x": 59.5,
             "y": 44.5,
@@ -2262,7 +2344,7 @@
     "posX": 50,
     "pages": [
       {
-        "id": "page-j4bgdvy",
+        "id": "page-bq4ppja",
         "template": "media-text",
         "title": "Modèle 2 : Cadre Vidéo & Texte",
         "bgTheme": "taupe",
@@ -2272,7 +2354,7 @@
         "videoMuted": false,
         "blocks": [
           {
-            "id": "blk-vid-iantm4",
+            "id": "blk-vid-3vqsrp",
             "type": "video",
             "x": 6.2,
             "y": 33.5,
@@ -2284,7 +2366,7 @@
             "posY": 50
           },
           {
-            "id": "blk-txt-6oo1jp",
+            "id": "blk-txt-zkyd2w",
             "type": "text",
             "x": 59.5,
             "y": 44.5,
@@ -2301,7 +2383,7 @@
         ]
       },
       {
-        "id": "page-80t2h2a",
+        "id": "page-rmy5f79",
         "template": "blank",
         "title": "Page vierge (Fond uni)",
         "bgTheme": "noir",
@@ -2311,7 +2393,7 @@
         "videoMuted": false,
         "blocks": [
           {
-            "id": "blk-vid-i0wybu",
+            "id": "blk-vid-gvprgq",
             "type": "video",
             "x": 6.2,
             "y": 33.5,
@@ -2323,7 +2405,7 @@
             "posY": 50
           },
           {
-            "id": "blk-txt-pksyae",
+            "id": "blk-txt-zi3i81",
             "type": "text",
             "x": 59.5,
             "y": 44.5,
@@ -3525,11 +3607,29 @@
 
                             <span class="m2-time-readout text-[10px] font-mono opacity-80 shrink-0">0:00</span>
 
+                            <div class="m2-quality-wrap">
+                              <button
+                                type="button"
+                                class="m2-btn-gear text-xs font-bold px-1.5 py-0.5 rounded hover:bg-white/10 flex items-center gap-1"
+                                onclick="toggleM2QualityMenu(event, this)"
+                                title="Qualité vidéo"
+                              >
+                                <span>⚙️</span>
+                                <span class="m2-quality-badge text-[9px] font-mono uppercase">HD</span>
+                              </button>
+                              <div class="m2-quality-menu">
+                                <button type="button" class="m2-quality-opt" onclick="setM2YouTubeQuality(this, 'hd2160', '4K')">4K (2160p)</button>
+                                <button type="button" class="m2-quality-opt is-active" onclick="setM2YouTubeQuality(this, 'hd1080', '1080p')">1080p HD</button>
+                                <button type="button" class="m2-quality-opt" onclick="setM2YouTubeQuality(this, 'hd720', '720p')">720p</button>
+                                <button type="button" class="m2-quality-opt" onclick="setM2YouTubeQuality(this, 'default', 'Auto')">Auto</button>
+                              </div>
+                            </div>
+
                             <button
                               type="button"
-                              class="text-xs font-bold px-1.5 py-0.5 rounded hover:bg-white/10"
+                              class="m2-btn-fullscreen text-xs font-bold px-1.5 py-0.5 rounded hover:bg-white/10"
                               onclick="requestM2FrameFullscreen(this)"
-                              title="Plein écran"
+                              title="Plein écran / Quitter plein écran"
                             >⛶</button>
                           </div>
                         ` : `
@@ -3578,9 +3678,9 @@
 
                             <button
                               type="button"
-                              class="text-xs font-bold px-1.5 py-0.5 rounded hover:bg-white/10"
+                              class="m2-btn-fullscreen text-xs font-bold px-1.5 py-0.5 rounded hover:bg-white/10"
                               onclick="requestM2VideoFullscreen(this)"
-                              title="Plein écran"
+                              title="Plein écran / Quitter plein écran"
                             >⛶</button>
                           </div>
                         `) : ''}
@@ -4765,10 +4865,15 @@
 
     function requestM2VideoFullscreen(btnEl) {
       const frame = btnEl.closest('.m2-video-frame');
-      const videoEl = frame ? frame.querySelector('.m2-video-el') : null;
-      if (!videoEl) return;
-      if (videoEl.requestFullscreen) videoEl.requestFullscreen();
-      else if (videoEl.webkitRequestFullscreen) videoEl.webkitRequestFullscreen();
+      if (!frame) return;
+      const fsEl = document.fullscreenElement || document.webkitFullscreenElement;
+      if (fsEl) {
+        if (document.exitFullscreen) document.exitFullscreen();
+        else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+      } else {
+        if (frame.requestFullscreen) frame.requestFullscreen();
+        else if (frame.webkitRequestFullscreen) frame.webkitRequestFullscreen();
+      }
     }
 
     function syncM2PlayerUI(videoEl) {
@@ -4845,9 +4950,58 @@
     function requestM2FrameFullscreen(btnEl) {
       const frame = btnEl.closest('.m2-video-frame');
       if (!frame) return;
-      if (frame.requestFullscreen) frame.requestFullscreen();
-      else if (frame.webkitRequestFullscreen) frame.webkitRequestFullscreen();
+      const fsEl = document.fullscreenElement || document.webkitFullscreenElement;
+      if (fsEl) {
+        if (document.exitFullscreen) document.exitFullscreen();
+        else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+      } else {
+        if (frame.requestFullscreen) frame.requestFullscreen();
+        else if (frame.webkitRequestFullscreen) frame.webkitRequestFullscreen();
+      }
     }
+
+    document.addEventListener('fullscreenchange', () => {
+      const isFs = Boolean(document.fullscreenElement || document.webkitFullscreenElement);
+      document.querySelectorAll('.m2-btn-fullscreen').forEach(btn => {
+        btn.textContent = isFs ? '🗗' : '⛶';
+      });
+    });
+
+    function toggleM2QualityMenu(e, btnEl) {
+      e.stopPropagation();
+      const wrap = btnEl.closest('.m2-quality-wrap');
+      const menu = wrap ? wrap.querySelector('.m2-quality-menu') : null;
+      if (!menu) return;
+      const wasOpen = menu.classList.contains('is-open');
+      document.querySelectorAll('.m2-quality-menu.is-open').forEach(m => m.classList.remove('is-open'));
+      if (!wasOpen) menu.classList.add('is-open');
+    }
+
+    function setM2YouTubeQuality(optBtn, qualityCode, labelText) {
+      const frame = optBtn.closest('.m2-video-frame');
+      const iframe = frame ? frame.querySelector('.m2-yt-iframe') : null;
+      const wrap = optBtn.closest('.m2-quality-wrap');
+      const menu = optBtn.closest('.m2-quality-menu');
+      const badge = wrap ? wrap.querySelector('.m2-quality-badge') : null;
+
+      if (menu) {
+        menu.querySelectorAll('.m2-quality-opt').forEach(b => b.classList.remove('is-active'));
+        optBtn.classList.add('is-active');
+        menu.classList.remove('is-open');
+      }
+      if (badge) badge.textContent = labelText;
+
+      if (iframe) {
+        sendYouTubeCommand(iframe, 'setPlaybackQualityRange', [qualityCode, qualityCode]);
+        sendYouTubeCommand(iframe, 'setPlaybackQuality', [qualityCode]);
+      }
+    }
+
+    window.addEventListener('pointerdown', (e) => {
+      if (!e.target.closest('.m2-quality-wrap')) {
+        document.querySelectorAll('.m2-quality-menu.is-open').forEach(m => m.classList.remove('is-open'));
+      }
+    });
 
     function syncM2YouTubeUI(frame, iframe) {
       if (!frame || !iframe) return;
@@ -4883,6 +5037,8 @@
             id: iframeEl.id || 'yt-player',
             channel: 'widget'
           }), '*');
+          sendYouTubeCommand(iframeEl, 'setPlaybackQualityRange', ['hd1080', 'hd2160']);
+          sendYouTubeCommand(iframeEl, 'setPlaybackQuality', ['hd1080']);
         } catch (e) {}
       };
       sendListening();
