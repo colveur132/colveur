@@ -1,608 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr" style="--col-base-width: 496.6666666666667px;"><head><base href="https://1262416271-atari-embeds.googleusercontent.com/embeds/6b07ff58ef6c9af0cc04f606a89001fe/inner-frame-minified.html?jsh=m%3B%2F_%2Fscs%2Fabc-static%2F_%2Fjs%2Fk%3Dgapi.lb.fr.NwStCmsbVJ4.O%2Fd%3D1%2Frs%3DAHpOoo_6HDxoiWLkgSC_FQfcFOPTefeGBg%2Fm%3D__features__" target="_blank">
-      <script>
-        (function() {
-          if (window.__atariInitRender) {
-            window.__atariInitRender(false);
-            return;
-          }
-          var isLiquid = false;
-          var guardsInstalled = false;
-          var LOCAL_DOWNLOAD_URL_RE = /^(?:blob|data):/i;
-          var PROTOCOL_RELATIVE_RE = /^[\/\\]{2}/;
-          var FORBIDDEN_TAG_RE = /^(?:iframe|frame|object|embed)$/i;
-          var XLINK_NS = 'http://www.w3.org/1999/xlink';
-          var origPreventDefault = Event.prototype.preventDefault;
-          var origStopPropagation = Event.prototype.stopPropagation;
-          var origStopImmediatePropagation =
-              Event.prototype.stopImmediatePropagation;
-          var origAddEventListener = EventTarget.prototype.addEventListener;
-          var origRemoveEventListener =
-              EventTarget.prototype.removeEventListener;
-          var origWindowStop = window.stop ? window.stop.bind(window) : null;
-          var origElementRemove = Element.prototype.remove;
-          var origGetAttribute = Element.prototype.getAttribute;
-          var origGetAttributeNS = Element.prototype.getAttributeNS;
-          var origHasAttribute = Element.prototype.hasAttribute;
-          var origHasAttributeNS = Element.prototype.hasAttributeNS;
-          var origSetAttribute = Element.prototype.setAttribute;
-          var origSetAttributeNS = Element.prototype.setAttributeNS;
-          var origSetAttributeNode = Element.prototype.setAttributeNode;
-          var origSetAttributeNodeNS = Element.prototype.setAttributeNodeNS;
-          var origRemoveAttribute = Element.prototype.removeAttribute;
-          var origRemoveAttributeNS = Element.prototype.removeAttributeNS;
-          var origComposedPath = Event.prototype.composedPath;
-          var origCreateElement = Document.prototype.createElement;
-          var origCreateElementNS = Document.prototype.createElementNS;
-          var validatingEvents =
-              typeof WeakSet !== 'undefined' ? new WeakSet() : null;
-          var activeDeferredListeners = null;
-          var inProgrammaticClick = 0;
-
-          function isLinkElement(el) {
-            var tag = el && el.tagName && el.tagName.toLowerCase();
-            return tag === 'a' || tag === 'area';
-          }
-
-          function hasLinkHref(link) {
-            return origHasAttribute.call(link, 'href') ||
-                origHasAttributeNS.call(link, XLINK_NS, 'href');
-          }
-
-          // Returns the href of an HTML or SVG link, which may only have the
-          // legacy xlink:href attribute.
-          function getLinkHref(link) {
-            return origGetAttribute.call(link, 'href') ||
-                origGetAttributeNS.call(link, XLINK_NS, 'href');
-          }
-
-          function removeLinkHref(link) {
-            origRemoveAttribute.call(link, 'href');
-            origRemoveAttributeNS.call(link, XLINK_NS, 'href');
-          }
-
-          // Returns whether the link downloads a file that the app created,
-          // which doesn't send data to other sites.
-          function isLocalDownloadLink(link, href) {
-            return origHasAttribute.call(link, 'download') &&
-                LOCAL_DOWNLOAD_URL_RE.test(href);
-          }
-
-          function isRefreshValue(val) {
-            return String(val || '').trim().toLowerCase() === 'refresh';
-          }
-
-          function purgeMetaRefresh(root) {
-            if (!root || !root.querySelectorAll) return;
-            var metas = root.querySelectorAll('meta[http-equiv]');
-            for (var i = 0; i < metas.length; i++) {
-              if (isRefreshValue(
-                  origGetAttribute.call(metas[i], 'http-equiv'))) {
-                origElementRemove.call(metas[i]);
-              }
-            }
-            var frames = root.querySelectorAll('iframe, frame, object, embed');
-            for (var j = 0; j < frames.length; j++) {
-              origElementRemove.call(frames[j]);
-            }
-          }
-
-          function getParentOrHost(node) {
-            if (!node) return null;
-            if (node.parentElement) return node.parentElement;
-            var parent = node.parentNode;
-            return parent && parent.host ? parent.host : null;
-          }
-
-          function findLinkFromNode(startNode, requireHref) {
-            var el = startNode;
-            while (el && el !== document) {
-              if (isLinkElement(el) && (!requireHref || hasLinkHref(el))) {
-                return el;
-              }
-              el = getParentOrHost(el);
-            }
-            return null;
-          }
-
-          function findLinkFromEvent(e) {
-            if (origComposedPath) {
-              try {
-                var path = origComposedPath.call(e);
-                for (var i = 0; i < path.length; i++) {
-                  var node = path[i];
-                  if (isLinkElement(node) && hasLinkHref(node)) {
-                    return node;
-                  }
-                }
-              } catch (err) {}
-            }
-            return findLinkFromNode(e.target, true);
-          }
-
-          // Keeps the app from opening popups, navigating its frame, and
-          // adding meta refresh tags. document.open() keeps the window, its
-          // prototypes, and the document, so these are installed once per
-          // frame rather than on every render.
-          function installNavigationGuards() {
-            try {
-              Object.defineProperty(window, 'open', {
-                value: function() {
-                  return null;
-                },
-                writable: false,
-                configurable: false
-              });
-            } catch (err) {
-              window.open = function() {
-                return null;
-              };
-            }
-            if (window.navigation && window.navigation.addEventListener) {
-              origAddEventListener.call(
-                  window.navigation, 'navigate', function(e) {
-                    if (!e.cancelable || e.destination.sameDocument) return;
-                    if (e.downloadRequest !== null &&
-                        LOCAL_DOWNLOAD_URL_RE.test(e.destination.url)) {
-                      return;
-                    }
-                    origPreventDefault.call(e);
-                  }, true);
-            }
-            var iframeWinDesc = typeof HTMLIFrameElement !== 'undefined' &&
-                Object.getOwnPropertyDescriptor(
-                    HTMLIFrameElement.prototype, 'contentWindow');
-            if (iframeWinDesc && iframeWinDesc.get) {
-              Object.defineProperty(
-                  HTMLIFrameElement.prototype, 'contentWindow', {
-                    get: function() {
-                      return null;
-                    },
-                    configurable: false,
-                    enumerable: true
-                  });
-            }
-            var iframeDocDesc = typeof HTMLIFrameElement !== 'undefined' &&
-                Object.getOwnPropertyDescriptor(
-                    HTMLIFrameElement.prototype, 'contentDocument');
-            if (iframeDocDesc && iframeDocDesc.get) {
-              Object.defineProperty(
-                  HTMLIFrameElement.prototype, 'contentDocument', {
-                    get: function() {
-                      return null;
-                    },
-                    configurable: false,
-                    enumerable: true
-                  });
-            }
-            Document.prototype.createElement = function(tagName, options) {
-              if (FORBIDDEN_TAG_RE.test(String(tagName || ''))) {
-                return origCreateElement.call(this, 'div', options);
-              }
-              return origCreateElement.apply(this, arguments);
-            };
-            if (origCreateElementNS) {
-              Document.prototype.createElementNS = function(ns, qName, opts) {
-                var local = String(qName || '').split(':').pop();
-                if (FORBIDDEN_TAG_RE.test(local)) {
-                  return origCreateElement.call(this, 'div');
-                }
-                return origCreateElementNS.apply(this, arguments);
-              };
-            }
-            var origClick = HTMLElement.prototype.click;
-            HTMLElement.prototype.click = function() {
-              var link = findLinkFromNode(this, true);
-              if (link) {
-                var clickHref = (getLinkHref(link) || '').trim();
-                if (!clickHref.startsWith('#') &&
-                    !isLocalDownloadLink(link, clickHref)) {
-                  return;
-                }
-              }
-              inProgrammaticClick++;
-              try {
-                return origClick.apply(this, arguments);
-              } finally {
-                inProgrammaticClick--;
-              }
-            };
-            function isMetaRefreshAttr(el, name, value) {
-              return el && el.tagName &&
-                  el.tagName.toLowerCase() === 'meta' &&
-                  String(name || '').trim().toLowerCase() === 'http-equiv' &&
-                  isRefreshValue(value);
-            }
-            function validateIfActiveLink(el) {
-              if (!activeDeferredListeners || !isLinkElement(el) ||
-                  !hasLinkHref(el)) {
-                return;
-              }
-              var curHref = (getLinkHref(el) || '').trim();
-              if (!curHref.startsWith('#')) {
-                handleLiquidExternalLink(
-                    activeDeferredListeners.event, el, curHref,
-                    activeDeferredListeners.programmatic);
-              }
-            }
-            Element.prototype.setAttribute = function(name, value) {
-              if (isMetaRefreshAttr(this, name, value)) {
-                origElementRemove.call(this);
-                return;
-              }
-              var res = origSetAttribute.apply(this, arguments);
-              if (String(name || '').toLowerCase() === 'href') {
-                validateIfActiveLink(this);
-              }
-              return res;
-            };
-            if (origSetAttributeNS) {
-              Element.prototype.setAttributeNS = function(ns, name, value) {
-                var local = String(name || '');
-                if (local.includes(':')) local = local.split(':').pop();
-                if (isMetaRefreshAttr(this, local, value)) {
-                  origElementRemove.call(this);
-                  return;
-                }
-                var res = origSetAttributeNS.apply(this, arguments);
-                if (local.toLowerCase() === 'href') {
-                  validateIfActiveLink(this);
-                }
-                return res;
-              };
-            }
-            if (origSetAttributeNode) {
-              Element.prototype.setAttributeNode = function(attr) {
-                if (attr && isMetaRefreshAttr(this, attr.name, attr.value)) {
-                  origElementRemove.call(this);
-                  return null;
-                }
-                var res = origSetAttributeNode.apply(this, arguments);
-                if (attr && String(attr.name || '').toLowerCase() === 'href') {
-                  validateIfActiveLink(this);
-                }
-                return res;
-              };
-            }
-            if (origSetAttributeNodeNS) {
-              Element.prototype.setAttributeNodeNS = function(attr) {
-                var name = attr && (attr.localName || attr.name);
-                if (attr && isMetaRefreshAttr(this, name, attr.value)) {
-                  origElementRemove.call(this);
-                  return null;
-                }
-                var res = origSetAttributeNodeNS.apply(this, arguments);
-                if (String(name || '').toLowerCase() === 'href') {
-                  validateIfActiveLink(this);
-                }
-                return res;
-              };
-            }
-            function wrapHrefSetter(ctor) {
-              if (!ctor || !ctor.prototype) return;
-              var hrefDesc = Object.getOwnPropertyDescriptor(
-                  ctor.prototype, 'href');
-              if (hrefDesc && hrefDesc.set) {
-                Object.defineProperty(ctor.prototype, 'href', {
-                  get: hrefDesc.get,
-                  set: function(value) {
-                    hrefDesc.set.call(this, value);
-                    validateIfActiveLink(this);
-                  },
-                  configurable: true,
-                  enumerable: true
-                });
-              }
-            }
-            if (typeof HTMLAnchorElement !== 'undefined') {
-              wrapHrefSetter(HTMLAnchorElement);
-            }
-            if (typeof HTMLAreaElement !== 'undefined') {
-              wrapHrefSetter(HTMLAreaElement);
-            }
-            if (typeof HTMLMetaElement !== 'undefined') {
-              var desc = Object.getOwnPropertyDescriptor(
-                  HTMLMetaElement.prototype, 'httpEquiv');
-              if (desc && desc.set) {
-                Object.defineProperty(HTMLMetaElement.prototype, 'httpEquiv', {
-                  get: desc.get,
-                  set: function(value) {
-                    if (isRefreshValue(value)) {
-                      origElementRemove.call(this);
-                      return;
-                    }
-                    desc.set.call(this, value);
-                  },
-                  configurable: true,
-                  enumerable: true
-                });
-              }
-            }
-            Event.prototype.stopPropagation = function() {
-              if (validatingEvents && validatingEvents.has(this)) {
-                return;
-              }
-              return origStopPropagation.apply(this, arguments);
-            };
-            Event.prototype.stopImmediatePropagation = function() {
-              if (validatingEvents && validatingEvents.has(this)) {
-                return;
-              }
-              return origStopImmediatePropagation.apply(this, arguments);
-            };
-            var cancelBubbleDesc = Object.getOwnPropertyDescriptor(
-                Event.prototype, 'cancelBubble');
-            if (cancelBubbleDesc && cancelBubbleDesc.set) {
-              Object.defineProperty(Event.prototype, 'cancelBubble', {
-                get: cancelBubbleDesc.get,
-                set: function(val) {
-                  if (val && validatingEvents && validatingEvents.has(this)) {
-                    return;
-                  }
-                  cancelBubbleDesc.set.call(this, val);
-                },
-                configurable: true,
-                enumerable: true
-              });
-            }
-            function wrapAddEventListener(origFn) {
-              return function(type, listener, options) {
-                var res = origFn.apply(this, arguments);
-                if (activeDeferredListeners &&
-                    type === activeDeferredListeners.type) {
-                  origRemoveEventListener.call(
-                      window, activeDeferredListeners.type,
-                      activeDeferredListeners.fn, false);
-                  origAddEventListener.call(
-                      window, activeDeferredListeners.type,
-                      activeDeferredListeners.fn, false);
-                }
-                return res;
-              };
-            }
-            var origWinAdd = window.addEventListener || origAddEventListener;
-            EventTarget.prototype.addEventListener =
-                wrapAddEventListener(origAddEventListener);
-            if (typeof Window !== 'undefined' && Window.prototype) {
-              try {
-                Window.prototype.addEventListener =
-                    wrapAddEventListener(origWinAdd);
-              } catch (err) {}
-            }
-            try {
-              window.addEventListener = wrapAddEventListener(origWinAdd);
-            } catch (err) {}
-            function observeMutations(target) {
-              if (!target || typeof MutationObserver === 'undefined') return;
-              new MutationObserver(function(mutations) {
-                if (activeDeferredListeners) {
-                  for (var i = 0; i < mutations.length; i++) {
-                    var m = mutations[i];
-                    if (m.type === 'attributes' &&
-                        isLinkElement(m.target) &&
-                        hasLinkHref(m.target)) {
-                      var mHref = (getLinkHref(m.target) || '').trim();
-                      if (!mHref.startsWith('#')) {
-                        handleLiquidExternalLink(
-                            activeDeferredListeners.event, m.target, mHref,
-                            activeDeferredListeners.programmatic);
-                      }
-                    }
-                  }
-                }
-                purgeMetaRefresh(target);
-              }).observe(target, {
-                childList: true,
-                subtree: true,
-                attributes: true,
-                attributeFilter: ['http-equiv', 'href']
-              });
-            }
-            observeMutations(document);
-            if (Element.prototype.attachShadow) {
-              var origAttachShadow = Element.prototype.attachShadow;
-              Element.prototype.attachShadow = function() {
-                var sr = origAttachShadow.apply(this, arguments);
-                observeMutations(sr);
-                return sr;
-              };
-            }
-          }
-
-          // Returns the URL of an absolute or protocol-relative href, or null.
-          function parseAbsoluteUrl(href) {
-            var candidate =
-                PROTOCOL_RELATIVE_RE.test(href) ? 'https:' + href : href;
-            try {
-              return new URL(candidate);
-            } catch (err) {
-              return null;
-            }
-          }
-
-          // Opens the link in a new tab through the Google redirector, which
-          // warns users before they leave for another site.
-          function routeThroughRedirector(link, url) {
-            var redirectUrl = url.href;
-            if (url.origin !== 'https://www.google.com' ||
-                url.pathname !== '/url' ||
-                !url.searchParams.has('q')) {
-              redirectUrl = 'https://www.google.com/url?q=' +
-                  encodeURIComponent(url.href);
-            }
-            origSetAttribute.call(link, 'href', redirectUrl);
-            origRemoveAttributeNS.call(link, XLINK_NS, 'href');
-            origSetAttribute.call(link, 'target', '_blank');
-            origSetAttribute.call(link, 'rel', 'noopener noreferrer');
-          }
-
-          // Lets Liquid App links open web pages only through the redirector,
-          // and blocks links with other protocols, such as javascript:.
-          // Context menu events rewrite or remove the link attribute so that
-          // "Open link in new tab" also goes through the redirector or is
-          // disabled.
-          function handleLiquidExternalLink(e, link, href, programmatic) {
-            if (isLocalDownloadLink(link, href)) return;
-            if (programmatic || inProgrammaticClick > 0) {
-              removeLinkHref(link);
-              origPreventDefault.call(e);
-              origStopPropagation.call(e);
-              return;
-            }
-            var url = parseAbsoluteUrl(href);
-            var protocol = url ? url.protocol : '';
-            if (protocol === 'http:' || protocol === 'https:') {
-              routeThroughRedirector(link, url);
-            } else if (protocol !== 'mailto:' && protocol !== 'tel:') {
-              if (e.type === 'contextmenu') {
-                removeLinkHref(link);
-              } else {
-                origPreventDefault.call(e);
-                origStopPropagation.call(e);
-              }
-            }
-          }
-
-          function validateLiquidLinkAfterBubble(e, anchor, programmatic) {
-            if (validatingEvents) {
-              validatingEvents.add(e);
-            }
-            var state = {
-              type: e.type,
-              fn: onBubble,
-              event: e,
-              programmatic: programmatic
-            };
-            activeDeferredListeners = state;
-            function checkTarget(ev) {
-              var targetLink = anchor || findLinkFromEvent(ev);
-              if (!targetLink || !hasLinkHref(targetLink)) return;
-              var latestHref = (getLinkHref(targetLink) || '').trim();
-              if (!latestHref.startsWith('#')) {
-                handleLiquidExternalLink(
-                    ev, targetLink, latestHref, programmatic);
-              }
-            }
-            Promise.resolve().then(function() {
-              checkTarget(e);
-              if (activeDeferredListeners === state) {
-                activeDeferredListeners = null;
-              }
-            });
-            function onBubble(ev) {
-              origRemoveEventListener.call(window, ev.type, onBubble, false);
-              checkTarget(ev);
-            }
-            origAddEventListener.call(window, e.type, onBubble, false);
-          }
-
-          function handleLinkClick(e) {
-            var programmatic = inProgrammaticClick > 0;
-            // Find the nearest ancestor link (handles nested icons, spans,
-            // svgs, and shadow DOM).
-            var anchor = findLinkFromEvent(e);
-            if (!anchor) {
-              if (isLiquid) {
-                validateLiquidLinkAfterBubble(e, null, programmatic);
-              }
-              return;
-            }
-
-            if (isLiquid) {
-              validateLiquidLinkAfterBubble(e, anchor, programmatic);
-            }
-            var href = (getLinkHref(anchor) || '').trim();
-            if (!href.startsWith('#')) {
-              if (isLiquid) {
-                handleLiquidExternalLink(e, anchor, href, programmatic);
-              }
-              return;
-            }
-            if (e.type === 'contextmenu') return;
-
-            // Prevent default <base target="_blank"> navigation to a new blank tab.
-            origPreventDefault.call(e);
-            if (!isLiquid) {
-              origStopPropagation.call(e);
-            }
-
-            // Handle empty anchor or top anchor.
-            if (href === '#' || href === '#top') {
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-              return;
-            }
-
-            // Resolve target element by id, falling back to legacy name attribute.
-            var targetId = href.slice(1);
-            try {
-              targetId = decodeURIComponent(targetId);
-            } catch (err) {}
-
-            var targetEl = document.getElementById(targetId);
-            if (!targetEl) {
-              try {
-                var escaped = window.CSS && CSS.escape ? CSS.escape(targetId) : targetId.replace(/["\\]/g, '\\$&');
-                targetEl = document.querySelector('[name="' + escaped + '"]');
-              } catch (err) {}
-            }
-
-            // Smoothly scroll to the target within the embed and update URL hash history.
-            if (targetEl) {
-              targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
-              if (window.history && window.history.pushState) {
-                window.history.pushState(null, '', href);
-              }
-            }
-          }
-
-          function initRender(nextIsLiquid) {
-            isLiquid = isLiquid || !!nextIsLiquid;
-            if (isLiquid) {
-              if (!guardsInstalled) {
-                guardsInstalled = true;
-                installNavigationGuards();
-              } else {
-                try {
-                  window.addEventListener =
-                      EventTarget.prototype.addEventListener;
-                } catch (err) {}
-              }
-              // document.open() removes the window's listeners, so this is
-              // added on every render.
-              origAddEventListener.call(window, 'beforeunload', function(e) {
-                origPreventDefault.call(e);
-                if (origWindowStop) {
-                  origWindowStop();
-                }
-              }, true);
-              purgeMetaRefresh(document);
-            }
-            // Listen during capturing phase to preempt <base target="_blank">.
-            origAddEventListener.call(
-                document, 'click', handleLinkClick, true);
-            if (isLiquid) {
-              origAddEventListener.call(
-                  document, 'auxclick', handleLinkClick, true);
-              origAddEventListener.call(
-                  document, 'contextmenu', handleLinkClick, true);
-            }
-          }
-
-          try {
-            Object.defineProperty(window, '__atariInitRender', {
-              value: initRender,
-              writable: false,
-              configurable: false
-            });
-          } catch (err) {
-            window.__atariInitRender = initRender;
-          }
-          initRender(false);
-        })();
-      </script>
-    
-
-
+<html lang="fr" style="--col-base-width: 626px;"><head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="referrer" content="strict-origin-when-cross-origin">
@@ -1404,14 +801,14 @@
   <!-- =====================================================================
        1. ÉCRAN D'INTRODUCTION "COLVEUR" (3 SECONDES OU CLIC -> ZOOM DANS LE "V")
        ===================================================================== -->
-  <canvas id="intro-canvas" width="2980" height="1806" class="is-hidden"></canvas>
+  <canvas id="intro-canvas" width="3756" height="2000" class="is-hidden"></canvas>
   <div id="intro-bottom-hint" class="is-hidden">Cliquer pour lancer l'animation</div>
 
   <!-- =====================================================================
        2. ACCUEIL PRINCIPAL : CARROUSEL DIAGONAL INFINI & FLÈCHES LATÉRALES
        ===================================================================== -->
   <main id="carousel-viewport" aria-label="Catégories du portfolio" class="">
-    <div id="carousel-track" class="" style="transform: translate3d(-2980px, 0px, 0px);"></div>
+    <div id="carousel-track" class="" style="transform: translate3d(-5008px, 0px, 0px);"></div>
 
     <button type="button" class="carousel-arrow-btn arrow-left" aria-label="Catégorie précédente" onclick="nudgeCarousel(-1)">
       <svg class="w-6 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 48">
@@ -1430,7 +827,7 @@
        3. PAGE DE DESTINATION CATÉGORIE (PAGES PLEIN ÉCRAN ALTERNÉES TAUPE/NOIR
           + HEADER FIXE À INVERSION BICOLORE DYNAMIQUE)
        ===================================================================== -->
-  <section id="category-page" aria-hidden="false" class="">
+  <section id="category-page" aria-hidden="true">
     <!-- Définitions SVG invisibles qui découpent les 2 versions du header fixe au pixel près -->
     <svg width="0" height="0" style="position:fixed; pointer-events:none;" aria-hidden="true">
       <defs>
@@ -1494,7 +891,7 @@
     </div>
 
     <!-- Contrôles spécifiques à l'accueil (masqués quand on est dans une sous-page catégorie) -->
-    <div id="editor-home-controls" class="items-center flex-wrap gap-2 md:gap-3 hidden">
+    <div id="editor-home-controls" class="items-center flex-wrap gap-2 md:gap-3 flex">
       <div class="flex items-center gap-1.5 bg-[#222222] px-2.5 py-1 rounded-xl border border-[#b6ab9d]/15">
         <span class="text-[11px] opacity-75">Effet survol :</span>
         <select id="hover-mode-select" class="bg-transparent text-xs font-semibold text-[#b6ab9d] focus:outline-none cursor-pointer" onchange="changeHoverMode(this.value)">
@@ -1517,7 +914,7 @@
     </div>
 
     <!-- Contrôles spécifiques aux sous-pages catégories (Scroll Libre vs Scroll Aimanté) -->
-    <div id="editor-category-controls" class="items-center flex-wrap gap-2 md:gap-3 flex">
+    <div id="editor-category-controls" class="items-center flex-wrap gap-2 md:gap-3 hidden">
       <div class="flex items-center gap-1.5 bg-[#222222] px-2.5 py-1 rounded-xl border border-[#b6ab9d]/15">
         <span class="text-[11px] opacity-75">Navigation :</span>
         <select id="category-scroll-mode-select" class="bg-transparent text-xs font-semibold text-[#b6ab9d] focus:outline-none cursor-pointer" onchange="changeCategoryScrollMode(this.value)">
@@ -1616,9 +1013,9 @@
         <div class="p-4 rounded-xl bg-[#1e1e1e] border border-dashed border-[#b6ab9d]/40 text-center">
           <label class="cursor-pointer flex flex-col items-center justify-center gap-2">
             <span class="w-12 h-12 rounded-full bg-[#b6ab9d] text-[#151515] flex items-center justify-center text-2xl font-bold shadow-md hover:scale-105 transition-transform">+</span>
-            <span class="text-sm font-semibold">Choisir une vidéo sur ton ordinateur (.MP4, .MOV, .WEBM)</span>
+            <span class="text-sm font-semibold">Choisir une vidéo courte ou une photo sur ton ordinateur (.MP4, .WEBM, .JPG, .PNG, .WEBP)</span>
             <span id="cat-local-file-badge" class="text-xs text-emerald-400 font-semibold">Sera envoyée automatiquement sur ton site via « 🚀 Publier en 1 clic »</span>
-            <input id="edit-cat-file-input" type="file" accept="video/*" class="hidden" onchange="handleLocalVideoUpload(event)">
+            <input id="edit-cat-file-input" type="file" accept="video/*,image/*" class="hidden" onchange="handleLocalVideoUpload(event)">
           </label>
         </div>
 
@@ -1887,7 +1284,7 @@
   </div>
 
   <!-- Modale d'Exportation du Code Final (pour Netlify / Google Sites) -->
-  <div id="modal-export-code" class="fixed inset-0 z-[90] hidden items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+  <div id="modal-export-code" class="fixed inset-0 z-[90] items-center justify-center bg-black/80 backdrop-blur-sm p-4 hidden">
     <div class="w-full max-w-2xl rounded-2xl bg-[#151515] border border-[#b6ab9d]/40 p-6 text-[#b6ab9d] shadow-2xl space-y-4">
       <div class="flex items-center justify-between">
         <div>
@@ -1918,9 +1315,7 @@
         </div>
 
         <div class="flex items-center gap-2 ml-auto">
-          <button type="button" id="btn-copy-exported-code" onclick="copyExportedHtmlCode()" class="px-4 py-2.5 rounded-xl bg-[#b6ab9d] text-[#151515] font-bold text-xs hover:brightness-110 transition-all">
-            📋 Copier le code
-          </button>
+          <button type="button" id="btn-copy-exported-code" onclick="copyExportedHtmlCode()" class="px-4 py-2.5 rounded-xl bg-[#b6ab9d] text-[#151515] font-bold text-xs hover:brightness-110 transition-all">📋 Copier le code</button>
         </div>
       </div>
     </div>
@@ -1984,14 +1379,14 @@
       </div>
 
       <!-- Zone de statut en direct -->
-      <div id="gh-publish-status" class="p-3.5 rounded-xl text-xs font-medium leading-relaxed border bg-white/5 text-[#b6ab9d] border-[#b6ab9d]/25">⏳ Mise à jour de <code>index.html</code> sur GitHub...</div>
+      <div id="gh-publish-status" class="p-3.5 rounded-xl text-xs font-medium leading-relaxed border bg-white/5 text-[#b6ab9d] border-[#b6ab9d]/25 hidden"></div>
 
       <div class="flex items-center justify-between gap-3 pt-2">
         <button type="button" onclick="closeModal('modal-github-publish')" class="px-4 py-2.5 rounded-xl text-xs hover:bg-white/5">
           Fermer
         </button>
 
-        <button type="button" id="btn-trigger-gh-push" onclick="publishDirectlyToGitHub()" class="flex items-center gap-2 px-6 py-3 rounded-xl bg-emerald-500 text-[#151515] font-dela text-xs hover:brightness-110 transition-all shadow-xl" disabled=""><span>⏳ Envoi sur GitHub en cours...</span></button>
+        <button type="button" id="btn-trigger-gh-push" onclick="publishDirectlyToGitHub()" class="flex items-center gap-2 px-6 py-3 rounded-xl bg-emerald-500 text-[#151515] font-dela text-xs hover:brightness-110 transition-all shadow-xl"><span>🚀 Publier sur le site maintenant</span></button>
       </div>
     </div>
   </div>
@@ -2004,7 +1399,7 @@
      * 0. CODE SECRET DU MODE ÉDITEUR (MODIFIABLE ICI OU VIA LE BOUTON "🔑 CODE")
      *************************************************************************/
     /* __COLVEUR_CONFIG_START__ */
-    let EDITOR_SECRET_PIN = "2026";
+    let EDITOR_SECRET_PIN = "395253";
     let DEFAULT_HOVER_MODE = "eat";
     let DEFAULT_RESTING_OPACITY = 0.4;
     let DEFAULT_SCROLL_MODE = "free";
@@ -2027,6 +1422,22 @@
       const regExp = /(?:youtube\.com\/(?:watch\?.*v=|embed\/|shorts\/|v\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
       const match = trimmed.match(regExp);
       return match ? match[1] : null;
+    }
+
+    /**
+     * Indique si un média du carrousel d'accueil est une photo (.jpg, .png, .webp...)
+     * plutôt qu'une vidéo. Gère aussi les fichiers choisis sur l'ordinateur et pas encore publiés.
+     */
+    function isImageMediaUrl(url) {
+      if (!url || typeof url !== 'string') return false;
+      const str = url.trim();
+      if (str.startsWith('blob:')) {
+        const item = pendingVideoUploads[str];
+        return Boolean(item && item.file && /^image\//i.test(item.file.type || ''));
+      }
+      if (/^data:image\//i.test(str)) return true;
+      const path = str.split('#')[0].split('?')[0];
+      return /\.(jpe?g|png|webp|gif|avif)$/i.test(path);
     }
 
     function buildYouTubeEmbedUrl(ytId, autoplay = false) {
@@ -2170,7 +1581,7 @@
     "posX": 50,
     "pages": [
       {
-        "id": "page-h7biigp",
+        "id": "page-docu1",
         "template": "media-text",
         "title": "Modèle 2 : Cadre Vidéo & Texte",
         "bgTheme": "taupe",
@@ -2180,36 +1591,35 @@
         "videoMuted": false,
         "blocks": [
           {
-            "id": "blk-vid-lel5ok",
+            "id": "blk-vid-docu1",
             "type": "video",
             "x": 6.2,
             "y": 33.5,
-            "w": 40,
-            "h": 40,
+            "w": 40.0,
+            "h": 40.0,
             "borderRadius": 42,
             "videoUrl": "",
             "posX": 50,
             "posY": 50
           },
           {
-            "id": "blk-txt-jlrbvq",
+            "id": "blk-txt-docu1",
             "type": "text",
             "x": 59.5,
             "y": 44.5,
-            "w": 31,
-            "h": 18,
+            "w": 31.0,
+            "h": 18.0,
             "html": "ZONE DE TEXTE",
             "fontSize": 28,
             "bold": false,
             "italic": false,
             "underline": false,
-            "align": "center",
-            "videoUrl": ""
+            "align": "center"
           }
         ]
       },
       {
-        "id": "page-4t5n3ev",
+        "id": "page-docu2",
         "template": "blank",
         "title": "Page vierge (Fond uni)",
         "bgTheme": "noir",
@@ -2219,31 +1629,30 @@
         "videoMuted": false,
         "blocks": [
           {
-            "id": "blk-vid-mweyzg",
+            "id": "blk-vid-docu2",
             "type": "video",
             "x": 6.2,
             "y": 33.5,
-            "w": 40,
-            "h": 40,
+            "w": 40.0,
+            "h": 40.0,
             "borderRadius": 42,
             "videoUrl": "",
             "posX": 50,
             "posY": 50
           },
           {
-            "id": "blk-txt-7l27kb",
+            "id": "blk-txt-docu2",
             "type": "text",
             "x": 59.5,
             "y": 44.5,
-            "w": 31,
-            "h": 18,
+            "w": 31.0,
+            "h": 18.0,
             "html": "ZONE DE TEXTE",
             "fontSize": 28,
             "bold": false,
             "italic": false,
             "underline": false,
-            "align": "center",
-            "videoUrl": ""
+            "align": "center"
           }
         ]
       }
@@ -2257,7 +1666,7 @@
     "posX": 50,
     "pages": [
       {
-        "id": "page-hfz5b2f",
+        "id": "page-event1",
         "template": "media-text",
         "title": "Modèle 2 : Cadre Vidéo & Texte",
         "bgTheme": "taupe",
@@ -2267,36 +1676,35 @@
         "videoMuted": false,
         "blocks": [
           {
-            "id": "blk-vid-khpin6",
+            "id": "blk-vid-event1",
             "type": "video",
             "x": 6.2,
             "y": 33.5,
-            "w": 40,
-            "h": 40,
+            "w": 40.0,
+            "h": 40.0,
             "borderRadius": 42,
             "videoUrl": "",
             "posX": 50,
             "posY": 50
           },
           {
-            "id": "blk-txt-dkeot1",
+            "id": "blk-txt-event1",
             "type": "text",
             "x": 59.5,
             "y": 44.5,
-            "w": 31,
-            "h": 18,
+            "w": 31.0,
+            "h": 18.0,
             "html": "ZONE DE TEXTE",
             "fontSize": 28,
             "bold": false,
             "italic": false,
             "underline": false,
-            "align": "center",
-            "videoUrl": ""
+            "align": "center"
           }
         ]
       },
       {
-        "id": "page-jn0i87a",
+        "id": "page-event2",
         "template": "blank",
         "title": "Page vierge (Fond uni)",
         "bgTheme": "noir",
@@ -2306,31 +1714,30 @@
         "videoMuted": false,
         "blocks": [
           {
-            "id": "blk-vid-oa7uug",
+            "id": "blk-vid-event2",
             "type": "video",
             "x": 6.2,
             "y": 33.5,
-            "w": 40,
-            "h": 40,
+            "w": 40.0,
+            "h": 40.0,
             "borderRadius": 42,
             "videoUrl": "",
             "posX": 50,
             "posY": 50
           },
           {
-            "id": "blk-txt-2mkabk",
+            "id": "blk-txt-event2",
             "type": "text",
             "x": 59.5,
             "y": 44.5,
-            "w": 31,
-            "h": 18,
+            "w": 31.0,
+            "h": 18.0,
             "html": "ZONE DE TEXTE",
             "fontSize": 28,
             "bold": false,
             "italic": false,
             "underline": false,
-            "align": "center",
-            "videoUrl": ""
+            "align": "center"
           }
         ]
       }
@@ -2344,7 +1751,7 @@
     "posX": 50,
     "pages": [
       {
-        "id": "page-c4bwpv0",
+        "id": "page-reseaux1",
         "template": "media-text",
         "title": "Modèle 2 : Cadre Vidéo & Texte",
         "bgTheme": "taupe",
@@ -2354,36 +1761,35 @@
         "videoMuted": false,
         "blocks": [
           {
-            "id": "blk-vid-yowdnu",
+            "id": "blk-vid-reseaux1",
             "type": "video",
             "x": 6.2,
             "y": 33.5,
-            "w": 40,
-            "h": 40,
+            "w": 40.0,
+            "h": 40.0,
             "borderRadius": 42,
             "videoUrl": "",
             "posX": 50,
             "posY": 50
           },
           {
-            "id": "blk-txt-qx4cwj",
+            "id": "blk-txt-reseaux1",
             "type": "text",
             "x": 59.5,
             "y": 44.5,
-            "w": 31,
-            "h": 18,
+            "w": 31.0,
+            "h": 18.0,
             "html": "ZONE DE TEXTE",
             "fontSize": 28,
             "bold": false,
             "italic": false,
             "underline": false,
-            "align": "center",
-            "videoUrl": ""
+            "align": "center"
           }
         ]
       },
       {
-        "id": "page-joa5qpt",
+        "id": "page-reseaux2",
         "template": "blank",
         "title": "Page vierge (Fond uni)",
         "bgTheme": "noir",
@@ -2393,31 +1799,30 @@
         "videoMuted": false,
         "blocks": [
           {
-            "id": "blk-vid-wgi3xb",
+            "id": "blk-vid-reseaux2",
             "type": "video",
             "x": 6.2,
             "y": 33.5,
-            "w": 40,
-            "h": 40,
+            "w": 40.0,
+            "h": 40.0,
             "borderRadius": 42,
             "videoUrl": "",
             "posX": 50,
             "posY": 50
           },
           {
-            "id": "blk-txt-7uz9iy",
+            "id": "blk-txt-reseaux2",
             "type": "text",
             "x": 59.5,
             "y": 44.5,
-            "w": 31,
-            "h": 18,
+            "w": 31.0,
+            "h": 18.0,
             "html": "ZONE DE TEXTE",
             "fontSize": 28,
             "bold": false,
             "italic": false,
             "underline": false,
-            "align": "center",
-            "videoUrl": ""
+            "align": "center"
           }
         ]
       }
@@ -2426,10 +1831,31 @@
 ];
     /* __COLVEUR_DATA_END__ */
 
+    /**
+     * Empreinte de la version publiée (DEFAULT_CATEGORIES) : les modifications locales
+     * (localStorage) ne sont reprises que si elles ont été faites sur CETTE version publiée.
+     * Si le site a été republié depuis (autre ordinateur, téléphone...), la version en ligne gagne.
+     */
+    const STORAGE_KEY_PORTFOLIO_BASE = 'colveur_portfolio_base_v1';
+
+    function computePublishedDataSignature() {
+      const str = JSON.stringify(DEFAULT_CATEGORIES);
+      let hash = 5381;
+      for (let i = 0; i < str.length; i++) {
+        hash = ((hash << 5) + hash + str.charCodeAt(i)) | 0;
+      }
+      return str.length + '-' + (hash >>> 0).toString(36);
+    }
+
     function loadPersistedCategories() {
       try {
         const raw = localStorage.getItem(STORAGE_KEY_PORTFOLIO);
         if (!raw) return JSON.parse(JSON.stringify(DEFAULT_CATEGORIES));
+        if (localStorage.getItem(STORAGE_KEY_PORTFOLIO_BASE) !== computePublishedDataSignature()) {
+          localStorage.removeItem(STORAGE_KEY_PORTFOLIO);
+          localStorage.removeItem(STORAGE_KEY_PORTFOLIO_BASE);
+          return JSON.parse(JSON.stringify(DEFAULT_CATEGORIES));
+        }
         const parsed = JSON.parse(raw);
         if (!Array.isArray(parsed) || parsed.length === 0) {
           return JSON.parse(JSON.stringify(DEFAULT_CATEGORIES));
@@ -2474,6 +1900,7 @@
           })
         }));
         localStorage.setItem(STORAGE_KEY_PORTFOLIO, JSON.stringify(serializable));
+        localStorage.setItem(STORAGE_KEY_PORTFOLIO_BASE, computePublishedDataSignature());
       } catch (e) {}
     }
 
@@ -2933,6 +2360,7 @@
           const hasCustomVideo = Boolean(cat.videoUrl && cat.videoUrl.trim() !== '');
           const ytId = extractYouTubeId(cat.videoUrl);
           const isYouTube = Boolean(ytId);
+          const isImage = hasCustomVideo && !isYouTube && isImageMediaUrl(cat.videoUrl);
 
           col.innerHTML = `
             <div class="col-skew-frame">
@@ -2940,14 +2368,22 @@
                 <div class="diag-media-layer" style="opacity: ${restingOpacity};">
                   <canvas class="diag-sim-canvas ${hasCustomVideo ? 'hidden' : ''}"></canvas>
                   <video
-                    class="diag-video ${(hasCustomVideo && !isYouTube) ? '' : 'hidden'}"
-                    ${(hasCustomVideo && !isYouTube) ? `src="${cat.videoUrl}"` : ''}
+                    class="diag-video ${(hasCustomVideo && !isYouTube && !isImage) ? '' : 'hidden'}"
+                    ${(hasCustomVideo && !isYouTube && !isImage) ? `src="${escapeHtml(cat.videoUrl)}"` : ''}
                     muted
                     loop
                     playsinline
                     preload="metadata"
                     style="object-position: ${cat.posX}% 50%;"
                   ></video>
+                  <img
+                    class="diag-video diag-image ${isImage ? '' : 'hidden'}"
+                    ${isImage ? `src="${escapeHtml(cat.videoUrl)}"` : ''}
+                    alt=""
+                    draggable="false"
+                    decoding="async"
+                    style="object-position: ${cat.posX}% 50%;"
+                  >
                   <div class="yt-cover-wrap diag-yt-wrap ${isYouTube ? '' : 'hidden'}">
                     <iframe
                       class="yt-cover-iframe diag-yt-iframe"
@@ -3003,6 +2439,7 @@
 
           const mediaLayer = col.querySelector('.diag-media-layer');
           const videoEl = col.querySelector('video');
+          const imageEl = col.querySelector('.diag-image');
           const ytWrapEl = col.querySelector('.diag-yt-wrap');
           const ytIframeEl = col.querySelector('.diag-yt-iframe');
           const simCanvas = col.querySelector('.diag-sim-canvas');
@@ -3013,8 +2450,16 @@
           drawProceduralCinemaFrame(simEntry, 0);
 
           videoEl.addEventListener('error', () => {
-            if (!extractYouTubeId(cat.videoUrl)) {
+            if (!extractYouTubeId(cat.videoUrl) && !isImageMediaUrl(cat.videoUrl)) {
               videoEl.classList.add('hidden');
+              simCanvas.classList.remove('hidden');
+            }
+          });
+
+          // Photo introuvable ou illisible : on revient à l'animation par défaut
+          imageEl.addEventListener('error', () => {
+            if (imageEl.getAttribute('src')) {
+              imageEl.classList.add('hidden');
               simCanvas.classList.remove('hidden');
             }
           });
@@ -4093,12 +3538,32 @@
       categoryPagesList.querySelectorAll('video').forEach(vid => {
         vid.pause();
       });
+      // Mettre aussi en pause les lecteurs YouTube (les <video> seuls ne suffisent pas)
+      categoryPagesList.querySelectorAll('iframe').forEach(ifr => {
+        sendYouTubeCommand(ifr, 'pauseVideo');
+        sendYouTubeCommand(ifr, 'mute');
+      });
 
       activeCategoryPageId = null;
       pendingDeletePageId = null;
       setBackButtonHover(false);
       syncEditorTopbarContext();
+
+      // Arrêt définitif une fois la page catégorie invisible (après sa transition de 0,45 s) :
+      // on décharge les lecteurs, aucun son ne peut continuer. La page est reconstruite à la prochaine ouverture.
+      const closeToken = ++categoryCloseToken;
+      setTimeout(() => {
+        if (closeToken !== categoryCloseToken || activeCategoryPageId) return;
+        categoryPagesList.querySelectorAll('iframe').forEach(ifr => ifr.removeAttribute('src'));
+        categoryPagesList.querySelectorAll('video').forEach(vid => {
+          vid.pause();
+          vid.removeAttribute('src');
+          vid.load();
+        });
+      }, 600);
     }
+
+    let categoryCloseToken = 0;
 
     function openAddPageTemplateModal() {
       if (!activeCategoryPageId) return;
@@ -5222,6 +4687,31 @@
 
       const cloneDoc = document.documentElement.cloneNode(true);
 
+      // Retirer tout ce qu'un outil ou un hébergeur a pu injecter dans la page (Gemini, Netlify...).
+      // Seuls 2 scripts appartiennent au site : Tailwind (CDN) et ce script principal.
+      cloneDoc.querySelectorAll('base').forEach(el => el.remove());
+      cloneDoc.querySelectorAll('script').forEach(sc => {
+        const src = sc.getAttribute('src') || '';
+        const isTailwind = /^https:\/\/cdn\.tailwindcss\.com\/?/i.test(src);
+        const isMainScript = !src && (sc.textContent || '').includes('__COLVEUR_CONFIG_START__');
+        if (!isTailwind && !isMainScript) sc.remove();
+      });
+      cloneDoc.querySelectorAll('*').forEach(el => {
+        if (/netlify/i.test(el.tagName) || /^netlify/i.test(el.id || '')) el.remove();
+      });
+
+      // Remettre les éléments de l'interface dans leur état de départ (la page est copiée en plein envoi)
+      const clonePushBtn = cloneDoc.querySelector('#btn-trigger-gh-push');
+      if (clonePushBtn) {
+        clonePushBtn.removeAttribute('disabled');
+        clonePushBtn.innerHTML = '<span>🚀 Publier sur le site maintenant</span>';
+      }
+      const clonePublishStatus = cloneDoc.querySelector('#gh-publish-status');
+      if (clonePublishStatus) {
+        clonePublishStatus.classList.add('hidden');
+        clonePublishStatus.textContent = '';
+      }
+
       // Supprimer les styles dynamiques injectés par le CDN Tailwind pour garder un fichier léger et propre
       const headStyles = cloneDoc.querySelectorAll('head style');
       headStyles.forEach((st, idx) => {
@@ -5249,6 +4739,7 @@
       const cloneCatPage = cloneDoc.querySelector('#category-page');
       if (cloneCatPage) {
         cloneCatPage.classList.remove('is-open', 'header-visible');
+        cloneCatPage.setAttribute('aria-hidden', 'true');
       }
       const cloneTrack = cloneDoc.querySelector('#carousel-track');
       if (cloneTrack) cloneTrack.innerHTML = '';
@@ -5391,7 +4882,7 @@
       const base64Data = arrayBufferToBase64(buffer);
 
       const payload = {
-        message: `Upload vidéo ${repoPath}`,
+        message: `Envoi du média ${repoPath}`,
         content: base64Data,
         branch: branch
       };
@@ -5408,7 +4899,7 @@
 
       if (!putRes.ok) {
         const errJson = await putRes.json().catch(() => ({}));
-        throw new Error(errJson.message || `Impossible d'envoyer la vidéo ${fileObj.name} (${putRes.status}). Vérifie qu'elle fait moins de 25 Mo.`);
+        throw new Error(errJson.message || `Impossible d'envoyer le fichier ${fileObj.name} (${putRes.status}). Vérifie qu'il fait moins de 25 Mo.`);
       }
     }
 
@@ -5454,10 +4945,10 @@
         for (let i = 0; i < pendingEntries.length; i++) {
           const [blobUrl, item] = pendingEntries[i];
           const sizeMB = (item.file.size / (1024 * 1024)).toFixed(1);
-          setStatus('info', `⏳ Envoi de la vidéo <strong>${escapeHtml(item.name)}</strong> (${sizeMB} Mo) vers ton site (${i + 1}/${pendingEntries.length})...`);
+          setStatus('info', `⏳ Envoi du fichier <strong>${escapeHtml(item.name)}</strong> (${sizeMB} Mo) vers ton site (${i + 1}/${pendingEntries.length})...`);
           await uploadBinaryFileToGitHub(owner, repo, branch, token, item.repoPath, item.file);
 
-          // Remplacer le blobUrl temporaire par le vrai chemin définitif (ex: videos/accueil-cat-docu.mp4)
+          // Remplacer le blobUrl temporaire par le vrai chemin définitif (ex: videos/accueil-cat-docu.mp4 ou images/accueil-cat-docu.jpg)
           categories.forEach(cat => {
             if (cat.videoUrl === blobUrl) cat.videoUrl = item.repoPath;
             (cat.pages || []).forEach(p => {
@@ -5770,9 +5261,35 @@
       const file = event.target.files && event.target.files[0];
       if (!file || !activeEditCatId) return;
 
+      const badge = document.getElementById('cat-local-file-badge');
+      const isImageFile = /^image\//i.test(file.type || '');
+      const isVideoFile = /^video\//i.test(file.type || '');
+      const rawExt = (file.name.split('.').pop() || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+
+      // Les photos iPhone (.HEIC) ne s'affichent pas dans Chrome/Firefox : on les refuse
+      if (/^image\/hei[cf]/i.test(file.type || '') || rawExt === 'heic' || rawExt === 'heif') {
+        if (badge) badge.textContent = '⚠️ Format HEIC non lisible par les navigateurs : exporte la photo en .JPG ou .WEBP.';
+        event.target.value = '';
+        return;
+      }
+      if (!isImageFile && !isVideoFile) {
+        if (badge) badge.textContent = '⚠️ Ce fichier n\'est ni une vidéo ni une photo.';
+        event.target.value = '';
+        return;
+      }
+
       const blobUrl = URL.createObjectURL(file);
-      const safeExt = (file.name.split('.').pop() || 'mp4').toLowerCase().replace(/[^a-z0-9]/g, '') || 'mp4';
-      const repoPath = `videos/accueil-${activeEditCatId}.${safeExt}`;
+      const safeExt = rawExt || (isImageFile ? 'jpg' : 'mp4');
+      const folder = isImageFile ? 'images' : 'videos';
+      const repoPath = `${folder}/accueil-${activeEditCatId}.${safeExt}`;
+
+      // Si un autre fichier avait déjà été choisi pour cette catégorie sans être publié, on le remplace
+      Object.keys(pendingVideoUploads).forEach(key => {
+        if (/\/accueil-/.test(pendingVideoUploads[key].repoPath) &&
+            pendingVideoUploads[key].repoPath.split('/').pop().replace(/\.[^.]+$/, '') === `accueil-${activeEditCatId}`) {
+          delete pendingVideoUploads[key];
+        }
+      });
       pendingVideoUploads[blobUrl] = { file, repoPath, name: file.name };
 
       const cat = categories.find(c => c.id === activeEditCatId);
@@ -5783,9 +5300,11 @@
 
       const urlInput = document.getElementById('edit-cat-url-input');
       if (urlInput) urlInput.value = repoPath;
-      const badge = document.getElementById('cat-local-file-badge');
       if (badge) {
-        badge.textContent = `✓ Fichier prêt : ${file.name} (enregistre puis clique sur 🚀 Publier en 1 clic)`;
+        const sizeMB = file.size / (1024 * 1024);
+        badge.textContent = sizeMB > 25
+          ? `⚠️ ${file.name} pèse ${sizeMB.toFixed(1)} Mo : l'envoi risque d'échouer au-delà de 25 Mo et le carrousel sera moins fluide. Vise une vidéo courte de 2 à 6 Mo.`
+          : `✓ Fichier prêt : ${file.name} (${sizeMB.toFixed(1)} Mo) — enregistre puis clique sur 🚀 Publier en 1 clic`;
       }
       event.target.value = '';
     }
@@ -5793,36 +5312,60 @@
     function applyCategoryVideoUpdate(catId, newUrl) {
       const ytId = extractYouTubeId(newUrl);
       const isYt = Boolean(ytId);
+      const isImg = Boolean(newUrl) && !isYt && isImageMediaUrl(newUrl);
 
       document.querySelectorAll(`.diag-column[data-cat-id="${catId}"]`).forEach(col => {
-        const vid = col.querySelector('.diag-video');
+        const vid = col.querySelector('video.diag-video');
+        const img = col.querySelector('.diag-image');
         const ytWrap = col.querySelector('.diag-yt-wrap');
         const ytIframe = col.querySelector('.diag-yt-iframe');
         const sim = col.querySelector('.diag-sim-canvas');
 
+        const hideVideo = () => {
+          vid.classList.add('hidden');
+          if (vid.getAttribute('src')) {
+            vid.pause();
+            vid.removeAttribute('src');
+            vid.load();
+          }
+        };
+        const hideImage = () => {
+          if (!img) return;
+          img.classList.add('hidden');
+          img.removeAttribute('src');
+        };
+        const hideYouTube = () => {
+          if (ytWrap && ytIframe) {
+            ytWrap.classList.add('hidden');
+            ytIframe.removeAttribute('src');
+          }
+        };
+
         if (newUrl && isYt) {
           sim.classList.add('hidden');
-          vid.classList.add('hidden');
-          vid.removeAttribute('src');
+          hideVideo();
+          hideImage();
           if (ytWrap && ytIframe) {
             ytWrap.classList.remove('hidden');
             ytIframe.src = buildYouTubeEmbedUrl(ytId, false);
           }
+        } else if (isImg && img) {
+          sim.classList.add('hidden');
+          hideVideo();
+          hideYouTube();
+          img.classList.remove('hidden');
+          img.src = newUrl;
         } else if (newUrl) {
           sim.classList.add('hidden');
-          if (ytWrap && ytIframe) {
-            ytWrap.classList.add('hidden');
-            ytIframe.removeAttribute('src');
-          }
+          hideImage();
+          hideYouTube();
           vid.classList.remove('hidden');
           vid.src = newUrl;
           vid.load();
         } else {
-          vid.classList.add('hidden');
-          if (ytWrap && ytIframe) {
-            ytWrap.classList.add('hidden');
-            ytIframe.removeAttribute('src');
-          }
+          hideVideo();
+          hideImage();
+          hideYouTube();
           sim.classList.remove('hidden');
         }
       });
@@ -5853,9 +5396,16 @@
           pendingVideoUploads[cat.videoUrl] &&
           pendingVideoUploads[cat.videoUrl].repoPath === newUrl;
         if (!isPendingRepoPath) {
+          // Un fichier choisi sur l'ordinateur est remplacé par un lien : inutile de l'envoyer
+          if (pendingVideoUploads[cat.videoUrl]) delete pendingVideoUploads[cat.videoUrl];
           cat.videoUrl = newUrl;
           applyCategoryVideoUpdate(cat.id, newUrl);
         }
+      } else if (!newUrl && cat.videoUrl) {
+        // Champ vidé : la colonne revient à l'animation par défaut
+        if (pendingVideoUploads[cat.videoUrl]) delete pendingVideoUploads[cat.videoUrl];
+        cat.videoUrl = '';
+        applyCategoryVideoUpdate(cat.id, '');
       }
 
       saveCategoriesToStorage();
@@ -5941,62 +5491,4 @@
       startIntroAnimation(false);
     });
   </script>
-
-
-      <script>
-        (function() {
-          // The root element's background fills the whole page. As in CSS,
-          // the body's background is used when the root element has none.
-          function getPageBackgroundColor() {
-            var docStyle = window.getComputedStyle(document.documentElement);
-            var color = docStyle.backgroundColor;
-            if ((color === 'rgba(0, 0, 0, 0)' || color === 'transparent') &&
-                docStyle.backgroundImage === 'none' && document.body) {
-              color = window.getComputedStyle(document.body).backgroundColor;
-            }
-            return color || '';
-          }
-
-          var lastReportedColor = '';
-          function reportBackgroundColor() {
-            try {
-              var color = getPageBackgroundColor();
-              if (color === lastReportedColor) return;
-              lastReportedColor = color;
-              window.parent.postMessage({
-                type: 'ATARI_CODE_EMBED_BACKGROUND_COLOR',
-                backgroundColor: color
-              }, '*');
-            } catch (e) {}
-          }
-
-          // The page background usually changes through an attribute on html
-          // or body (for example a theme class), a style sheet in head, or the
-          // system color scheme.
-          if (typeof MutationObserver !== 'undefined') {
-            var observer = new MutationObserver(reportBackgroundColor);
-            observer.observe(document.documentElement, {attributes: true});
-            if (document.body) {
-              observer.observe(document.body, {attributes: true});
-            }
-            if (document.head) {
-              observer.observe(document.head, {
-                attributes: true,
-                childList: true,
-                subtree: true,
-                characterData: true
-              });
-            }
-          }
-          var colorSchemeQuery =
-              window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)');
-          if (colorSchemeQuery && colorSchemeQuery.addEventListener) {
-            colorSchemeQuery.addEventListener('change', reportBackgroundColor);
-          }
-          window.addEventListener('load', reportBackgroundColor);
-          window.addEventListener('transitionend', reportBackgroundColor);
-          window.addEventListener('animationend', reportBackgroundColor);
-          reportBackgroundColor();
-        })();
-      </script>
-    </body></html>
+</body></html>
