@@ -794,7 +794,92 @@
       animation: none;
       display: none;
     }
+
+    /* =====================================================================
+       VERSION TÉLÉPHONE (écrans de moins de 768 px de large)
+       Rien ici ne s'applique sur ordinateur.
+       ===================================================================== */
+    :root {
+      --pu: 1px; /* 1 « pixel téléphone » : 1/390e de la largeur de l'écran sur téléphone */
+    }
+
+    /* Le glisser du carrousel est géré par le site (pas par le navigateur) */
+    #carousel-viewport {
+      touch-action: none;
+    }
+
+    #carousel-track.carousel-no-transition,
+    #carousel-track.carousel-no-transition * {
+      transition: none !important;
+    }
+
+    /* Position des blocs (cadres vidéo, textes, images, fenêtres) : ordinateur par défaut */
+    .m2-block {
+      left: var(--x);
+      top: var(--y);
+      width: var(--w);
+      height: var(--h);
+    }
+
+    .m2-text-content {
+      font-size: var(--fs);
+    }
+
+    @media (max-width: 767px) {
+      :root {
+        --pu: calc(100vw / 390);
+      }
+
+      #carousel-viewport,
+      .diag-column,
+      #category-scroll-container {
+        height: 100vh;
+        height: 100dvh;
+      }
+
+      .cat-page-section {
+        height: 100vh;
+        height: 100dvh;
+        min-height: 100vh;
+        min-height: 100dvh;
+      }
+
+      /* La bande centrale ne change pas de largeur : le carrousel reste bien centré */
+      body[data-hover-mode="push"] #carousel-track.has-hovered .diag-column:not(.is-hovered),
+      body[data-hover-mode="push"] #carousel-track.has-hovered .diag-column.is-hovered {
+        width: var(--col-base-width) !important;
+      }
+
+      .cat-fixed-header-layer {
+        height: 88px;
+        padding: 0.75rem 1rem;
+      }
+
+      .cat-back-pill {
+        gap: 0.5rem;
+        padding: 0.5rem 0.95rem;
+        font-size: 0.75rem;
+      }
+
+      .cat-header-title {
+        font-size: 1.35rem !important;
+        line-height: 1.1;
+      }
+
+      /* Mise en page téléphone des blocs */
+      .m2-block {
+        left: var(--mx);
+        top: var(--my);
+        width: var(--mw);
+        height: var(--mh);
+      }
+
+      .m2-text-content {
+        font-size: calc(var(--mfs) * var(--pu));
+      }
+    }
   </style>
+
 </head>
 <body data-hover-mode="eat" class="">
 
@@ -975,7 +1060,121 @@
       ];
     }
 
+    /*************************************************************************
+     * MISE EN PAGE TÉLÉPHONE DES BLOCS
+     * Chaque bloc peut avoir sa propre position sur téléphone (block.m = {x, y, w, h, fontSize}).
+     * Sans position téléphone, les blocs sont empilés automatiquement de haut en bas.
+     *************************************************************************/
+    const PHONE_REF_W = 390;   // largeur de référence d'un téléphone (px)
+    const PHONE_REF_H = 844;   // hauteur de référence d'un téléphone (px)
+    const DESKTOP_REF_W = 1440;
+    const DESKTOP_REF_H = 900;
+
+    // 'desktop' ou 'phone' : quelle mise en page l'atelier est en train de modifier (toujours 'desktop' sur le site)
+    let layoutEditMode = 'desktop';
+
+    function isPhoneLayoutEditing() {
+      return layoutEditMode === 'phone';
+    }
+
+    function isPhoneViewport() {
+      return window.matchMedia ? window.matchMedia('(max-width: 767px)').matches : window.innerWidth < 768;
+    }
+
+    function roundPct(v) {
+      return Number(Number(v).toFixed(2));
+    }
+
+    function normalizePhoneLayout(m, type) {
+      if (!m || typeof m !== 'object') return null;
+      const nums = ['x', 'y', 'w', 'h'].map(k => m[k]);
+      if (nums.some(v => typeof v !== 'number' || !isFinite(v))) return null;
+      const out = { x: m.x, y: m.y, w: m.w, h: m.h };
+      if (type === 'text' && typeof m.fontSize === 'number') out.fontSize = m.fontSize;
+      return out;
+    }
+
+    function autoPhoneFontSize(block, shrink) {
+      return Math.max(14, Math.min(44, Math.round((block.fontSize || 28) * 0.62 * Math.max(0.7, shrink || 1))));
+    }
+
+    /** Positions téléphone de tous les blocs d'une page (positions choisies + empilement automatique) */
+    function computePhoneLayouts(blocks) {
+      const result = {};
+      const list = (blocks || []).filter(b => b && typeof b === 'object');
+      list.forEach(b => {
+        if (b.m) result[b.id] = { ...b.m, fontSize: b.m.fontSize ?? autoPhoneFontSize(b, 1) };
+      });
+
+      const autoBlocks = list.filter(b => !b.m).sort((a, b) => (a.y - b.y) || (a.x - b.x));
+      if (!autoBlocks.length) return result;
+
+      const TOP = 14;
+      const BOTTOM = 96;
+      const GAP = 2.5;
+      const FULL_W = 88;
+
+      const desired = autoBlocks.map(b => {
+        if (b.type === 'text') {
+          return { w: FULL_W, h: Math.max(8, Math.min(20, b.h * 0.6)) };
+        }
+        const ratio = Math.max(0.3, Math.min(4, (b.w * DESKTOP_REF_W) / Math.max(1, b.h * DESKTOP_REF_H)));
+        let w = FULL_W;
+        let h = ((w / 100) * PHONE_REF_W / ratio) / PHONE_REF_H * 100;
+        if (h > 62) {
+          h = 62;
+          w = ((h / 100) * PHONE_REF_H * ratio) / PHONE_REF_W * 100;
+        }
+        return { w, h };
+      });
+
+      const gaps = GAP * (autoBlocks.length - 1);
+      const sumH = desired.reduce((acc, d) => acc + d.h, 0);
+      const avail = BOTTOM - TOP;
+      const k = (sumH + gaps) > avail ? Math.max(0.2, (avail - gaps) / sumH) : 1;
+      let y = TOP + Math.max(0, (avail - (sumH * k + gaps)) / 2);
+
+      autoBlocks.forEach((b, i) => {
+        const h = desired[i].h * k;
+        const w = b.type === 'text' ? FULL_W : desired[i].w * k;
+        const layout = { x: roundPct(50 - w / 2), y: roundPct(y), w: roundPct(w), h: roundPct(h) };
+        if (b.type === 'text') layout.fontSize = autoPhoneFontSize(b, k);
+        result[b.id] = layout;
+        y += h + GAP;
+      });
+      return result;
+    }
+
+    /** Fige la mise en page téléphone d'une page (à la première modification en mode téléphone) */
+    function ensurePhoneLayout(blocks) {
+      const auto = computePhoneLayouts(blocks);
+      (blocks || []).forEach(b => {
+        if (!b.m && auto[b.id]) b.m = { ...auto[b.id] };
+        if (b.m && b.type === 'text' && typeof b.m.fontSize !== 'number') b.m.fontSize = auto[b.id].fontSize;
+      });
+    }
+
+    /** Disposition modifiable d'un bloc pour la mise en page en cours (ordinateur ou téléphone) */
+    function getEditableLayout(page, block) {
+      if (!isPhoneLayoutEditing()) return block;
+      ensurePhoneLayout(getPageBlockList(page));
+      return block.m;
+    }
+
+    /** Variables CSS de position d'un bloc : ordinateur (--x...) et téléphone (--mx...) */
+    function m2BlockPosStyle(blk, phoneLayouts) {
+      const m = phoneLayouts[blk.id] || { x: blk.x, y: blk.y, w: blk.w, h: blk.h };
+      return `--x:${blk.x}%; --y:${blk.y}%; --w:${blk.w}%; --h:${blk.h}%; --mx:${m.x}%; --my:${m.y}%; --mw:${m.w}%; --mh:${m.h}%;`;
+    }
+
     function normalizeM2Block(b, idx) {
+      const out = normalizeM2BlockBase(b, idx);
+      const m = normalizePhoneLayout(b && b.m, out.type);
+      if (m) out.m = m;
+      return out;
+    }
+
+    function normalizeM2BlockBase(b, idx) {
       if (!b || typeof b !== 'object') {
         return createDefaultM2Blocks()[idx % 2];
       }
@@ -1016,7 +1215,8 @@
           bold: Boolean(b.bold),
           italic: Boolean(b.italic),
           underline: Boolean(b.underline),
-          align: (b.align === 'left' || b.align === 'right' || b.align === 'center') ? b.align : 'center'
+          align: (b.align === 'left' || b.align === 'right' || b.align === 'center') ? b.align : 'center',
+          fontId: typeof b.fontId === 'string' ? b.fontId : ''
         };
       }
       return {
@@ -1101,10 +1301,48 @@
     }
 
     /**
-     * Ce qu'une « fenêtre web » doit afficher : profil TikTok, vidéo TikTok, vidéo YouTube ou autre site.
+     * Sites qui interdisent d'afficher leurs pages dans la fenêtre d'un autre site (règle de sécurité de leur part).
+     * Pour eux, la fenêtre affiche une « carte lien » aux couleurs du site au lieu d'un message d'erreur.
+     */
+    const FRAME_REFUSING_SITES = [
+      { re: /(^|\.)(x|twitter)\.com$/, name: 'X' },
+      { re: /(^|\.)instagram\.com$/, name: 'Instagram' },
+      { re: /(^|\.)(facebook|fb)\.com$/, name: 'Facebook' },
+      { re: /(^|\.)threads\.(net|com)$/, name: 'Threads' },
+      { re: /(^|\.)linkedin\.com$/, name: 'LinkedIn' },
+      { re: /(^|\.)youtube\.com$/, name: 'YouTube' },
+      { re: /(^|\.)google\.[a-z.]+$/, name: 'Google' },
+      { re: /(^|\.)reddit\.com$/, name: 'Reddit' },
+      { re: /(^|\.)pinterest\.[a-z.]+$/, name: 'Pinterest' },
+      { re: /(^|\.)github\.com$/, name: 'GitHub' },
+      { re: /(^|\.)snapchat\.com$/, name: 'Snapchat' },
+      { re: /(^|\.)spotify\.com$/, name: 'Spotify' },
+      { re: /(^|\.)soundcloud\.com$/, name: 'SoundCloud' },
+      { re: /(^|\.)vimeo\.com$/, name: 'Vimeo' }
+    ];
+
+    const YOUTUBE_CHANNEL_ID_RE = /^UC[\w-]{22}$/;
+
+    function linkCardTarget(url, parsed, siteName) {
+      const path = decodeURIComponent(parsed.pathname).replace(/\/+$/, '');
+      const segments = path.split('/').filter(Boolean);
+      let detail = '';
+      if (segments.length === 1) detail = segments[0].startsWith('@') ? segments[0] : `@${segments[0]}`;
+      else if (segments.length) detail = parsed.hostname.replace(/^www\./, '') + path;
+      return { kind: 'link-card', site: siteName, detail, openUrl: url };
+    }
+
+    /**
+     * Ce qu'une « fenêtre web » doit afficher. Uniquement des intégrations officielles :
+     * TikTok (profil, vidéo), YouTube (vidéo, playlist, chaîne), X (publication), Instagram (publication),
+     * Spotify, SoundCloud, Vimeo. Les sites qui refusent l'affichage donnent une carte lien.
      */
     function resolveEmbedTarget(rawUrl) {
-      const url = safeExternalUrl(rawUrl);
+      const raw = String(rawUrl || '').trim();
+      if (YOUTUBE_CHANNEL_ID_RE.test(raw)) {
+        return { kind: 'youtube-channel', channelId: raw, openUrl: `https://www.youtube.com/channel/${raw}` };
+      }
+      const url = safeExternalUrl(raw);
       if (!url) return null;
       let parsed;
       try {
@@ -1112,39 +1350,157 @@
       } catch (e) {
         return null;
       }
-      const host = parsed.hostname.toLowerCase().replace(/^(www|m)\./, '');
+      const host = parsed.hostname.toLowerCase().replace(/^(www|m|mobile)\./, '');
+      const path = parsed.pathname;
+
+      // TikTok
       if (host === 'tiktok.com') {
-        const videoMatch = parsed.pathname.match(/^\/@[\w.]+\/(?:video|photo)\/(\d+)/);
+        const videoMatch = path.match(/^\/@[\w.]+\/(?:video|photo)\/(\d+)/);
         if (videoMatch) return { kind: 'tiktok-video', id: videoMatch[1], openUrl: url };
-        const profileMatch = parsed.pathname.match(/^\/@([\w.]+)\/?$/);
+        const profileMatch = path.match(/^\/@([\w.]+)\/?$/);
         if (profileMatch) return { kind: 'tiktok-profile', username: profileMatch[1], openUrl: `https://www.tiktok.com/@${profileMatch[1]}` };
       }
-      const ytId = extractYouTubeId(url);
-      if (ytId) return { kind: 'youtube', id: ytId, openUrl: url };
+
+      // YouTube
+      if (host === 'youtube.com' || host === 'youtu.be' || host === 'youtube-nocookie.com') {
+        const channelMatch = path.match(/^\/channel\/(UC[\w-]{22})\/?/);
+        if (channelMatch) return { kind: 'youtube-channel', channelId: channelMatch[1], openUrl: url };
+        const listId = parsed.searchParams.get('list');
+        if (path === '/playlist' && listId && /^[\w-]+$/.test(listId)) return { kind: 'youtube-playlist', listId, openUrl: url };
+        const ytId = extractYouTubeId(url);
+        if (ytId) return { kind: 'youtube', id: ytId, openUrl: url };
+        if (/^\/(@|c\/|user\/)/.test(path)) {
+          return { ...linkCardTarget(url, parsed, 'YouTube'), youtubeHandle: true };
+        }
+      }
+
+      // X (ex-Twitter) : une publication précise
+      if (host === 'x.com' || host === 'twitter.com') {
+        const postMatch = path.match(/^\/([\w]+)\/status(?:es)?\/(\d+)/);
+        if (postMatch) return { kind: 'x-post', user: postMatch[1], id: postMatch[2], openUrl: url };
+      }
+
+      // Instagram : une publication ou un reel précis
+      if (host === 'instagram.com') {
+        const postMatch = path.match(/^\/(?:[\w.]+\/)?(p|reel|tv)\/([\w-]+)/);
+        if (postMatch) return { kind: 'instagram-post', type: postMatch[1] === 'tv' ? 'p' : postMatch[1], code: postMatch[2], openUrl: url };
+      }
+
+      // Spotify
+      if (host === 'open.spotify.com') {
+        const spMatch = path.match(/^\/(?:intl-[\w-]+\/)?(track|album|playlist|artist|episode|show)\/([A-Za-z0-9]+)/);
+        if (spMatch) return { kind: 'spotify', type: spMatch[1], id: spMatch[2], openUrl: url };
+      }
+
+      // SoundCloud (morceau, playlist ou profil)
+      if (host === 'soundcloud.com' && path.split('/').filter(Boolean).length >= 1) {
+        return { kind: 'soundcloud', url: `https://soundcloud.com${path.replace(/\/+$/, '')}`, openUrl: url };
+      }
+
+      // Vimeo
+      if (host === 'vimeo.com' || host === 'player.vimeo.com') {
+        const vimeoMatch = path.match(/(?:^|\/)(\d{5,})(?:\/|$)/);
+        if (vimeoMatch) return { kind: 'vimeo', id: vimeoMatch[1], openUrl: url };
+      }
+
+      // Google Maps « Intégrer une carte » : autorisé
+      if (/(^|\.)google\.[a-z.]+$/.test(host) && path.startsWith('/maps/embed')) {
+        return { kind: 'web', url, openUrl: url };
+      }
+
+      const refusing = FRAME_REFUSING_SITES.find(s => s.re.test(host));
+      if (refusing) return linkCardTarget(url, parsed, refusing.name);
+
       return { kind: 'web', url, openUrl: url };
+    }
+
+    /** Petite page isolée contenant un code d'intégration officiel (TikTok, X...) */
+    function embedSrcdoc(bodyHtml, scriptUrl) {
+      return '<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">' +
+        '<style>html,body{margin:0;padding:0;background:transparent;}body{display:flex;justify-content:center;}blockquote{margin:0 auto !important;}.twitter-tweet{margin:0 auto !important;}</style></head><body>' +
+        bodyHtml +
+        `<script async src="${scriptUrl}" charset="utf-8"><\/script></body></html>`;
+    }
+
+    function buildLinkCardHtml(target, isEditor) {
+      return `
+        <a
+          href="${escapeHtml(target.openUrl)}"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="m2-link-card absolute inset-0 flex flex-col items-center justify-center gap-3 p-5 text-center text-[#b6ab9d]"
+          style="text-decoration:none; ${isEditor ? 'pointer-events:none;' : ''}"
+          title="Ouvrir sur ${escapeHtml(target.site)}"
+        >
+          <span class="font-dela text-2xl leading-tight">${escapeHtml(target.site)}</span>
+          ${target.detail ? `<span class="text-xs opacity-70 max-w-full break-all">${escapeHtml(target.detail)}</span>` : ''}
+          <span class="mt-1 px-4 py-2 rounded-full bg-[#b6ab9d] text-[#151515] text-xs font-bold">↗ Voir sur ${escapeHtml(target.site)}</span>
+        </a>`;
     }
 
     function buildEmbedIframeHtml(target, isEditor) {
       // En mode éditeur, la fenêtre ne capte pas la souris : on peut la déplacer et la redimensionner
       const attrs = `class="m2-embed-iframe" style="position:absolute; inset:0; width:100%; height:100%; border:0; ${isEditor ? 'pointer-events:none;' : ''}" loading="lazy" allow="autoplay; encrypted-media; fullscreen; picture-in-picture; clipboard-write" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"`;
 
-      if (target.kind === 'tiktok-profile') {
-        // Code d'intégration officiel TikTok (profil créateur), isolé dans sa propre petite page
-        const u = target.username;
-        const doc = '<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">' +
-          '<style>html,body{margin:0;padding:0;background:transparent;}body{display:flex;justify-content:center;}blockquote.tiktok-embed{margin:0 auto !important;}</style></head><body>' +
-          `<blockquote class="tiktok-embed" cite="https://www.tiktok.com/@${u}" data-unique-id="${u}" data-embed-type="creator" style="max-width:720px; min-width:288px;">` +
-          `<section><a target="_blank" href="https://www.tiktok.com/@${u}?refer=creator_embed">@${u}</a></section></blockquote>` +
-          '<script async src="https://www.tiktok.com/embed.js"><\/script></body></html>';
-        return `<iframe ${attrs} title="Profil TikTok @${escapeHtml(u)}" srcdoc="${escapeHtml(doc)}"></iframe>`;
+      switch (target.kind) {
+        case 'tiktok-profile': {
+          // Code d'intégration officiel TikTok (profil créateur)
+          const u = target.username;
+          const doc = embedSrcdoc(
+            `<blockquote class="tiktok-embed" cite="https://www.tiktok.com/@${u}" data-unique-id="${u}" data-embed-type="creator" style="max-width:720px; min-width:288px;">` +
+            `<section><a target="_blank" href="https://www.tiktok.com/@${u}?refer=creator_embed">@${u}</a></section></blockquote>`,
+            'https://www.tiktok.com/embed.js'
+          );
+          return `<iframe ${attrs} title="Profil TikTok @${escapeHtml(u)}" srcdoc="${escapeHtml(doc)}"></iframe>`;
+        }
+        case 'tiktok-video':
+          return `<iframe ${attrs} title="Vidéo TikTok" src="https://www.tiktok.com/player/v1/${target.id}?rel=0&description=1"></iframe>`;
+        case 'youtube':
+          return `<iframe ${attrs} title="Vidéo YouTube" src="https://www.youtube.com/embed/${target.id}?rel=0&playsinline=1"></iframe>`;
+        case 'youtube-playlist':
+          return `<iframe ${attrs} title="Playlist YouTube" src="https://www.youtube.com/embed/videoseries?list=${encodeURIComponent(target.listId)}&rel=0&playsinline=1"></iframe>`;
+        case 'youtube-channel':
+          // Les vidéos publiées d'une chaîne forment la playlist « UU » + identifiant de la chaîne
+          return `<iframe ${attrs} title="Chaîne YouTube" src="https://www.youtube.com/embed/videoseries?list=UU${target.channelId.slice(2)}&rel=0&playsinline=1"></iframe>`;
+        case 'x-post': {
+          // Code d'intégration officiel de X (publication)
+          const doc = embedSrcdoc(
+            `<blockquote class="twitter-tweet" data-theme="dark" data-dnt="true"><a href="https://twitter.com/${target.user}/status/${target.id}"></a></blockquote>`,
+            'https://platform.twitter.com/widgets.js'
+          );
+          return `<iframe ${attrs} title="Publication X" srcdoc="${escapeHtml(doc)}"></iframe>`;
+        }
+        case 'instagram-post':
+          return `<iframe ${attrs} title="Publication Instagram" src="https://www.instagram.com/${target.type}/${encodeURIComponent(target.code)}/embed/"></iframe>`;
+        case 'spotify':
+          return `<iframe ${attrs} title="Spotify" src="https://open.spotify.com/embed/${target.type}/${target.id}"></iframe>`;
+        case 'soundcloud':
+          return `<iframe ${attrs} title="SoundCloud" src="https://w.soundcloud.com/player/?url=${encodeURIComponent(target.url)}&color=%23b6ab9d&visual=true&show_comments=false"></iframe>`;
+        case 'vimeo':
+          return `<iframe ${attrs} title="Vidéo Vimeo" src="https://player.vimeo.com/video/${target.id}"></iframe>`;
+        case 'link-card':
+          return buildLinkCardHtml(target, isEditor);
+        default:
+          return `<iframe ${attrs} title="Site web" src="${escapeHtml(target.url)}"></iframe>`;
       }
-      if (target.kind === 'tiktok-video') {
-        return `<iframe ${attrs} title="Vidéo TikTok" src="https://www.tiktok.com/player/v1/${target.id}?rel=0&description=1"></iframe>`;
-      }
-      if (target.kind === 'youtube') {
-        return `<iframe ${attrs} title="Vidéo YouTube" src="https://www.youtube.com/embed/${target.id}?rel=0&playsinline=1"></iframe>`;
-      }
-      return `<iframe ${attrs} title="Site web" src="${escapeHtml(target.url)}"></iframe>`;
+    }
+
+    function embedTargetLabel(target) {
+      if (!target) return '';
+      return {
+        'tiktok-profile': `Profil TikTok @${target.username || ''}`,
+        'tiktok-video': 'Vidéo TikTok',
+        'youtube': 'Vidéo YouTube',
+        'youtube-playlist': 'Playlist YouTube',
+        'youtube-channel': 'Chaîne YouTube (dernières vidéos)',
+        'x-post': 'Publication X',
+        'instagram-post': 'Publication Instagram',
+        'spotify': 'Spotify',
+        'soundcloud': 'SoundCloud',
+        'vimeo': 'Vidéo Vimeo',
+        'link-card': `Carte lien : ${target.site || ''}`,
+        'web': 'Site web'
+      }[target.kind] || 'Fenêtre web';
     }
 
     function createDefaultPages() {
@@ -1197,7 +1553,8 @@
             "bold": false,
             "italic": false,
             "underline": false,
-            "align": "center"
+            "align": "center",
+            "fontId": ""
           }
         ],
         "freeBlocks": []
@@ -1236,7 +1593,8 @@
             "bold": false,
             "italic": false,
             "underline": false,
-            "align": "center"
+            "align": "center",
+            "fontId": ""
           }
         ],
         "freeBlocks": []
@@ -1272,7 +1630,8 @@
             "bold": false,
             "italic": false,
             "underline": false,
-            "align": "center"
+            "align": "center",
+            "fontId": ""
           }
         ],
         "freeBlocks": []
@@ -1311,7 +1670,8 @@
             "bold": false,
             "italic": false,
             "underline": false,
-            "align": "center"
+            "align": "center",
+            "fontId": ""
           }
         ],
         "freeBlocks": []
@@ -1347,7 +1707,8 @@
             "bold": false,
             "italic": false,
             "underline": false,
-            "align": "left"
+            "align": "left",
+            "fontId": ""
           },
           {
             "id": "blk-web-1795556461620",
@@ -1371,7 +1732,8 @@
             "bold": true,
             "italic": false,
             "underline": false,
-            "align": "left"
+            "align": "left",
+            "fontId": ""
           }
         ],
         "freeBlocks": []
@@ -1410,14 +1772,15 @@
             "bold": false,
             "italic": false,
             "underline": false,
-            "align": "center"
+            "align": "center",
+            "fontId": ""
           }
         ],
         "freeBlocks": [
           {
             "id": "blk-vid-1795556610562",
             "type": "video",
-            "x": 9.79,
+            "x": 8.6,
             "y": 31,
             "w": 34,
             "h": 38,
@@ -1438,7 +1801,267 @@
             "bold": false,
             "italic": false,
             "underline": false,
-            "align": "center"
+            "align": "center",
+            "fontId": ""
+          },
+          {
+            "id": "blk-web-1795557212368",
+            "type": "embed",
+            "x": 24.56,
+            "y": 71.75,
+            "w": 16.41,
+            "h": 24.21,
+            "embedUrl": "https://x.com/JoblifeEsport/status/1962523590848303177?a=7e-9fbhzrDM9ac1o18o&s=20",
+            "borderRadius": 24
+          },
+          {
+            "id": "blk-txt-1795557303171",
+            "type": "text",
+            "x": 9.01,
+            "y": 65.74,
+            "w": 14.69,
+            "h": 16,
+            "html": "Lien vers la vidéo postée sur Twitter",
+            "fontSize": 19,
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "left",
+            "fontId": ""
+          },
+          {
+            "id": "blk-txt-1795558472642",
+            "type": "text",
+            "x": 0,
+            "y": 0,
+            "w": 30,
+            "h": 8,
+            "html": "<div><span style=\"letter-spacing: 0.015em; -webkit-text-stroke: 0.032em currentcolor;\"><br></span></div><div><span style=\"letter-spacing: 0.015em; -webkit-text-stroke: 0.032em currentcolor;\"><br></span></div><div><span style=\"letter-spacing: 0.015em; -webkit-text-stroke: 0.032em currentcolor;\"><br></span></div><div><span style=\"letter-spacing: 0.015em; -webkit-text-stroke: 0.032em currentcolor;\"><br></span></div><div><span style=\"letter-spacing: 0.015em; -webkit-text-stroke: 0.032em currentcolor;\"><br></span></div><div><span style=\"letter-spacing: 0.015em; -webkit-text-stroke: 0.032em currentcolor;\"><br></span></div><div><span style=\"letter-spacing: 0.015em; -webkit-text-stroke: 0.032em currentcolor;\"><br></span></div><div><span style=\"letter-spacing: 0.015em; -webkit-text-stroke: 0.032em currentcolor;\">&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; TWITTER</span></div>",
+            "fontSize": 26,
+            "bold": true,
+            "italic": false,
+            "underline": false,
+            "align": "left",
+            "fontId": ""
+          }
+        ]
+      },
+      {
+        "id": "page-1795557418744-kq8f",
+        "template": "fullscreen-video",
+        "title": "Modèle 1 : Vidéo Plein Écran",
+        "bgTheme": "noir",
+        "videoUrl": "https://youtu.be/6hJKJS8QOyw?si=bgZR95DIPb2yrhPp",
+        "videoOpacity": 100,
+        "videoVolume": 50,
+        "videoMuted": false,
+        "blocks": [
+          {
+            "id": "blk-vid-y7uy8b",
+            "type": "video",
+            "x": 6.2,
+            "y": 33.5,
+            "w": 40,
+            "h": 40,
+            "borderRadius": 42,
+            "videoUrl": "",
+            "posX": 50,
+            "posY": 50
+          },
+          {
+            "id": "blk-txt-ipfu3a",
+            "type": "text",
+            "x": 59.5,
+            "y": 44.5,
+            "w": 31,
+            "h": 18,
+            "html": "ZONE DE TEXTE",
+            "fontSize": 28,
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "center",
+            "fontId": ""
+          }
+        ],
+        "freeBlocks": []
+      },
+      {
+        "id": "page-1795557425552-h2t7",
+        "template": "blank",
+        "title": "Page vierge (Fond uni)",
+        "bgTheme": "taupe",
+        "videoUrl": "",
+        "videoOpacity": 80,
+        "videoVolume": 80,
+        "videoMuted": false,
+        "blocks": [
+          {
+            "id": "blk-vid-ep50l9",
+            "type": "video",
+            "x": 6.2,
+            "y": 33.5,
+            "w": 40,
+            "h": 40,
+            "borderRadius": 42,
+            "videoUrl": "",
+            "posX": 50,
+            "posY": 50
+          },
+          {
+            "id": "blk-txt-b4y6xa",
+            "type": "text",
+            "x": 59.5,
+            "y": 44.5,
+            "w": 31,
+            "h": 18,
+            "html": "ZONE DE TEXTE",
+            "fontSize": 28,
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "center",
+            "fontId": ""
+          }
+        ],
+        "freeBlocks": [
+          {
+            "id": "blk-txt-1795557450926",
+            "type": "text",
+            "x": 56.11,
+            "y": 34.37,
+            "w": 34.11,
+            "h": 37.43,
+            "html": "<span style=\"font-size: 22px; text-align: left;\">Dans la continuité de ma collaboration avec Joblife, j'ai rencontré Kada, un streamer dans l'entourage de JLTomy.&nbsp; Kada m'a fait confiance pour rejoindre son équipe et participer à la mise en place de son émission esport :&nbsp; L'Avant-Match.&nbsp; Nous avons fait 2 saisons. Cette expérience m'a beaucoup apporté sur le travail en équipe et la préparation rapide d'émissions Twitch.&nbsp;</span>",
+            "fontSize": 26,
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "center",
+            "fontId": ""
+          },
+          {
+            "id": "blk-vid-1795557568456",
+            "type": "video",
+            "x": 5.79,
+            "y": 27.43,
+            "w": 40,
+            "h": 45.14,
+            "borderRadius": 42,
+            "videoUrl": "https://youtu.be/acYNyvf4BTQ?si=03aSHHmFp65Ugs3d",
+            "posX": 50,
+            "posY": 50
+          },
+          {
+            "id": "blk-txt-1795557668635",
+            "type": "text",
+            "x": 6.86,
+            "y": 69.35,
+            "w": 30,
+            "h": 16,
+            "html": "Pour la 2ème saison, j'ai proposé à Kada de réaliser une vidéo d'annonce. Elle marque ma première réalisation de A à Z.",
+            "fontSize": 17,
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "left",
+            "fontId": ""
+          },
+          {
+            "id": "blk-txt-1795558515084",
+            "type": "text",
+            "x": 0,
+            "y": 0,
+            "w": 30,
+            "h": 8,
+            "html": "<div><br></div><div><br></div><div><br></div><div><br></div><div><br></div><div><br></div><div><br></div>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; TWITCH",
+            "fontSize": 26,
+            "bold": true,
+            "italic": false,
+            "underline": false,
+            "align": "left",
+            "fontId": ""
+          }
+        ]
+      },
+      {
+        "id": "page-1795557815032-mmrd",
+        "template": "blank",
+        "title": "Page vierge (Fond uni)",
+        "bgTheme": "noir",
+        "videoUrl": "",
+        "videoOpacity": 80,
+        "videoVolume": 80,
+        "videoMuted": false,
+        "blocks": [
+          {
+            "id": "blk-vid-3a0v72",
+            "type": "video",
+            "x": 6.2,
+            "y": 33.5,
+            "w": 40,
+            "h": 40,
+            "borderRadius": 42,
+            "videoUrl": "",
+            "posX": 50,
+            "posY": 50
+          },
+          {
+            "id": "blk-txt-8k1p24",
+            "type": "text",
+            "x": 59.5,
+            "y": 44.5,
+            "w": 31,
+            "h": 18,
+            "html": "ZONE DE TEXTE",
+            "fontSize": 28,
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "center",
+            "fontId": ""
+          }
+        ],
+        "freeBlocks": [
+          {
+            "id": "blk-txt-1795557818328",
+            "type": "text",
+            "x": 9.29,
+            "y": 19.05,
+            "w": 37.56,
+            "h": 61.9,
+            "html": "Avant de travailler avec Tomy, j'ai travaillé avec un autre streamer, Viggy_Night. J'ai géré sa chaîne Youtube pendant 1 an.&nbsp;<div><br></div><div><div>J'ai ensuite géré la chaîne Youtube de l'Avant-Match durant la saison 2 .</div><div><br></div><div><div>Ces expériences m'ont permis de comprendre l'outil Youtube.&nbsp; Conscient que ma formation ne m'apprend pas le montage au format Youtube, j'ai réalisé de mon côté un stage auprès d'un vidéaste centré sur les commandes de vidéos Youtubes. Ce stage m'a permis d'engendrer de nouvelles connaissances sur le montage format long pour les réseaux.</div></div></div>",
+            "fontSize": 26,
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "left",
+            "fontId": ""
+          },
+          {
+            "id": "blk-web-1795558236653",
+            "type": "embed",
+            "x": 49.97,
+            "y": 19.85,
+            "w": 45.61,
+            "h": 60.3,
+            "embedUrl": "UCECXV1BV8oO213wxuygowdg",
+            "borderRadius": 24
+          },
+          {
+            "id": "blk-txt-1795558537188",
+            "type": "text",
+            "x": 0,
+            "y": 0,
+            "w": 30,
+            "h": 8,
+            "html": "<div><br></div><div><br></div><div><br></div><div><br></div><div><br></div><div><br></div><div><br></div>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; YOUTUBE",
+            "fontSize": 26,
+            "bold": true,
+            "italic": false,
+            "underline": false,
+            "align": "left",
+            "fontId": ""
           }
         ]
       }
@@ -1447,12 +2070,96 @@
 ];
     /* __COLVEUR_DATA_END__ */
 
+    /* __COLVEUR_FONTS_START__ */
+    const SITE_FONTS = [];
+    /* __COLVEUR_FONTS_END__ */
+
+    /*************************************************************************
+     * POLICES D'ÉCRITURE AJOUTÉES (Google Fonts...)
+     * Chaque police : { id, name, files: [{ url, weight, style, format }] }
+     *************************************************************************/
+    const STORAGE_KEY_FONTS = 'colveur_site_fonts_v1';
+
+    function guessFontFormat(url) {
+      const ext = String(url || '').split('?')[0].split('.').pop().toLowerCase();
+      return { woff2: 'woff2', woff: 'woff', otf: 'opentype', ttf: 'truetype' }[ext] || 'truetype';
+    }
+
+    function normalizeFontList(list) {
+      return (Array.isArray(list) ? list : [])
+        .filter(f => f && typeof f === 'object' && /^[a-z0-9-]+$/.test(String(f.id || '')) && Array.isArray(f.files))
+        .map(f => ({
+          id: String(f.id),
+          name: String(f.name || f.id),
+          files: f.files
+            .filter(x => x && typeof x.url === 'string' && x.url)
+            .map(x => ({
+              url: x.url,
+              weight: /^\d{3}( \d{3})?$/.test(String(x.weight)) ? String(x.weight) : '400',
+              style: x.style === 'italic' ? 'italic' : 'normal',
+              format: ['woff2', 'woff', 'opentype', 'truetype'].includes(x.format) ? x.format : guessFontFormat(x.url)
+            }))
+        }))
+        .filter(f => f.files.length > 0);
+    }
+
+    let siteFonts = normalizeFontList(SITE_FONTS);
+    if (IS_ATELIER) {
+      try {
+        const rawFonts = localStorage.getItem(STORAGE_KEY_FONTS);
+        if (rawFonts && localStorage.getItem('colveur_portfolio_data_v2')) siteFonts = normalizeFontList(JSON.parse(rawFonts));
+      } catch (e) {}
+    }
+
+    function fontFamilyName(fontId) {
+      return `cvf-${fontId}`;
+    }
+
+    /** Pile de polices CSS d'une zone de texte ('' = police par défaut du site, Dela Gothic One) */
+    function fontCssStack(fontId) {
+      if (!fontId) return '';
+      if (fontId === 'inter') return "'Inter', sans-serif";
+      if (!siteFonts.some(f => f.id === fontId)) return '';
+      return `'${fontFamilyName(fontId)}', 'Dela Gothic One', cursive, sans-serif`;
+    }
+
+    function fontOptionsHtml(selectedId) {
+      const options = [
+        { id: '', name: 'Dela Gothic (défaut)' },
+        { id: 'inter', name: 'Inter' },
+        ...siteFonts.map(f => ({ id: f.id, name: f.name }))
+      ];
+      const known = options.some(o => o.id === (selectedId || ''));
+      return options.map(o => `<option value="${escapeHtml(o.id)}" class="bg-[#151515]" ${(o.id === (selectedId || '') || (!known && o.id === '')) ? 'selected' : ''}>${escapeHtml(o.name)}</option>`).join('') +
+        '<option value="__add__" class="bg-[#151515]">+ Ajouter une police…</option>';
+    }
+
+    /** Déclare les polices ajoutées pour que le navigateur les charge */
+    function applySiteFonts() {
+      let styleEl = document.getElementById('colveur-site-fonts');
+      if (!styleEl) {
+        styleEl = document.createElement('style');
+        styleEl.id = 'colveur-site-fonts';
+        document.head.appendChild(styleEl);
+      }
+      styleEl.textContent = siteFonts.map(f => f.files.map(file =>
+        `@font-face { font-family: '${fontFamilyName(f.id)}'; src: url("${String(file.url).replace(/["\\\n]/g, '')}") format("${file.format}"); font-weight: ${file.weight}; font-style: ${file.style}; font-display: swap; }`
+      ).join('\n')).join('\n');
+    }
+
+    applySiteFonts();
+
     /**
      * Empreinte d'une version du contenu : permet à l'atelier de savoir si ses modifications locales
      * (non publiées) ont été faites sur la version actuellement en ligne.
      */
     const STORAGE_KEY_PORTFOLIO_BASE = 'colveur_portfolio_base_v1';
     let publishedBaseSignature = null;
+
+    function computeSiteSignature(rawCategories, rawFonts) {
+      const base = computeDataSignature(rawCategories);
+      return (Array.isArray(rawFonts) && rawFonts.length) ? `${base}|${computeDataSignature(rawFonts)}` : base;
+    }
 
     function computeDataSignature(data) {
       const str = JSON.stringify(data);
@@ -1521,10 +2228,13 @@
           })
         }));
         localStorage.setItem(STORAGE_KEY_PORTFOLIO, JSON.stringify(serializable));
+        // Les polices pas encore publiées (fichiers sur l'ordinateur) ne survivent pas à une fermeture
+        localStorage.setItem(STORAGE_KEY_FONTS, JSON.stringify(siteFonts.filter(f => f.files.every(file => !String(file.url).startsWith('blob:')))));
         if (publishedBaseSignature) {
           localStorage.setItem(STORAGE_KEY_PORTFOLIO_BASE, publishedBaseSignature);
         }
       } catch (e) {}
+      if (typeof recordUndoStep === 'function') recordUndoStep();
     }
 
     let categories = loadPersistedCategories();
@@ -1952,6 +2662,65 @@
     let framingDragCatId = null;
     let framingStartPosX = 50;
 
+    /*************************************************************************
+     * CARROUSEL SUR TÉLÉPHONE : on glisse, la bande arrive au centre et s'allume toute seule.
+     * Toucher une bande sur le côté la ramène au centre ; toucher la bande centrale l'ouvre.
+     *************************************************************************/
+    let phoneActiveCol = null;
+    let carouselJustWrapped = false;
+
+    function isPhoneCarousel() {
+      return isPhoneViewport();
+    }
+
+    // Décalage qui place une bande pile au centre de l'écran
+    function phoneCenterOffset() {
+      return baseColWidth / 2 - window.innerWidth / 2;
+    }
+
+    function phoneIndexForScroll(scrollValue) {
+      return Math.round((scrollValue - phoneCenterOffset()) / baseColWidth);
+    }
+
+    function phoneScrollForIndex(index) {
+      return index * baseColWidth + phoneCenterOffset();
+    }
+
+    function snapPhoneCarousel(directionBias) {
+      let index = phoneIndexForScroll(scrollTarget);
+      if (directionBias) {
+        const startIndex = phoneIndexForScroll(scrollStartTarget);
+        if (index === startIndex) index += directionBias;
+      }
+      scrollTarget = phoneScrollForIndex(index);
+    }
+
+    function setPhoneActiveColumn(col) {
+      if (col === phoneActiveCol) return;
+      if (phoneActiveCol) phoneActiveCol.dispatchEvent(new MouseEvent('mouseleave'));
+      phoneActiveCol = col;
+      if (col) col.dispatchEvent(new MouseEvent('mouseenter'));
+    }
+
+    function updatePhoneActiveColumn() {
+      if (!isPhoneCarousel()) {
+        if (phoneActiveCol) setPhoneActiveColumn(null);
+        return;
+      }
+      if (document.getElementById('category-page').classList.contains('is-open')) return;
+      const index = phoneIndexForScroll(scrollCurrent);
+      const col = track.children[index] || null;
+      if (carouselJustWrapped && col && phoneActiveCol && col !== phoneActiveCol && col.dataset.catId === phoneActiveCol.dataset.catId) {
+        // Le carrousel infini vient de boucler : même bande, on bascule sans animation (pas de clignotement)
+        track.classList.add('carousel-no-transition');
+        setPhoneActiveColumn(col);
+        requestAnimationFrame(() => requestAnimationFrame(() => track.classList.remove('carousel-no-transition')));
+      } else {
+        setPhoneActiveColumn(col);
+      }
+      carouselJustWrapped = false;
+    }
+
     function updateColumnDimensions() {
       const colsVisible = window.innerWidth < 640 ? 1.25 : window.innerWidth < 1024 ? 2 : 3;
       baseColWidth = window.innerWidth / colsVisible;
@@ -2087,7 +2856,9 @@
             }
           });
 
-          col.addEventListener('mouseenter', () => {
+          col.addEventListener('mouseenter', (e) => {
+            // Sur téléphone, c'est la position au centre qui allume la bande (pas le doigt)
+            if (e.isTrusted && isPhoneCarousel()) return;
             col.classList.add('is-hovered');
             track.classList.add('has-hovered');
             mediaLayer.style.opacity = '1';
@@ -2102,7 +2873,8 @@
             }
           });
 
-          col.addEventListener('mouseleave', () => {
+          col.addEventListener('mouseleave', (e) => {
+            if (e.isTrusted && isPhoneCarousel()) return;
             col.classList.remove('is-hovered');
             if (!track.querySelector('.diag-column.is-hovered')) {
               track.classList.remove('has-hovered');
@@ -2119,6 +2891,12 @@
 
           col.addEventListener('click', () => {
             if (dragDistance > 6) return;
+            if (isPhoneCarousel() && col !== phoneActiveCol) {
+              // Bande sur le côté : on la ramène au centre
+              const index = Array.prototype.indexOf.call(track.children, col);
+              if (index >= 0) scrollTarget = phoneScrollForIndex(index);
+              return;
+            }
             openCategoryPage(cat.id);
           });
 
@@ -2127,11 +2905,16 @@
       }
 
       const singleSetWidth = categories.length * baseColWidth;
-      scrollTarget = singleSetWidth * 2;
+      scrollTarget = singleSetWidth * 2 + (isPhoneCarousel() ? phoneCenterOffset() : 0);
       scrollCurrent = scrollTarget;
+      phoneActiveCol = null;
     }
 
     function nudgeCarousel(direction) {
+      if (isPhoneCarousel()) {
+        scrollTarget = phoneScrollForIndex(phoneIndexForScroll(scrollTarget) + direction);
+        return;
+      }
       scrollTarget += direction * baseColWidth;
     }
 
@@ -2154,13 +2937,16 @@
         if (scrollCurrent < minBound) {
           scrollCurrent += singleSetWidth;
           scrollTarget += singleSetWidth;
+          carouselJustWrapped = true;
         } else if (scrollCurrent >= maxBound) {
           scrollCurrent -= singleSetWidth;
           scrollTarget -= singleSetWidth;
+          carouselJustWrapped = true;
         }
       }
 
       track.style.transform = `translate3d(${-scrollCurrent}px, 0, 0)`;
+      updatePhoneActiveColumn();
 
       for (let i = 0; i < simCanvases.length; i++) {
         if (simCanvases[i].isPlaying) {
@@ -2228,15 +3014,29 @@
       }
     });
 
-    window.addEventListener('pointerup', () => {
+    function endCarouselDrag() {
+      if (isPointerDown && isPhoneCarousel() && !framingDragCatId) {
+        snapPhoneCarousel(dragDistance > 30 ? (scrollTarget > scrollStartTarget ? 1 : -1) : 0);
+      }
       isPointerDown = false;
       framingDragCatId = null;
       viewport.classList.remove('is-dragging');
-    });
+    }
+
+    window.addEventListener('pointerup', endCarouselDrag);
+    window.addEventListener('pointercancel', endCarouselDrag);
 
     window.addEventListener('resize', () => {
+      const wasPhone = isPhoneCarousel();
+      const oldIndex = (scrollTarget - (baseColWidth / 2 - lastCarouselWidth / 2)) / baseColWidth;
       updateColumnDimensions();
+      if (wasPhone) {
+        scrollTarget = phoneScrollForIndex(Math.round(oldIndex));
+        scrollCurrent = scrollTarget;
+      }
+      lastCarouselWidth = window.innerWidth;
     });
+    let lastCarouselWidth = window.innerWidth;
 
     /*************************************************************************
      * 4B. RECADRAGE VIDÉO GAUCHE <-> DROITE & MODIFICATIONS EN DIRECT
@@ -2390,8 +3190,11 @@
     function updateCategorySplitHeader() {
       if (!categoryPage.classList.contains('is-open')) return;
 
-      const headerHeight = 132;
-      const vw = window.innerWidth;
+      const headerLayer = categoryPage.querySelector('.cat-fixed-header-layer');
+      const headerHeight = (headerLayer && headerLayer.offsetHeight) || 132;
+      const frameRect = categoryPage.getBoundingClientRect();
+      const frameTop = frameRect.top;
+      const vw = frameRect.width || window.innerWidth;
       const sections = categoryPagesList.querySelectorAll('.cat-page-section');
 
       let taupeRectsHtml = '';
@@ -2399,8 +3202,8 @@
 
       sections.forEach((sec) => {
         const rect = sec.getBoundingClientRect();
-        const top = Math.max(0, rect.top);
-        const bottom = Math.min(headerHeight, rect.bottom);
+        const top = Math.max(0, rect.top - frameTop);
+        const bottom = Math.min(headerHeight, rect.bottom - frameTop);
 
         if (bottom > top) {
           const rectTag = `<rect x="0" y="${top.toFixed(2)}" width="${vw}" height="${(bottom - top).toFixed(2)}" />`;
@@ -2414,8 +3217,8 @@
 
       if (isEditorMode && categoryEditorFooter) {
         const fRect = categoryEditorFooter.getBoundingClientRect();
-        const fTop = Math.max(0, fRect.top);
-        const fBottom = Math.min(headerHeight, fRect.bottom);
+        const fTop = Math.max(0, fRect.top - frameTop);
+        const fBottom = Math.min(headerHeight, fRect.bottom - frameTop);
         if (fBottom > fTop) {
           const rectTag = `<rect x="0" y="${fTop.toFixed(2)}" width="${vw}" height="${(fBottom - fTop).toFixed(2)}" />`;
           if (categoryEditorFooter.dataset.bgTheme === 'taupe') {
@@ -2440,10 +3243,12 @@
         return;
       }
 
-      const vh = window.innerHeight || 1;
+      const viewRect = categoryScrollContainer.getBoundingClientRect();
+      const viewTop = viewRect.height ? viewRect.top : 0;
+      const vh = viewRect.height || window.innerHeight || 1;
       sections.forEach(sec => {
         const rect = sec.getBoundingClientRect();
-        const visibleHeight = Math.min(vh, rect.bottom) - Math.max(0, rect.top);
+        const visibleHeight = Math.min(viewTop + vh, rect.bottom) - Math.max(viewTop, rect.top);
         const visibleRatio = visibleHeight / vh;
         const pageId = sec.dataset.pageId;
         const cat = categories.find(c => c.id === activeCategoryPageId);
@@ -2562,6 +3367,8 @@
           const blocks = isBlankTemplate
             ? page.freeBlocks
             : (Array.isArray(page.blocks) && page.blocks.length > 0 ? page.blocks : createDefaultM2Blocks());
+          const phoneLayouts = computePhoneLayouts(blocks);
+          const editingPhone = isPhoneLayoutEditing();
           const videoCount = blocks.filter(b => b.type === 'video').length;
           const textCount = blocks.filter(b => b.type === 'text').length;
 
@@ -2572,7 +3379,7 @@
 
               ${blocks.map((blk) => {
                 const isSelected = selectedM2BlockId === blk.id;
-                const toolbarBelowClass = blk.y < 18 ? 'toolbar-below' : '';
+                const toolbarBelowClass = ((editingPhone && phoneLayouts[blk.id]) ? phoneLayouts[blk.id].y : blk.y) < 18 ? 'toolbar-below' : '';
 
                 if (blk.type === 'video') {
                   const hasBlkVideo = Boolean(blk.videoUrl && String(blk.videoUrl).trim() !== '');
@@ -2587,7 +3394,7 @@
                       data-page-id="${page.id}"
                       data-block-id="${blk.id}"
                       data-block-type="video"
-                      style="left:${blk.x}%; top:${blk.y}%; width:${blk.w}%; height:${blk.h}%;"
+                      style="${m2BlockPosStyle(blk, phoneLayouts)}"
                       onpointerdown="startM2BlockInteract(event, '${page.id}', '${blk.id}', 'move')"
                     >
                       <div class="m2-block-toolbar" onpointerdown="event.stopPropagation()">
@@ -2801,7 +3608,7 @@
                       data-page-id="${page.id}"
                       data-block-id="${blk.id}"
                       data-block-type="image"
-                      style="left:${blk.x}%; top:${blk.y}%; width:${blk.w}%; height:${blk.h}%;"
+                      style="${m2BlockPosStyle(blk, phoneLayouts)}"
                       onpointerdown="startM2BlockInteract(event, '${page.id}', '${blk.id}', 'move')"
                     >
                       <div class="m2-block-toolbar" onpointerdown="event.stopPropagation()">
@@ -2848,12 +3655,6 @@
                 } else if (blk.type === 'embed') {
                   const embedTarget = resolveEmbedTarget(blk.embedUrl);
                   const embedRadius = typeof blk.borderRadius === 'number' ? blk.borderRadius : 24;
-                  const embedLabels = {
-                    'tiktok-profile': embedTarget && embedTarget.username ? `Profil TikTok @${embedTarget.username}` : '',
-                    'tiktok-video': 'Vidéo TikTok',
-                    'youtube': 'Vidéo YouTube',
-                    'web': 'Site web'
-                  };
 
                   return `
                     <div
@@ -2861,7 +3662,7 @@
                       data-page-id="${page.id}"
                       data-block-id="${blk.id}"
                       data-block-type="embed"
-                      style="left:${blk.x}%; top:${blk.y}%; width:${blk.w}%; height:${blk.h}%;"
+                      style="${m2BlockPosStyle(blk, phoneLayouts)}"
                       onpointerdown="startM2BlockInteract(event, '${page.id}', '${blk.id}', 'move')"
                     >
                       <div class="m2-block-toolbar" onpointerdown="event.stopPropagation()">
@@ -2923,7 +3724,7 @@
                             title="Choisir ce qu'affiche cette fenêtre"
                           >+</button>
                           <span class="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-[#151515]/85 text-[#b6ab9d] text-center max-w-[90%]">
-                            ${embedTarget ? escapeHtml(embedLabels[embedTarget.kind]) : 'Fenêtre web : ajouter un lien'}
+                            ${embedTarget ? escapeHtml(embedTargetLabel(embedTarget)) : 'Fenêtre web : ajouter un lien'}
                           </span>
                         </div>
                       </div>
@@ -2938,6 +3739,9 @@
                   `;
                 } else {
                   const canDeleteTxt = isBlankTemplate || textCount > 1 || blocks.length > 1;
+                  const deskFs = Math.round(blk.fontSize || 28);
+                  const phoneFs = Math.round((phoneLayouts[blk.id] && phoneLayouts[blk.id].fontSize) || autoPhoneFontSize(blk, 1));
+                  const shownFs = editingPhone ? phoneFs : deskFs;
                   const boldClass = blk.bold ? 'is-bold' : '';
                   const italicClass = blk.italic ? 'is-italic' : '';
                   const underlineClass = blk.underline ? 'is-underline' : '';
@@ -2948,7 +3752,7 @@
                       data-page-id="${page.id}"
                       data-block-id="${blk.id}"
                       data-block-type="text"
-                      style="left:${blk.x}%; top:${blk.y}%; width:${blk.w}%; height:${blk.h}%;"
+                      style="${m2BlockPosStyle(blk, phoneLayouts)}"
                       onpointerdown="startM2BlockInteract(event, '${page.id}', '${blk.id}', 'move')"
                     >
                       <div class="m2-block-toolbar" onpointerdown="event.stopPropagation()">
@@ -3004,17 +3808,25 @@
 
                         <div class="h-4 w-[1px] bg-[#b6ab9d]/25 mx-0.5"></div>
 
+                        <select
+                          class="m2-font-select h-7 max-w-[130px] px-1.5 rounded-lg bg-[#252525] text-[#b6ab9d] text-[11px] font-semibold focus:outline-none cursor-pointer"
+                          onchange="changeM2TextFont('${page.id}', '${blk.id}', this)"
+                          title="Police d'écriture"
+                        >${fontOptionsHtml(blk.fontId)}</select>
+
+                        <div class="h-4 w-[1px] bg-[#b6ab9d]/25 mx-0.5"></div>
+
                         <div class="flex items-center gap-1.5 px-1">
                           <span class="text-[10px] opacity-75">Taille</span>
                           <input
                             type="range"
                             min="12"
                             max="92"
-                            value="${blk.fontSize || 28}"
+                            value="${shownFs}"
                             class="w-20 accent-[#b6ab9d] cursor-pointer"
                             oninput="updateM2TextFontSize('${page.id}', '${blk.id}', this.value)"
                           />
-                          <span class="m2-fontsize-label text-[11px] font-mono font-bold w-8">${Math.round(blk.fontSize || 28)}px</span>
+                          <span class="m2-fontsize-label text-[11px] font-mono font-bold w-8">${shownFs}px</span>
                         </div>
 
                         ${canDeleteTxt ? `
@@ -3031,7 +3843,7 @@
                         class="m2-text-content ${boldClass} ${italicClass} ${underlineClass}"
                         contenteditable="${isEditorMode ? 'true' : 'false'}"
                         spellcheck="false"
-                        style="font-size:${blk.fontSize || 28}px; text-align:${blk.align || 'center'};"
+                        style="--fs:${deskFs}px; --mfs:${phoneFs}; text-align:${blk.align || 'center'};${fontCssStack(blk.fontId) ? ` font-family:${fontCssStack(blk.fontId)};` : ''}"
                         onfocus="selectM2Block('${page.id}', '${blk.id}')"
                         oninput="saveM2TextInline('${page.id}', '${blk.id}', this)"
                       >${blk.html || 'ZONE DE TEXTE'}</div>
@@ -3143,6 +3955,16 @@
                 >
                   <span>+ Fenêtre web</span>
                 </button>
+                ${isPhoneLayoutEditing() ? `
+                  <button
+                    type="button"
+                    onclick="resetPhoneLayout('${page.id}')"
+                    class="flex items-center gap-1 px-3 py-1.5 rounded-full bg-[#151515]/95 text-[#b6ab9d] border border-[#b6ab9d]/40 text-xs font-semibold shadow-md hover:scale-105 transition-transform"
+                    title="Replacer automatiquement tous les blocs de cette page pour le téléphone"
+                  >
+                    <span>↺ Disposition auto</span>
+                  </button>
+                ` : ''}
               ` : ''}
             </div>
 
@@ -3345,6 +4167,7 @@
 
       activeCategoryPageId = null;
       pendingDeletePageId = null;
+      if (isPhoneLayoutEditing() && typeof setPhoneLayoutEditing === 'function') setPhoneLayoutEditing(false);
       setBackButtonHover(false);
       syncEditorTopbarContext();
 
@@ -3754,6 +4577,7 @@
 
       const { page, block } = findActivePageAndBlock(pageId, blockId);
       if (!page || !block) return;
+      const layout = getEditableLayout(page, block);
 
       const blockEl = document.querySelector(`.m2-block[data-page-id="${pageId}"][data-block-id="${blockId}"]`);
       const stageEl = blockEl ? blockEl.closest('.m2-canvas-stage') : null;
@@ -3769,10 +4593,10 @@
         startY: e.clientY,
         stageWidth: Math.max(1, stageRect.width),
         stageHeight: Math.max(1, stageRect.height),
-        origX: block.x,
-        origY: block.y,
-        origW: block.w,
-        origH: block.h,
+        origX: layout.x,
+        origY: layout.y,
+        origW: layout.w,
+        origH: layout.h,
         blockEl,
         stageEl
       };
@@ -3781,8 +4605,11 @@
     window.addEventListener('pointermove', (e) => {
       if (!m2DragState) return;
       const { pageId, blockId, mode, startX, startY, stageWidth, stageHeight, origX, origY, origW, origH, blockEl, stageEl } = m2DragState;
-      const { block } = findActivePageAndBlock(pageId, blockId);
-      if (!block) return;
+      const { page, block: srcBlock } = findActivePageAndBlock(pageId, blockId);
+      if (!srcBlock) return;
+      // « block » = la disposition modifiée (ordinateur ou téléphone)
+      const block = { ...getEditableLayout(page, srcBlock), type: srcBlock.type };
+      const target = getEditableLayout(page, srcBlock);
 
       const dxPct = ((e.clientX - startX) / stageWidth) * 100;
       const dyPct = ((e.clientY - startY) / stageHeight) * 100;
@@ -3843,10 +4670,15 @@
         block.h = Number(nh.toFixed(2));
       }
 
-      blockEl.style.left = `${block.x}%`;
-      blockEl.style.top = `${block.y}%`;
-      blockEl.style.width = `${block.w}%`;
-      blockEl.style.height = `${block.h}%`;
+      target.x = block.x;
+      target.y = block.y;
+      target.w = block.w;
+      target.h = block.h;
+      const prefix = isPhoneLayoutEditing() ? '--m' : '--';
+      blockEl.style.setProperty(`${prefix}x`, `${block.x}%`);
+      blockEl.style.setProperty(`${prefix}y`, `${block.y}%`);
+      blockEl.style.setProperty(`${prefix}w`, `${block.w}%`);
+      blockEl.style.setProperty(`${prefix}h`, `${block.h}%`);
       blockEl.classList.toggle('toolbar-below', block.y < 18);
 
       if (guideV) guideV.classList.toggle('is-visible', showV);
@@ -3918,6 +4750,12 @@
             borderRadius: 42
           }, 0);
 
+      if (isPhoneLayoutEditing()) {
+        ensurePhoneLayout(list);
+        const h = newBlock.type === 'text' ? 12 : (newBlock.type === 'embed' ? 60 : 28);
+        newBlock.m = { x: 6, y: roundPct(50 - h / 2), w: 88, h };
+        if (newBlock.type === 'text') newBlock.m.fontSize = autoPhoneFontSize(newBlock, 1);
+      }
       list.push(newBlock);
       selectedM2BlockId = newBlock.id;
       saveCategoriesToStorage();
@@ -3943,26 +4781,31 @@
     }
 
     function applyM2VideoPresetRatio(pageId, blockId, ratioStr) {
-      const { cat, block } = findActivePageAndBlock(pageId, blockId);
-      if (!cat || !block) return;
+      const { cat, page, block: srcBlock } = findActivePageAndBlock(pageId, blockId);
+      if (!cat || !srcBlock) return;
+      const block = getEditableLayout(page, srcBlock);
 
-      const vw = window.innerWidth || 1920;
-      const vh = window.innerHeight || 1080;
+      const stageEl = document.querySelector(`.m2-block[data-block-id="${blockId}"]`)?.closest('.m2-canvas-stage');
+      const stageRect = stageEl ? stageEl.getBoundingClientRect() : null;
+      const vw = (stageRect && stageRect.width) || window.innerWidth || 1920;
+      const vh = (stageRect && stageRect.height) || window.innerHeight || 1080;
+      const phone = isPhoneLayoutEditing();
 
       if (ratioStr === '16:9') {
-        block.w = 40;
+        block.w = phone ? 88 : 40;
         const pxW = (block.w / 100) * vw;
         const pxH = pxW * (9 / 16);
         block.h = Number(Math.min(82, (pxH / vh) * 100).toFixed(2));
       } else if (ratioStr === '9:16') {
-        block.h = 66;
+        block.h = phone ? 62 : 66;
         const pxH = (block.h / 100) * vh;
         const pxW = pxH * (9 / 16);
-        block.w = Number(Math.min(55, (pxW / vw) * 100).toFixed(2));
+        block.w = Number(Math.min(phone ? 90 : 55, (pxW / vw) * 100).toFixed(2));
       } else if (ratioStr === '1:1') {
-        block.h = 50;
+        block.h = phone ? 40 : 50;
         const pxH = (block.h / 100) * vh;
-        block.w = Number(Math.min(55, (pxH / vw) * 100).toFixed(2));
+        block.w = Number(Math.min(phone ? 88 : 55, (pxH / vw) * 100).toFixed(2));
+        if (phone) block.h = Number((((block.w / 100) * vw) / vh * 100).toFixed(2));
       }
 
       block.x = Math.max(2, Math.min(98 - block.w, block.x));
@@ -4005,17 +4848,18 @@
     }
 
     function updateM2TextFontSize(pageId, blockId, sizePx) {
-      const { block } = findActivePageAndBlock(pageId, blockId);
+      const { page, block } = findActivePageAndBlock(pageId, blockId);
       if (!block) return;
       const clamped = Math.max(12, Math.min(96, parseInt(sizePx, 10) || 28));
-      block.fontSize = clamped;
+      const phone = isPhoneLayoutEditing();
+      getEditableLayout(page, block).fontSize = clamped;
       saveCategoriesToStorage();
 
       const blockEl = document.querySelector(`.m2-block[data-page-id="${pageId}"][data-block-id="${blockId}"]`);
       if (blockEl) {
         const textEl = blockEl.querySelector('.m2-text-content');
         const labelEl = blockEl.querySelector('.m2-fontsize-label');
-        if (textEl) textEl.style.fontSize = `${clamped}px`;
+        if (textEl) textEl.style.setProperty(phone ? '--mfs' : '--fs', phone ? String(clamped) : `${clamped}px`);
         if (labelEl) labelEl.textContent = `${clamped}px`;
       }
     }
