@@ -796,7 +796,7 @@
     }
   </style>
 </head>
-<body data-hover-mode="push" class="">
+<body data-hover-mode="eat" class="">
 
   <!-- =====================================================================
        1. ÉCRAN D'INTRODUCTION "COLVEUR" (3 SECONDES OU CLIC -> ZOOM DANS LE "V")
@@ -808,7 +808,7 @@
        2. ACCUEIL PRINCIPAL : CARROUSEL DIAGONAL INFINI & FLÈCHES LATÉRALES
        ===================================================================== -->
   <main id="carousel-viewport" aria-label="Catégories du portfolio" class="">
-    <div id="carousel-track" class="" style="transform: translate3d(-3227px, 0px, 0px);"></div>
+    <div id="carousel-track" class="" style="transform: translate3d(-5008px, 0px, 0px);"></div>
 
     <button type="button" class="carousel-arrow-btn arrow-left" aria-label="Catégorie précédente" onclick="nudgeCarousel(-1)">
       <svg class="w-6 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 48">
@@ -827,11 +827,11 @@
        3. PAGE DE DESTINATION CATÉGORIE (PAGES PLEIN ÉCRAN ALTERNÉES TAUPE/NOIR
           + HEADER FIXE À INVERSION BICOLORE DYNAMIQUE)
        ===================================================================== -->
-  <section id="category-page" aria-hidden="true" class="">
+  <section id="category-page" aria-hidden="true">
     <!-- Définitions SVG invisibles qui découpent les 2 versions du header fixe au pixel près -->
     <svg width="0" height="0" style="position:fixed; pointer-events:none;" aria-hidden="true">
       <defs>
-        <clipPath id="clip-taupe-header" clipPathUnits="userSpaceOnUse"><rect x="0" y="0.00" width="1878" height="132.00"></rect></clipPath>
+        <clipPath id="clip-taupe-header" clipPathUnits="userSpaceOnUse"><rect x="0" y="0.00" width="1490" height="132.00"></rect></clipPath>
         <clipPath id="clip-noir-header" clipPathUnits="userSpaceOnUse"></clipPath>
       </defs>
     </svg>
@@ -847,7 +847,7 @@
 
       <div class="flex items-center gap-4">
         <span class="text-xs uppercase tracking-widest font-semibold text-[#151515]/60">Catégorie</span>
-        <span class="cat-header-title font-dela text-2xl md:text-4xl text-[#151515]">Docu</span>
+        <span class="cat-header-title font-dela text-2xl md:text-4xl text-[#151515]">Event</span>
       </div>
     </header>
 
@@ -862,7 +862,7 @@
 
       <div class="flex items-center gap-4">
         <span class="text-xs uppercase tracking-widest font-semibold text-[#b6ab9d]/60">Catégorie</span>
-        <span class="cat-header-title font-dela text-2xl md:text-4xl text-[#b6ab9d]">Docu</span>
+        <span class="cat-header-title font-dela text-2xl md:text-4xl text-[#b6ab9d]">Event</span>
       </div>
     </header>
 
@@ -870,542 +870,24 @@
     <div id="category-scroll-container">
       <div id="category-pages-list"></div>
 
-      <!-- Bouton "+" en bas pour ajouter une nouvelle page (uniquement visible en Mode Éditeur) -->
-      <div id="category-editor-footer" class="w-full py-16 px-6 flex-col items-center justify-center gap-3 border-t border-current/15 transition-colors" data-bg-theme="taupe" style="background-color: rgb(182, 171, 157); color: rgb(21, 21, 21);">
-        <button type="button" onclick="openAddPageTemplateModal()" class="group flex items-center gap-3 px-7 py-4 rounded-full bg-[#b6ab9d] text-[#151515] border-2 border-[#151515] font-dela text-base shadow-2xl hover:scale-105 active:scale-95 transition-all">
-          <span class="w-8 h-8 rounded-full bg-[#151515] text-[#b6ab9d] flex items-center justify-center text-xl font-bold leading-none group-hover:rotate-90 transition-transform">+</span>
-          <span>Ajouter une page</span>
-        </button>
-        <span id="next-page-color-hint" class="text-xs font-medium opacity-75">Prochaine page vierge en fond Taupe (#b6ab9d) (ou Noir automatique pour une Vidéo Plein Écran)</span>
-      </div>
     </div>
   </section>
-
-  <!-- =====================================================================
-       4. BARRE SUPÉRIEURE DU MODE ÉDITEUR (VISIBLE UNIQUEMENT PAR TOI)
-       ===================================================================== -->
-  <aside id="editor-topbar" class="fixed top-4 left-1/2 -translate-x-1/2 z-[70] items-center flex-wrap gap-2 md:gap-3 px-4 py-2.5 rounded-2xl bg-[#151515]/95 border border-[#b6ab9d]/40 text-[#b6ab9d] shadow-2xl backdrop-blur-md max-w-[96vw] hidden">
-    <div class="flex items-center gap-2 pr-2 border-r border-[#b6ab9d]/20">
-      <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
-      <span class="text-xs font-bold uppercase tracking-wider">Mode Éditeur</span>
-    </div>
-
-    <!-- Contrôles spécifiques à l'accueil (masqués quand on est dans une sous-page catégorie) -->
-    <div id="editor-home-controls" class="items-center flex-wrap gap-2 md:gap-3 flex">
-      <div class="flex items-center gap-1.5 bg-[#222222] px-2.5 py-1 rounded-xl border border-[#b6ab9d]/15">
-        <span class="text-[11px] opacity-75">Effet survol :</span>
-        <select id="hover-mode-select" class="bg-transparent text-xs font-semibold text-[#b6ab9d] focus:outline-none cursor-pointer" onchange="changeHoverMode(this.value)">
-          <option value="eat" class="bg-[#151515]">1. Manger sur les autres (Défaut)</option>
-          <option value="push" class="bg-[#151515]">2. Pousser les autres (Compresser)</option>
-          <option value="hybrid" class="bg-[#151515]">3. Cinéma Hybride (Élargir + Dolly Zoom)</option>
-        </select>
-      </div>
-
-      <div class="flex items-center gap-2 bg-[#222222] px-2.5 py-1 rounded-xl border border-[#b6ab9d]/15">
-        <span class="text-[11px] opacity-75">Opacité repos :</span>
-        <input id="resting-opacity-slider" type="range" min="15" max="85" value="40" class="w-16 accent-[#b6ab9d] cursor-pointer" oninput="updateRestingOpacity(this.value)">
-        <span id="resting-opacity-label" class="text-xs font-mono font-bold w-8">40%</span>
-      </div>
-
-      <button onclick="openAddCategoryModal()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#b6ab9d] text-[#151515] text-xs font-bold hover:brightness-110 transition-all">
-        <span class="text-base leading-none">+</span>
-        <span>Catégorie</span>
-      </button>
-    </div>
-
-    <!-- Contrôles spécifiques aux sous-pages catégories (Scroll Libre vs Scroll Aimanté) -->
-    <div id="editor-category-controls" class="items-center flex-wrap gap-2 md:gap-3 hidden">
-      <div class="flex items-center gap-1.5 bg-[#222222] px-2.5 py-1 rounded-xl border border-[#b6ab9d]/15">
-        <span class="text-[11px] opacity-75">Navigation :</span>
-        <select id="category-scroll-mode-select" class="bg-transparent text-xs font-semibold text-[#b6ab9d] focus:outline-none cursor-pointer" onchange="changeCategoryScrollMode(this.value)">
-          <option value="free" class="bg-[#151515]">Scroll : Libre (Fluide)</option>
-          <option value="snap" class="bg-[#151515]">Scroll : Aimanté (Page par page)</option>
-        </select>
-      </div>
-    </div>
-
-    <button onclick="replayIntroAnimation()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#252525] hover:bg-[#303030] border border-[#b6ab9d]/25 text-xs font-medium transition-all" title="Tester l'animation d'ouverture Colveur (3s + zoom dans le V)">
-      <span>🎬 Rejouer l'intro</span>
-    </button>
-
-    <button onclick="openChangePinModal()" class="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-[#252525] hover:bg-[#303030] border border-[#b6ab9d]/25 text-xs font-medium transition-all" title="Changer le mot de passe du Mode Éditeur">
-      <span>🔑 Code secret</span>
-    </button>
-
-    <button id="btn-oneclick-publish" onclick="openGitHubPublishModal()" class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-500 text-[#151515] font-bold text-xs hover:brightness-110 transition-all shadow-lg" title="Envoyer directement tes modifications sur GitHub &amp; Netlify en 1 clic">
-      <span>🚀 Publier en 1 clic</span>
-    </button>
-
-    <button onclick="openExportCodeModal()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#252525] hover:bg-[#303030] border border-[#b6ab9d]/30 text-[#b6ab9d] font-semibold text-xs transition-all" title="Copier le code ou télécharger le .ZIP manuellement">
-      <span>💾 Code / .ZIP</span>
-    </button>
-
-    <button onclick="toggleEditorMode(false)" class="px-2.5 py-1.5 rounded-xl bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-500/30 text-xs font-semibold transition-all">
-      Verrouiller
-    </button>
-  </aside>
-
-  <!-- =====================================================================
-       5. ACCÈS SECRET AU MODE ÉDITEUR (100% INVISIBLE POUR LES CLIENTS)
-          - Raccourci clavier : Shift + E
-          - Ou clic maintenu 1,5 seconde dans le coin inférieur droit
-       ===================================================================== -->
-  <div id="secret-admin-corner" class="fixed bottom-0 right-0 w-10 h-10 z-[74] opacity-0" onpointerdown="startSecretCornerHold()" onpointerup="cancelSecretCornerHold()" onpointerleave="cancelSecretCornerHold()"></div>
-
-  <div id="admin-floating-controls" class="fixed bottom-5 right-5 z-[75] items-center gap-2 hidden">
-    <button id="btn-replay-quick" onclick="replayIntroAnimation()" class="px-3.5 py-2 rounded-full bg-[#151515]/85 hover:bg-[#151515] border border-[#b6ab9d]/30 text-[#b6ab9d] text-xs font-medium backdrop-blur-md shadow-lg transition-all hover:scale-105" title="Revoir l'animation d'ouverture Colveur">
-      ↺ Revoir l'intro
-    </button>
-
-    <button id="btn-editor-lock" onclick="handleLockButtonClick()" class="flex items-center gap-2 px-4 py-2 rounded-full bg-[#151515]/90 hover:bg-[#151515] border border-[#b6ab9d]/40 text-[#b6ab9d] text-xs font-semibold backdrop-blur-md shadow-xl transition-all hover:scale-105">
-      <span id="lock-icon">🔓</span>
-      <span id="lock-label">Quitter Éditeur</span>
-    </button>
-  </div>
-
-  <!-- =====================================================================
-       6. MODALES (CONNEXION ÉDITEUR, AJOUT VIDÉO "+", AJOUT CATÉGORIE, EXPORT)
-       ===================================================================== -->
-
-  <!-- Modale Mot de Passe / PIN Mode Éditeur -->
-  <div id="modal-login" class="fixed inset-0 z-[80] items-center justify-center bg-black/75 backdrop-blur-sm p-4 hidden">
-    <div class="w-full max-w-md rounded-2xl bg-[#151515] border border-[#b6ab9d]/40 p-6 text-[#b6ab9d] shadow-2xl">
-      <div class="flex items-center justify-between mb-4">
-        <h2 class="font-dela text-xl text-[#b6ab9d]">Accès Créateur</h2>
-        <button onclick="closeModal('modal-login')" class="text-[#b6ab9d]/60 hover:text-[#b6ab9d] text-xl">×</button>
-      </div>
-      <p class="text-xs text-[#b6ab9d]/80 mb-4 leading-relaxed">
-        Entre ton code secret pour déverrouiller le <strong>Mode Éditeur</strong> (invisible pour tes visiteurs).
-      </p>
-      <form onsubmit="submitEditorLogin(event)" class="space-y-4">
-        <div>
-          <label class="block text-xs uppercase tracking-wider mb-1.5 opacity-80">Code d'accès</label>
-          <input id="editor-pin-input" type="password" placeholder="••••••" value="" class="w-full px-4 py-2.5 rounded-xl bg-[#222222] border border-[#b6ab9d]/30 text-[#b6ab9d] text-center text-lg tracking-widest font-bold focus:outline-none focus:border-[#b6ab9d]">
-          <p id="login-error-msg" class="text-xs text-red-400 mt-1.5 hidden">Code incorrect.</p>
-        </div>
-        <div class="flex items-center justify-end gap-2 pt-2">
-          <button type="button" onclick="closeModal('modal-login')" class="px-4 py-2 rounded-xl text-xs hover:bg-white/5">Annuler</button>
-          <button type="submit" class="px-5 py-2.5 rounded-xl bg-[#b6ab9d] text-[#151515] font-bold text-xs hover:brightness-110">
-            Déverrouiller le Mode Éditeur
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- Modale "+" : Ajouter / Changer la vidéo & Recadrer une catégorie -->
-  <div id="modal-video-edit" class="fixed inset-0 z-[80] items-center justify-center bg-black/75 backdrop-blur-sm p-4 hidden">
-    <div class="w-full max-w-lg rounded-2xl bg-[#151515] border border-[#b6ab9d]/40 p-6 text-[#b6ab9d] shadow-2xl">
-      <div class="flex items-center justify-between mb-4">
-        <div>
-          <span class="text-[11px] uppercase tracking-widest opacity-60">Modifier la bande diagonale</span>
-          <h2 id="modal-video-cat-name" class="font-dela text-2xl hidden">Réseaux</h2>
-        </div>
-        <button onclick="closeModal('modal-video-edit')" class="text-[#b6ab9d]/60 hover:text-[#b6ab9d] text-2xl leading-none">×</button>
-      </div>
-
-      <div class="space-y-5">
-        <div>
-          <label class="block text-xs uppercase tracking-wider mb-1.5 opacity-80">Titre affiché sur la colonne</label>
-          <input id="edit-cat-title-input" type="text" class="w-full px-3.5 py-2 rounded-xl bg-[#222222] border border-[#b6ab9d]/30 text-[#b6ab9d] font-dela text-base focus:outline-none focus:border-[#b6ab9d]">
-        </div>
-
-        <div class="p-4 rounded-xl bg-[#1e1e1e] border border-dashed border-[#b6ab9d]/40 text-center">
-          <label class="cursor-pointer flex flex-col items-center justify-center gap-2">
-            <span class="w-12 h-12 rounded-full bg-[#b6ab9d] text-[#151515] flex items-center justify-center text-2xl font-bold shadow-md hover:scale-105 transition-transform">+</span>
-            <span class="text-sm font-semibold">Choisir une vidéo courte ou une photo sur ton ordinateur (.MP4, .WEBM, .JPG, .PNG, .WEBP)</span>
-            <span id="cat-local-file-badge" class="text-xs text-emerald-400 font-semibold">Sera envoyée automatiquement sur ton site via « 🚀 Publier en 1 clic »</span>
-            <input id="edit-cat-file-input" type="file" accept="video/*,image/*" class="hidden" onchange="handleLocalVideoUpload(event)">
-          </label>
-        </div>
-
-        <div>
-          <label class="block text-xs uppercase tracking-wider mb-1.5 opacity-80">Coller un lien YouTube (normal, non-répertorié, Short) ou .mp4</label>
-          <input id="edit-cat-url-input" type="url" placeholder="https://www.youtube.com/watch?v=... ou https://youtu.be/..." class="w-full px-3.5 py-2 rounded-xl bg-[#222222] border border-[#b6ab9d]/30 text-[#b6ab9d] text-xs focus:outline-none focus:border-[#b6ab9d]">
-        </div>
-
-        <div class="p-4 rounded-xl bg-[#222222] border border-[#b6ab9d]/20">
-          <div class="flex items-center justify-between mb-2">
-            <label class="text-xs font-semibold">Cadrage horizontal (Gauche ↔ Droite)</label>
-            <span id="modal-pos-x-label" class="text-xs font-mono font-bold text-[#b6ab9d] hidden">50%</span>
-          </div>
-          <input id="modal-pos-x-slider" type="range" min="0" max="100" value="50" class="colveur-slider hidden" oninput="updateCategoryPosXFromModal(this.value)">
-          <div class="flex justify-between text-[10px] opacity-60 mt-1">
-            <span>← Bord gauche de la vidéo</span>
-            <span>Centre (50%)</span>
-            <span>Bord droit de la vidéo →</span>
-          </div>
-        </div>
-
-        <div class="flex items-center justify-between pt-2">
-          <button id="btn-delete-category" type="button" onclick="deleteActiveCategory()" class="px-3.5 py-2 rounded-xl bg-red-500/15 hover:bg-red-500/25 text-red-300 text-xs font-medium transition-all" style="display: inline-block;">
-            Supprimer la catégorie
-          </button>
-
-          <div class="flex items-center gap-2 ml-auto">
-            <button type="button" onclick="closeModal('modal-video-edit')" class="px-4 py-2 rounded-xl text-xs hover:bg-white/5">Fermer</button>
-            <button type="button" onclick="saveCategoryModalChanges()" class="px-5 py-2.5 rounded-xl bg-[#b6ab9d] text-[#151515] font-bold text-xs hover:brightness-110">
-              Enregistrer
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modale Ajouter une nouvelle catégorie -->
-  <div id="modal-add-category" class="fixed inset-0 z-[80] items-center justify-center bg-black/75 backdrop-blur-sm p-4 hidden">
-    <div class="w-full max-w-md rounded-2xl bg-[#151515] border border-[#b6ab9d]/40 p-6 text-[#b6ab9d] shadow-2xl">
-      <div class="flex items-center justify-between mb-4">
-        <h2 class="font-dela text-xl">Nouvelle catégorie</h2>
-        <button onclick="closeModal('modal-add-category')" class="text-[#b6ab9d]/60 hover:text-[#b6ab9d] text-2xl leading-none">×</button>
-      </div>
-      <form onsubmit="confirmAddCategory(event)" class="space-y-4">
-        <div>
-          <label class="block text-xs uppercase tracking-wider mb-1.5 opacity-80">Nom de la catégorie (ex: Clip, Pub, Court-métrage)</label>
-          <input id="new-cat-name-input" type="text" required="" placeholder="Clip" class="w-full px-3.5 py-2.5 rounded-xl bg-[#222222] border border-[#b6ab9d]/30 text-[#b6ab9d] font-dela text-base focus:outline-none focus:border-[#b6ab9d]">
-        </div>
-        <div class="flex justify-end gap-2 pt-2">
-          <button type="button" onclick="closeModal('modal-add-category')" class="px-4 py-2 rounded-xl text-xs hover:bg-white/5">Annuler</button>
-          <button type="submit" class="px-5 py-2.5 rounded-xl bg-[#b6ab9d] text-[#151515] font-bold text-xs hover:brightness-110">
-            Ajouter au carrousel
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- Modale "+" : Choisir un modèle de page à ajouter en bas de la catégorie -->
-  <div id="modal-add-page-template" class="fixed inset-0 z-[85] items-center justify-center bg-black/75 backdrop-blur-sm p-4 hidden">
-    <div class="w-full max-w-xl rounded-2xl bg-[#151515] border border-[#b6ab9d]/40 p-6 text-[#b6ab9d] shadow-2xl space-y-5">
-      <div class="flex items-center justify-between">
-        <div>
-          <span class="text-[11px] uppercase tracking-widest opacity-60">Structure de la catégorie</span>
-          <h2 class="font-dela text-xl">Choisir un modèle de page</h2>
-        </div>
-        <button onclick="closeModal('modal-add-page-template')" class="text-[#b6ab9d]/60 hover:text-[#b6ab9d] text-2xl leading-none">×</button>
-      </div>
-
-      <p id="modal-template-color-info" class="text-xs text-[#b6ab9d]/85 leading-relaxed hidden">Cette nouvelle page (<strong>Page 2</strong>) sera ajoutée en plein écran (100%) avec un fond <strong>Noir (#151515)</strong>.</p>
-
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-        <button type="button" onclick="addPageToActiveCategory('blank')" class="group flex flex-col items-start text-left p-4 rounded-2xl bg-[#222222] hover:bg-[#2a2a2a] border-2 border-[#b6ab9d]/60 hover:border-[#b6ab9d] transition-all hover:scale-[1.02] active:scale-[0.98]">
-          <div id="template-blank-preview" class="w-full aspect-video rounded-xl bg-[#b6ab9d] border border-white/15 mb-3 flex items-center justify-center" style="background-color: rgb(21, 21, 21);"><span class="font-dela text-xs" style="color: #b6ab9d; opacity: 0.85;">Page 2</span></div>
-          <span class="text-xs font-bold text-[#b6ab9d] group-hover:underline">Page vierge (Fond uni)</span>
-          <span class="text-[11px] opacity-65 mt-1">Fond uni Taupe ou Noir changeable en 1 clic.</span>
-        </button>
-
-        <button type="button" onclick="addPageToActiveCategory('fullscreen-video')" class="group flex flex-col items-start text-left p-4 rounded-2xl bg-[#222222] hover:bg-[#2a2a2a] border-2 border-[#b6ab9d]/70 hover:border-[#b6ab9d] transition-all hover:scale-[1.02] active:scale-[0.98]">
-          <div class="w-full aspect-video rounded-xl bg-[#151515] border border-[#b6ab9d]/40 mb-3 flex flex-col items-center justify-center relative overflow-hidden">
-            <div class="absolute inset-0 bg-gradient-to-tr from-[#151515] via-[#b6ab9d]/25 to-[#151515]"></div>
-            <span class="relative z-10 w-8 h-8 rounded-full bg-[#b6ab9d] text-[#151515] flex items-center justify-center text-xs font-bold shadow">▶</span>
-            <span class="relative z-10 text-[10px] uppercase tracking-wider mt-1 text-[#b6ab9d]/90 font-semibold">Fond Noir + Opacité</span>
-          </div>
-          <span class="text-xs font-bold text-[#b6ab9d] group-hover:underline">Modèle 1 — Vidéo Plein Écran</span>
-          <span class="text-[11px] opacity-65 mt-1">Vidéo 100% sur fond noir avec réglage d'opacité et de volume/mute.</span>
-        </button>
-
-        <button type="button" onclick="addPageToActiveCategory('media-text')" class="group flex flex-col items-start text-left p-4 rounded-2xl bg-[#222222] hover:bg-[#2a2a2a] border-2 border-[#b6ab9d] transition-all hover:scale-[1.02] active:scale-[0.98]">
-          <div class="w-full aspect-video rounded-xl bg-[#b6ab9d] border border-white/15 mb-3 p-2.5 flex items-center justify-between gap-2">
-            <div class="w-1/2 h-4/5 rounded-lg bg-[#151515] flex items-center justify-center text-[#b6ab9d] text-[10px] font-bold">▶</div>
-            <div class="w-5/12 text-center font-dela text-[8px] text-[#151515] leading-tight">ZONE DE TEXTE</div>
-          </div>
-          <span class="text-xs font-bold text-[#b6ab9d] group-hover:underline">Modèle 2 — Cadre Vidéo &amp; Texte</span>
-          <span class="text-[11px] opacity-65 mt-1">Cadres vidéo déplaçables/redimensionnables + texte Dela Gothic formatable.</span>
-        </button>
-      </div>
-
-      <div class="flex justify-end pt-1">
-        <button type="button" onclick="closeModal('modal-add-page-template')" class="px-4 py-2 rounded-xl text-xs hover:bg-white/5">
-          Annuler
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modale "+" pour configurer un Cadre Vidéo du Modèle 2 (Fichier/URL + Recadrage interne X/Y + Formats) -->
-  <div id="modal-m2-frame-video" class="fixed inset-0 z-[85] items-center justify-center bg-black/75 backdrop-blur-sm p-4 hidden">
-    <div class="w-full max-w-lg rounded-2xl bg-[#151515] border border-[#b6ab9d]/40 p-6 text-[#b6ab9d] shadow-2xl space-y-5">
-      <div class="flex items-center justify-between">
-        <div>
-          <span class="text-[11px] uppercase tracking-widest opacity-60">Modèle 2 — Cadre Vidéo</span>
-          <h2 class="font-dela text-xl">Ajouter / Cadrer la vidéo</h2>
-        </div>
-        <button onclick="closeModal('modal-m2-frame-video')" class="text-[#b6ab9d]/60 hover:text-[#b6ab9d] text-2xl leading-none">×</button>
-      </div>
-
-      <div class="p-4 rounded-xl bg-[#1e1e1e] border border-dashed border-[#b6ab9d]/40 text-center">
-        <label class="cursor-pointer flex flex-col items-center justify-center gap-2">
-          <span class="w-12 h-12 rounded-full bg-[#b6ab9d] text-[#151515] flex items-center justify-center text-2xl font-bold shadow-md hover:scale-105 transition-transform">+</span>
-          <span class="text-sm font-semibold">Choisir une vidéo sur ton ordinateur (.MP4, .MOV, .WEBM)</span>
-          <span class="text-xs opacity-65">Lecture auto en boucle • Clic visiteur pour le son ou pause</span>
-          <input id="m2-frame-file-input" type="file" accept="video/*" class="hidden" onchange="handleM2FrameLocalVideoUpload(event)">
-        </label>
-      </div>
-
-      <div>
-        <label class="block text-xs uppercase tracking-wider mb-1.5 opacity-80">Coller un lien YouTube (normal, non-répertorié, Short) ou .mp4</label>
-        <input id="m2-frame-url-input" type="url" placeholder="https://www.youtube.com/watch?v=... ou https://youtu.be/..." class="w-full px-3.5 py-2 rounded-xl bg-[#222222] border border-[#b6ab9d]/30 text-[#b6ab9d] text-xs focus:outline-none focus:border-[#b6ab9d]">
-      </div>
-
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div class="p-3.5 rounded-xl bg-[#222222] border border-[#b6ab9d]/20">
-          <div class="flex items-center justify-between mb-1.5">
-            <label class="text-xs font-semibold">Cadrage Gauche ↔ Droite</label>
-            <span id="m2-frame-posx-label" class="text-xs font-mono font-bold">50%</span>
-          </div>
-          <input id="m2-frame-posx-slider" type="range" min="0" max="100" value="50" class="colveur-slider" oninput="updateActiveM2FrameCrop('x', this.value)">
-        </div>
-
-        <div class="p-3.5 rounded-xl bg-[#222222] border border-[#b6ab9d]/20">
-          <div class="flex items-center justify-between mb-1.5">
-            <label class="text-xs font-semibold">Cadrage Haut ↕ Bas</label>
-            <span id="m2-frame-posy-label" class="text-xs font-mono font-bold">50%</span>
-          </div>
-          <input id="m2-frame-posy-slider" type="range" min="0" max="100" value="50" class="colveur-slider" oninput="updateActiveM2FrameCrop('y', this.value)">
-        </div>
-      </div>
-
-      <div class="p-3.5 rounded-xl bg-[#222222] border border-[#b6ab9d]/20">
-        <div class="flex items-center justify-between mb-1.5">
-          <label class="text-xs font-semibold">Arrondi des coins du cadre</label>
-          <span id="m2-frame-radius-label" class="text-xs font-mono font-bold">42px</span>
-        </div>
-        <input id="m2-frame-radius-slider" type="range" min="0" max="120" value="42" class="colveur-slider" oninput="updateActiveM2FrameRadius(this.value)">
-      </div>
-
-      <div class="flex items-center justify-between pt-2">
-        <button type="button" onclick="clearActiveM2FrameVideo()" class="px-3.5 py-2 rounded-xl bg-red-500/15 hover:bg-red-500/25 text-red-300 text-xs font-medium">
-          Vider la vidéo
-        </button>
-        <div class="flex items-center gap-2">
-          <button type="button" onclick="closeModal('modal-m2-frame-video')" class="px-4 py-2 rounded-xl text-xs hover:bg-white/5">
-            Fermer
-          </button>
-          <button type="button" onclick="saveM2FrameVideoModal()" class="px-5 py-2.5 rounded-xl bg-[#b6ab9d] text-[#151515] font-bold text-xs hover:brightness-110">
-            Enregistrer
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modale "+" pour ajouter/modifier la vidéo d'une page "Modèle 1 : Vidéo Plein Écran" -->
-  <div id="modal-page-video-edit" class="fixed inset-0 z-[85] items-center justify-center bg-black/75 backdrop-blur-sm p-4 hidden">
-    <div class="w-full max-w-lg rounded-2xl bg-[#151515] border border-[#b6ab9d]/40 p-6 text-[#b6ab9d] shadow-2xl space-y-5">
-      <div class="flex items-center justify-between">
-        <div>
-          <span class="text-[11px] uppercase tracking-widest opacity-60">Modèle 1 — Vidéo Plein Écran</span>
-          <h2 id="modal-page-video-title" class="font-dela text-xl hidden">Page 2 — Vidéo Plein Écran</h2>
-        </div>
-        <button onclick="closeModal('modal-page-video-edit')" class="text-[#b6ab9d]/60 hover:text-[#b6ab9d] text-2xl leading-none">×</button>
-      </div>
-
-      <div class="p-4 rounded-xl bg-[#1e1e1e] border border-dashed border-[#b6ab9d]/40 text-center">
-        <label class="cursor-pointer flex flex-col items-center justify-center gap-2">
-          <span class="w-12 h-12 rounded-full bg-[#b6ab9d] text-[#151515] flex items-center justify-center text-2xl font-bold shadow-md hover:scale-105 transition-transform">+</span>
-          <span class="text-sm font-semibold">Choisir une vidéo sur ton ordinateur (.MP4, .MOV, .WEBM)</span>
-          <span class="text-xs opacity-65">Lecture en boucle plein écran sur fond Noir (#151515)</span>
-          <input id="edit-page-file-input" type="file" accept="video/*" class="hidden" onchange="handlePageLocalVideoUpload(event)">
-        </label>
-      </div>
-
-      <div>
-        <label class="block text-xs uppercase tracking-wider mb-1.5 opacity-80">Coller un lien YouTube (normal, non-répertorié, Short) ou .mp4</label>
-        <input id="edit-page-url-input" type="url" placeholder="https://www.youtube.com/watch?v=... ou https://youtu.be/..." class="w-full px-3.5 py-2 rounded-xl bg-[#222222] border border-[#b6ab9d]/30 text-[#b6ab9d] text-xs focus:outline-none focus:border-[#b6ab9d]">
-      </div>
-
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div class="p-3.5 rounded-xl bg-[#222222] border border-[#b6ab9d]/20">
-          <div class="flex items-center justify-between mb-1.5">
-            <label class="text-xs font-semibold">Opacité vidéo</label>
-            <span id="modal-page-opacity-label" class="text-xs font-mono font-bold hidden">100%</span>
-          </div>
-          <input id="modal-page-opacity-slider" type="range" min="0" max="100" value="80" class="colveur-slider hidden" oninput="updateActiveEditPageOpacity(this.value)">
-          <span class="block text-[10px] opacity-60 mt-1">Fond Noir (#151515) derrière</span>
-        </div>
-
-        <div class="p-3.5 rounded-xl bg-[#222222] border border-[#b6ab9d]/20">
-          <div class="flex items-center justify-between mb-1.5">
-            <label class="text-xs font-semibold">Volume sonore</label>
-            <span id="modal-page-volume-label" class="text-xs font-mono font-bold hidden">8%</span>
-          </div>
-          <input id="modal-page-volume-slider" type="range" min="0" max="100" value="80" class="colveur-slider hidden" oninput="updateActiveEditPageVolume(this.value)">
-          <div class="flex items-center justify-between mt-2">
-            <span class="text-[10px] opacity-60">En boucle avec son</span>
-            <button type="button" id="modal-page-mute-btn" onclick="toggleActiveEditPageMute()" class="px-2.5 py-1 rounded-lg bg-[#151515] border border-[#b6ab9d]/30 text-[11px] font-bold hover:border-[#b6ab9d] transition-all hidden">🔊 Son actif</button>
-          </div>
-        </div>
-      </div>
-
-      <div class="flex justify-end gap-2 pt-2">
-        <button type="button" onclick="closeModal('modal-page-video-edit')" class="px-4 py-2 rounded-xl text-xs hover:bg-white/5">
-          Fermer
-        </button>
-        <button type="button" onclick="savePageVideoModalChanges()" class="px-5 py-2.5 rounded-xl bg-[#b6ab9d] text-[#151515] font-bold text-xs hover:brightness-110">
-          Enregistrer
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modale pour changer le code secret du Mode Éditeur -->
-  <div id="modal-change-pin" class="fixed inset-0 z-[85] hidden items-center justify-center bg-black/75 backdrop-blur-sm p-4">
-    <div class="w-full max-w-md rounded-2xl bg-[#151515] border border-[#b6ab9d]/40 p-6 text-[#b6ab9d] shadow-2xl space-y-4">
-      <div class="flex items-center justify-between">
-        <h2 class="font-dela text-lg">🔑 Changer ton code secret</h2>
-        <button onclick="closeModal('modal-change-pin')" class="text-[#b6ab9d]/60 hover:text-[#b6ab9d] text-2xl leading-none">×</button>
-      </div>
-      <p class="text-xs text-[#b6ab9d]/80 leading-relaxed">
-        Choisis ton nouveau mot de passe ou code PIN pour ouvrir le Mode Éditeur (via <strong>Shift + E</strong> ou en maintenant le coin inférieur droit pendant 1,5 seconde).
-      </p>
-      <form onsubmit="saveNewEditorPin(event)" class="space-y-4">
-        <div>
-          <label class="block text-xs uppercase tracking-wider mb-1.5 opacity-80">Nouveau code secret</label>
-          <input id="new-editor-pin-input" type="text" required="" minlength="3" placeholder="Ex: Colveur2026!" class="w-full px-4 py-2.5 rounded-xl bg-[#222222] border border-[#b6ab9d]/30 text-[#b6ab9d] font-bold focus:outline-none focus:border-[#b6ab9d]">
-        </div>
-        <p id="pin-saved-feedback" class="text-xs text-emerald-400 font-semibold hidden">
-          ✓ Nouveau code enregistré ! Pense à cliquer sur « 💾 Sauvegarder pour mise en ligne » avant de quitter.
-        </p>
-        <div class="flex justify-end gap-2 pt-2">
-          <button type="button" onclick="closeModal('modal-change-pin')" class="px-4 py-2 rounded-xl text-xs hover:bg-white/5">Fermer</button>
-          <button type="submit" class="px-5 py-2.5 rounded-xl bg-[#b6ab9d] text-[#151515] font-bold text-xs hover:brightness-110">
-            Valider le nouveau code
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- Modale d'Exportation du Code Final (pour Netlify / Google Sites) -->
-  <div id="modal-export-code" class="fixed inset-0 z-[90] items-center justify-center bg-black/80 backdrop-blur-sm p-4 hidden">
-    <div class="w-full max-w-2xl rounded-2xl bg-[#151515] border border-[#b6ab9d]/40 p-6 text-[#b6ab9d] shadow-2xl space-y-4">
-      <div class="flex items-center justify-between">
-        <div>
-          <span class="text-[11px] uppercase tracking-widest text-emerald-400 font-bold">Prêt pour Netlify &amp; Google Sites</span>
-          <h2 class="font-dela text-xl">💾 Sauvegarder ton site mis à jour</h2>
-        </div>
-        <button onclick="closeModal('modal-export-code')" class="text-[#b6ab9d]/60 hover:text-[#b6ab9d] text-2xl leading-none">×</button>
-      </div>
-
-      <div class="text-xs space-y-2 text-[#b6ab9d]/85 leading-relaxed bg-[#202020] p-3.5 rounded-xl border border-[#b6ab9d]/20">
-        <p>
-          <strong>Pour Netlify (important pour éviter l'écran noir "Error - Request ID") :</strong><br>
-          Netlify refuse qu'on glisse un fichier <code>index.html</code> tout seul : il faut obligatoirement glisser soit un <strong>fichier .ZIP</strong> (bouton vert ci-dessous), soit un <strong>dossier</strong> contenant <code>index.html</code> !
-        </p>
-      </div>
-
-      <textarea id="exported-html-textarea" readonly="" class="w-full h-36 p-3 rounded-xl bg-[#0e0e0e] border border-[#b6ab9d]/25 text-[#b6ab9d]/80 font-mono text-[11px] focus:outline-none"></textarea>
-
-      <div class="flex flex-wrap items-center justify-between gap-2.5 pt-1">
-        <div class="flex flex-wrap items-center gap-2">
-          <button type="button" onclick="downloadNetlifyReadyZip()" class="px-4 py-2.5 rounded-xl bg-emerald-500 text-[#151515] font-bold text-xs hover:brightness-110 transition-all shadow-lg">
-            📦 Télécharger le .ZIP prêt pour Netlify
-          </button>
-
-          <button type="button" onclick="downloadUpdatedHtmlFile()" class="px-3.5 py-2.5 rounded-xl bg-[#252525] hover:bg-[#323232] border border-[#b6ab9d]/30 text-xs font-semibold transition-all">
-            ⬇️ Fichier index.html seul
-          </button>
-        </div>
-
-        <div class="flex items-center gap-2 ml-auto">
-          <button type="button" id="btn-copy-exported-code" onclick="copyExportedHtmlCode()" class="px-4 py-2.5 rounded-xl bg-[#b6ab9d] text-[#151515] font-bold text-xs hover:brightness-110 transition-all">📋 Copier le code</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modale "🚀 Publier en 1 clic" vers GitHub + Netlify -->
-  <div id="modal-github-publish" class="fixed inset-0 z-[90] items-center justify-center bg-black/80 backdrop-blur-sm p-4 hidden">
-    <div class="w-full max-w-xl rounded-2xl bg-[#151515] border border-[#b6ab9d]/40 p-6 text-[#b6ab9d] shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto">
-      <div class="flex items-center justify-between">
-        <div>
-          <span class="text-[11px] uppercase tracking-widest text-emerald-400 font-bold">Synchronisation directe GitHub → Netlify</span>
-          <h2 class="font-dela text-xl">🚀 Publier en 1 clic</h2>
-        </div>
-        <button onclick="closeModal('modal-github-publish')" class="text-[#b6ab9d]/60 hover:text-[#b6ab9d] text-2xl leading-none">×</button>
-      </div>
-
-      <!-- Résumé rapide quand c'est déjà configuré -->
-      <div id="gh-configured-banner" class="items-center justify-between gap-3 p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-xs hidden">
-        <div>
-          <span class="text-emerald-400 font-bold">✓ Connecté au dépôt :</span>
-          <span id="gh-connected-repo-label" class="font-mono ml-1 text-[#b6ab9d]">colveur132/colveur (main)</span>
-        </div>
-        <button type="button" onclick="toggleGitHubConfigForm(true)" class="px-2.5 py-1 rounded-lg bg-[#252525] hover:bg-[#333] text-[11px] font-semibold">
-          ⚙️ Modifier config
-        </button>
-      </div>
-
-      <!-- Formulaire de configuration GitHub (à remplir une seule fois) -->
-      <div id="gh-config-form-wrap" class="space-y-3.5 bg-[#1e1e1e] p-4 rounded-xl border border-[#b6ab9d]/20">
-        <div class="text-xs text-[#b6ab9d]/85 leading-relaxed space-y-1">
-          <p class="font-bold text-[#b6ab9d]">Configuration unique (enregistrée sur ton navigateur uniquement) :</p>
-          <p class="text-[11px] opacity-80">
-            Pour autoriser ton site à mettre à jour ton GitHub tout seul, crée une clé sur GitHub :
-            <strong>Settings</strong> (ton profil en haut à droite) → tout en bas à gauche <strong>Developer settings</strong> → <strong>Personal access tokens</strong> → <strong>Tokens (classic)</strong> → <strong>Generate new token (classic)</strong> → coche la case <strong><code>repo</code></strong> et copie la clé <code>ghp_...</code>.
-          </p>
-        </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div>
-            <label class="block text-[11px] uppercase tracking-wider mb-1 opacity-75">Ton pseudo GitHub (Owner)</label>
-            <input id="gh-owner-input" type="text" placeholder="Ex: Colveur" class="w-full px-3 py-2 rounded-xl bg-[#141414] border border-[#b6ab9d]/30 text-[#b6ab9d] text-xs font-mono focus:outline-none focus:border-[#b6ab9d]">
-          </div>
-
-          <div>
-            <label class="block text-[11px] uppercase tracking-wider mb-1 opacity-75">Nom du dépôt (Repository)</label>
-            <input id="gh-repo-input" type="text" placeholder="Ex: colveur" class="w-full px-3 py-2 rounded-xl bg-[#141414] border border-[#b6ab9d]/30 text-[#b6ab9d] text-xs font-mono focus:outline-none focus:border-[#b6ab9d]">
-          </div>
-        </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div class="sm:col-span-2">
-            <label class="block text-[11px] uppercase tracking-wider mb-1 opacity-75">Clé Token GitHub (<code>ghp_...</code>)</label>
-            <input id="gh-token-input" type="password" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" class="w-full px-3 py-2 rounded-xl bg-[#141414] border border-[#b6ab9d]/30 text-[#b6ab9d] text-xs font-mono focus:outline-none focus:border-[#b6ab9d]">
-          </div>
-
-          <div>
-            <label class="block text-[11px] uppercase tracking-wider mb-1 opacity-75">Branche</label>
-            <input id="gh-branch-input" type="text" value="main" placeholder="main" class="w-full px-3 py-2 rounded-xl bg-[#141414] border border-[#b6ab9d]/30 text-[#b6ab9d] text-xs font-mono focus:outline-none focus:border-[#b6ab9d]">
-          </div>
-        </div>
-      </div>
-
-      <!-- Zone de statut en direct -->
-      <div id="gh-publish-status" class="p-3.5 rounded-xl text-xs font-medium leading-relaxed border bg-white/5 text-[#b6ab9d] border-[#b6ab9d]/25 hidden"></div>
-
-      <div class="flex items-center justify-between gap-3 pt-2">
-        <button type="button" onclick="closeModal('modal-github-publish')" class="px-4 py-2.5 rounded-xl text-xs hover:bg-white/5">
-          Fermer
-        </button>
-
-        <button type="button" id="btn-trigger-gh-push" onclick="publishDirectlyToGitHub()" class="flex items-center gap-2 px-6 py-3 rounded-xl bg-emerald-500 text-[#151515] font-dela text-xs hover:brightness-110 transition-all shadow-xl"><span>🚀 Publier sur le site maintenant</span></button>
-      </div>
-    </div>
-  </div>
 
   <!-- =====================================================================
        SCRIPT PRINCIPAL : ANIMATION "COLVEUR", CARROUSEL INFINI & ÉDITEUR
        ===================================================================== -->
   <script>
     /*************************************************************************
-     * 0. CODE SECRET DU MODE ÉDITEUR (MODIFIABLE ICI OU VIA LE BOUTON "🔑 CODE")
+     * 0. RÉGLAGES GÉNÉRAUX DU SITE (écrits automatiquement par l'atelier à chaque publication)
      *************************************************************************/
     /* __COLVEUR_CONFIG_START__ */
-    let EDITOR_SECRET_PIN = "395253";
     let DEFAULT_HOVER_MODE = "push";
     let DEFAULT_RESTING_OPACITY = 0.4;
     let DEFAULT_SCROLL_MODE = "free";
     /* __COLVEUR_CONFIG_END__ */
 
-    const STORAGE_KEY_EDITOR_PIN = 'colveur_editor_secret_pin_v1';
-    try {
-      const savedPin = localStorage.getItem(STORAGE_KEY_EDITOR_PIN);
-      if (savedPin && savedPin.trim().length >= 3) {
-        EDITOR_SECRET_PIN = savedPin.trim();
-      }
-    } catch (e) {}
+    // true uniquement dans editeur.html (remplacé automatiquement à la fabrication des fichiers)
+    const IS_ATELIER = false; // @@ATELIER_FLAG
 
     /**
      * Détecte et extrait l'identifiant d'une vidéo YouTube (watch?v=, youtu.be/, shorts/, embed/)
@@ -1497,6 +979,30 @@
       if (!b || typeof b !== 'object') {
         return createDefaultM2Blocks()[idx % 2];
       }
+      if (b.type === 'image') {
+        return {
+          id: b.id || ('blk-img-' + Math.random().toString(36).slice(2, 8)),
+          type: 'image',
+          x: typeof b.x === 'number' ? b.x : 40,
+          y: typeof b.y === 'number' ? b.y : 30,
+          w: typeof b.w === 'number' ? b.w : 20,
+          h: typeof b.h === 'number' ? b.h : 34,
+          imageUrl: typeof b.imageUrl === 'string' ? b.imageUrl : '',
+          linkUrl: typeof b.linkUrl === 'string' ? b.linkUrl : ''
+        };
+      }
+      if (b.type === 'embed') {
+        return {
+          id: b.id || ('blk-web-' + Math.random().toString(36).slice(2, 8)),
+          type: 'embed',
+          x: typeof b.x === 'number' ? b.x : 38,
+          y: typeof b.y === 'number' ? b.y : 14,
+          w: typeof b.w === 'number' ? b.w : 24,
+          h: typeof b.h === 'number' ? b.h : 72,
+          embedUrl: typeof b.embedUrl === 'string' ? b.embedUrl : '',
+          borderRadius: typeof b.borderRadius === 'number' ? b.borderRadius : 24
+        };
+      }
       if (b.type === 'text') {
         return {
           id: b.id || ('blk-txt-' + Math.random().toString(36).slice(2, 8)),
@@ -1554,8 +1060,91 @@
         videoOpacity: (page && typeof page.videoOpacity === 'number') ? page.videoOpacity : 80,
         videoVolume: (page && typeof page.videoVolume === 'number') ? page.videoVolume : 80,
         videoMuted: (page && typeof page.videoMuted === 'boolean') ? page.videoMuted : false,
-        blocks: rawBlocks
+        blocks: rawBlocks,
+        // Blocs posés librement sur une page « Fond uni » (vide par défaut)
+        freeBlocks: (page && Array.isArray(page.freeBlocks))
+          ? page.freeBlocks.filter(b => b && typeof b === 'object').map((b, bIdx) => normalizeM2Block(b, bIdx))
+          : []
       };
+    }
+
+    /**
+     * Champs d'un bloc qui pointent vers un fichier média (vidéo ou image).
+     * Sert à remplacer les fichiers choisis sur l'ordinateur par leur chemin définitif sur le site.
+     */
+    const BLOCK_MEDIA_FIELDS = ['videoUrl', 'imageUrl'];
+
+    function mapBlockMedia(block, fn) {
+      const out = { ...block };
+      BLOCK_MEDIA_FIELDS.forEach(key => {
+        if (typeof out[key] === 'string') out[key] = fn(out[key]);
+      });
+      return out;
+    }
+
+    function dropBlobUrl(url) {
+      return (url && !String(url).startsWith('blob:')) ? url : '';
+    }
+
+    /** Lien externe sûr (http/https uniquement). Accepte « tiktok.com/@x » ou « @x » (TikTok). */
+    function safeExternalUrl(url) {
+      let u = String(url || '').trim();
+      if (!u) return '';
+      if (/^@[\w.]+$/.test(u)) u = 'https://www.tiktok.com/' + u;
+      if (!/^[a-z][a-z0-9+.-]*:/i.test(u)) u = 'https://' + u;
+      if (!/^https?:\/\//i.test(u)) return '';
+      try {
+        return new URL(u).href;
+      } catch (e) {
+        return '';
+      }
+    }
+
+    /**
+     * Ce qu'une « fenêtre web » doit afficher : profil TikTok, vidéo TikTok, vidéo YouTube ou autre site.
+     */
+    function resolveEmbedTarget(rawUrl) {
+      const url = safeExternalUrl(rawUrl);
+      if (!url) return null;
+      let parsed;
+      try {
+        parsed = new URL(url);
+      } catch (e) {
+        return null;
+      }
+      const host = parsed.hostname.toLowerCase().replace(/^(www|m)\./, '');
+      if (host === 'tiktok.com') {
+        const videoMatch = parsed.pathname.match(/^\/@[\w.]+\/(?:video|photo)\/(\d+)/);
+        if (videoMatch) return { kind: 'tiktok-video', id: videoMatch[1], openUrl: url };
+        const profileMatch = parsed.pathname.match(/^\/@([\w.]+)\/?$/);
+        if (profileMatch) return { kind: 'tiktok-profile', username: profileMatch[1], openUrl: `https://www.tiktok.com/@${profileMatch[1]}` };
+      }
+      const ytId = extractYouTubeId(url);
+      if (ytId) return { kind: 'youtube', id: ytId, openUrl: url };
+      return { kind: 'web', url, openUrl: url };
+    }
+
+    function buildEmbedIframeHtml(target, isEditor) {
+      // En mode éditeur, la fenêtre ne capte pas la souris : on peut la déplacer et la redimensionner
+      const attrs = `class="m2-embed-iframe" style="position:absolute; inset:0; width:100%; height:100%; border:0; ${isEditor ? 'pointer-events:none;' : ''}" loading="lazy" allow="autoplay; encrypted-media; fullscreen; picture-in-picture; clipboard-write" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"`;
+
+      if (target.kind === 'tiktok-profile') {
+        // Code d'intégration officiel TikTok (profil créateur), isolé dans sa propre petite page
+        const u = target.username;
+        const doc = '<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">' +
+          '<style>html,body{margin:0;padding:0;background:transparent;}body{display:flex;justify-content:center;}blockquote.tiktok-embed{margin:0 auto !important;}</style></head><body>' +
+          `<blockquote class="tiktok-embed" cite="https://www.tiktok.com/@${u}" data-unique-id="${u}" data-embed-type="creator" style="max-width:720px; min-width:288px;">` +
+          `<section><a target="_blank" href="https://www.tiktok.com/@${u}?refer=creator_embed">@${u}</a></section></blockquote>` +
+          '<script async src="https://www.tiktok.com/embed.js"><\/script></body></html>';
+        return `<iframe ${attrs} title="Profil TikTok @${escapeHtml(u)}" srcdoc="${escapeHtml(doc)}"></iframe>`;
+      }
+      if (target.kind === 'tiktok-video') {
+        return `<iframe ${attrs} title="Vidéo TikTok" src="https://www.tiktok.com/player/v1/${target.id}?rel=0&description=1"></iframe>`;
+      }
+      if (target.kind === 'youtube') {
+        return `<iframe ${attrs} title="Vidéo YouTube" src="https://www.youtube.com/embed/${target.id}?rel=0&playsinline=1"></iframe>`;
+      }
+      return `<iframe ${attrs} title="Site web" src="${escapeHtml(target.url)}"></iframe>`;
     }
 
     function createDefaultPages() {
@@ -1608,10 +1197,10 @@
             "bold": false,
             "italic": false,
             "underline": false,
-            "align": "center",
-            "videoUrl": ""
+            "align": "center"
           }
-        ]
+        ],
+        "freeBlocks": []
       },
       {
         "id": "page-1795545812174-22ma",
@@ -1647,10 +1236,10 @@
             "bold": false,
             "italic": false,
             "underline": false,
-            "align": "center",
-            "videoUrl": ""
+            "align": "center"
           }
-        ]
+        ],
+        "freeBlocks": []
       }
     ]
   },
@@ -1695,10 +1284,10 @@
             "bold": false,
             "italic": false,
             "underline": false,
-            "align": "center",
-            "videoUrl": ""
+            "align": "center"
           }
-        ]
+        ],
+        "freeBlocks": []
       },
       {
         "id": "page-7plg5h7",
@@ -1734,10 +1323,10 @@
             "bold": false,
             "italic": false,
             "underline": false,
-            "align": "center",
-            "videoUrl": ""
+            "align": "center"
           }
-        ]
+        ],
+        "freeBlocks": []
       }
     ]
   }
@@ -1745,14 +1334,14 @@
     /* __COLVEUR_DATA_END__ */
 
     /**
-     * Empreinte de la version publiée (DEFAULT_CATEGORIES) : les modifications locales
-     * (localStorage) ne sont reprises que si elles ont été faites sur CETTE version publiée.
-     * Si le site a été republié depuis (autre ordinateur, téléphone...), la version en ligne gagne.
+     * Empreinte d'une version du contenu : permet à l'atelier de savoir si ses modifications locales
+     * (non publiées) ont été faites sur la version actuellement en ligne.
      */
     const STORAGE_KEY_PORTFOLIO_BASE = 'colveur_portfolio_base_v1';
+    let publishedBaseSignature = null;
 
-    function computePublishedDataSignature() {
-      const str = JSON.stringify(DEFAULT_CATEGORIES);
+    function computeDataSignature(data) {
+      const str = JSON.stringify(data);
       let hash = 5381;
       for (let i = 0; i < str.length; i++) {
         hash = ((hash << 5) + hash + str.charCodeAt(i)) | 0;
@@ -1760,42 +1349,49 @@
       return str.length + '-' + (hash >>> 0).toString(36);
     }
 
+    function normalizeCategoryList(list) {
+      return list.map((cat, idx) => ({
+        id: cat.id || 'cat-' + idx,
+        title: cat.title || 'Catégorie',
+        theme: cat.theme || ['docu', 'event', 'reseaux'][idx % 3],
+        videoUrl: (cat.videoUrl && !cat.videoUrl.startsWith('blob:')) ? cat.videoUrl : '',
+        posX: typeof cat.posX === 'number' ? cat.posX : 50,
+        pages: (Array.isArray(cat.pages) && cat.pages.length > 0)
+          ? cat.pages.map((p, pIdx) => normalizePageObject({
+              ...p,
+              videoUrl: (p && p.videoUrl && !String(p.videoUrl).startsWith('blob:')) ? p.videoUrl : '',
+              blocks: Array.isArray(p && p.blocks) ? p.blocks.map((b, bIdx) => mapBlockMedia(normalizeM2Block(b, bIdx), dropBlobUrl)) : undefined,
+              freeBlocks: Array.isArray(p && p.freeBlocks) ? p.freeBlocks.filter(b => b && typeof b === 'object').map((b, bIdx) => mapBlockMedia(normalizeM2Block(b, bIdx), dropBlobUrl)) : []
+            }, pIdx))
+          : createDefaultPages()
+      }));
+    }
+
     function loadPersistedCategories() {
+      if (!IS_ATELIER) {
+        // Site public : toujours exactement la version publiée.
+        // On efface au passage les restes de l'ancien mode éditeur en ligne (dont l'ancienne clé GitHub).
+        try {
+          ['colveur_portfolio_data_v2', 'colveur_portfolio_base_v1', 'colveur_category_scroll_mode_v1',
+           'colveur_editor_secret_pin_v1', 'colveur_github_sync_config_v1'].forEach(k => localStorage.removeItem(k));
+        } catch (e) {}
+        return JSON.parse(JSON.stringify(DEFAULT_CATEGORIES));
+      }
       try {
         const raw = localStorage.getItem(STORAGE_KEY_PORTFOLIO);
         if (!raw) return JSON.parse(JSON.stringify(DEFAULT_CATEGORIES));
-        if (localStorage.getItem(STORAGE_KEY_PORTFOLIO_BASE) !== computePublishedDataSignature()) {
-          localStorage.removeItem(STORAGE_KEY_PORTFOLIO);
-          localStorage.removeItem(STORAGE_KEY_PORTFOLIO_BASE);
-          return JSON.parse(JSON.stringify(DEFAULT_CATEGORIES));
-        }
         const parsed = JSON.parse(raw);
         if (!Array.isArray(parsed) || parsed.length === 0) {
           return JSON.parse(JSON.stringify(DEFAULT_CATEGORIES));
         }
-        return parsed.map((cat, idx) => ({
-          id: cat.id || 'cat-' + idx,
-          title: cat.title || 'Catégorie',
-          theme: cat.theme || ['docu', 'event', 'reseaux'][idx % 3],
-          videoUrl: (cat.videoUrl && !cat.videoUrl.startsWith('blob:')) ? cat.videoUrl : '',
-          posX: typeof cat.posX === 'number' ? cat.posX : 50,
-          pages: (Array.isArray(cat.pages) && cat.pages.length > 0)
-            ? cat.pages.map((p, pIdx) => normalizePageObject({
-                ...p,
-                videoUrl: (p && p.videoUrl && !String(p.videoUrl).startsWith('blob:')) ? p.videoUrl : '',
-                blocks: Array.isArray(p && p.blocks) ? p.blocks.map((b, bIdx) => ({
-                  ...normalizeM2Block(b, bIdx),
-                  videoUrl: (b && b.videoUrl && !String(b.videoUrl).startsWith('blob:')) ? b.videoUrl : ''
-                })) : undefined
-              }, pIdx))
-            : createDefaultPages()
-        }));
+        return normalizeCategoryList(parsed);
       } catch (e) {
         return JSON.parse(JSON.stringify(DEFAULT_CATEGORIES));
       }
     }
 
     function saveCategoriesToStorage() {
+      if (!IS_ATELIER) return;
       try {
         const serializable = categories.map(cat => ({
           ...cat,
@@ -1805,21 +1401,21 @@
             return {
               ...norm,
               videoUrl: (norm.videoUrl && !String(norm.videoUrl).startsWith('blob:')) ? norm.videoUrl : '',
-              blocks: (norm.blocks || []).map((b, bIdx) => ({
-                ...normalizeM2Block(b, bIdx),
-                videoUrl: (b.videoUrl && !String(b.videoUrl).startsWith('blob:')) ? b.videoUrl : ''
-              }))
+              blocks: (norm.blocks || []).map((b, bIdx) => mapBlockMedia(normalizeM2Block(b, bIdx), dropBlobUrl)),
+              freeBlocks: (norm.freeBlocks || []).map((b, bIdx) => mapBlockMedia(normalizeM2Block(b, bIdx), dropBlobUrl))
             };
           })
         }));
         localStorage.setItem(STORAGE_KEY_PORTFOLIO, JSON.stringify(serializable));
-        localStorage.setItem(STORAGE_KEY_PORTFOLIO_BASE, computePublishedDataSignature());
+        if (publishedBaseSignature) {
+          localStorage.setItem(STORAGE_KEY_PORTFOLIO_BASE, publishedBaseSignature);
+        }
       } catch (e) {}
     }
 
     let categories = loadPersistedCategories();
     let categoryScrollMode = typeof DEFAULT_SCROLL_MODE === 'string' ? DEFAULT_SCROLL_MODE : 'free';
-    try {
+    if (IS_ATELIER) try {
       const savedScrollMode = localStorage.getItem(STORAGE_KEY_SCROLL_MODE);
       if (savedScrollMode === 'snap' || savedScrollMode === 'free') {
         categoryScrollMode = savedScrollMode;
@@ -2831,6 +2427,8 @@
       cat.pages.forEach((page, index) => {
         const isVideoTemplate = page.template === 'fullscreen-video';
         const isMediaTextTemplate = page.template === 'media-text';
+        const isBlankTemplate = !isVideoTemplate && !isMediaTextTemplate;
+        const hasFreeBlocks = isBlankTemplate && Array.isArray(page.freeBlocks) && page.freeBlocks.length > 0;
         const bgTheme = page.bgTheme === 'taupe' ? 'taupe' : 'noir';
         const isTaupe = bgTheme === 'taupe';
         const colorName = isTaupe ? 'Taupe (#b6ab9d)' : 'Noir (#151515)';
@@ -2846,8 +2444,10 @@
         section.dataset.bgTheme = bgTheme;
 
         let m2BlocksHtml = '';
-        if (isMediaTextTemplate) {
-          const blocks = Array.isArray(page.blocks) && page.blocks.length > 0 ? page.blocks : createDefaultM2Blocks();
+        if (isMediaTextTemplate || hasFreeBlocks) {
+          const blocks = isBlankTemplate
+            ? page.freeBlocks
+            : (Array.isArray(page.blocks) && page.blocks.length > 0 ? page.blocks : createDefaultM2Blocks());
           const videoCount = blocks.filter(b => b.type === 'video').length;
           const textCount = blocks.filter(b => b.type === 'text').length;
 
@@ -2865,7 +2465,7 @@
                   const blkYtId = extractYouTubeId(blk.videoUrl);
                   const isBlkYouTube = Boolean(blkYtId);
                   const radiusPx = typeof blk.borderRadius === 'number' ? blk.borderRadius : 42;
-                  const canDeleteBlk = videoCount > 1 || blocks.length > 1;
+                  const canDeleteBlk = isBlankTemplate || videoCount > 1 || blocks.length > 1;
 
                   return `
                     <div
@@ -3068,8 +2668,162 @@
                       <div class="m2-resize-handle handle-s" onpointerdown="startM2BlockInteract(event, '${page.id}', '${blk.id}', 's')"></div>
                     </div>
                   `;
+                } else if (blk.type === 'image') {
+                  const imgSrc = blk.imageUrl ? String(blk.imageUrl) : '';
+                  const imgLink = safeExternalUrl(blk.linkUrl);
+                  const imgTag = imgSrc ? `
+                    <img
+                      class="m2-image-el w-full h-full object-contain block select-none"
+                      src="${escapeHtml(imgSrc)}"
+                      alt=""
+                      draggable="false"
+                      decoding="async"
+                      style="width:100%; height:100%; object-fit:contain; display:block; pointer-events:${isEditorMode ? 'none' : 'auto'};"
+                    >` : '';
+
+                  return `
+                    <div
+                      class="m2-block m2-block-image ${isSelected ? 'is-selected' : ''} ${toolbarBelowClass}"
+                      data-page-id="${page.id}"
+                      data-block-id="${blk.id}"
+                      data-block-type="image"
+                      style="left:${blk.x}%; top:${blk.y}%; width:${blk.w}%; height:${blk.h}%;"
+                      onpointerdown="startM2BlockInteract(event, '${page.id}', '${blk.id}', 'move')"
+                    >
+                      <div class="m2-block-toolbar" onpointerdown="event.stopPropagation()">
+                        <button
+                          type="button"
+                          onclick="openM2ImageModal('${page.id}', '${blk.id}')"
+                          class="px-2.5 py-1 rounded-lg bg-[#b6ab9d] text-[#151515] text-[11px] font-bold hover:brightness-110"
+                        >
+                          + Image / Lien
+                        </button>
+                        <button
+                          type="button"
+                          onclick="deleteM2Block('${page.id}', '${blk.id}')"
+                          class="px-2 py-1 rounded-lg bg-red-500/20 hover:bg-red-500/35 text-red-300 text-[11px] font-bold"
+                          title="Supprimer cette image"
+                        >✕</button>
+                      </div>
+
+                      <div class="relative w-full h-full">
+                        ${imgSrc ? ((imgLink && !isEditorMode) ? `<a href="${escapeHtml(imgLink)}" target="_blank" rel="noopener noreferrer" class="block w-full h-full" title="Ouvrir le lien">${imgTag}</a>` : imgTag) : ''}
+
+                        <div class="cat-page-editor-placeholder ${isEditorMode ? 'flex' : 'hidden'} absolute inset-0 flex-col items-center justify-center gap-2 ${imgSrc ? '' : 'rounded-2xl border-2 border-dashed border-current/40'} z-10 pointer-events-none">
+                          <button
+                            type="button"
+                            onpointerdown="event.stopPropagation()"
+                            onclick="event.stopPropagation(); openM2ImageModal('${page.id}', '${blk.id}')"
+                            class="pointer-events-auto w-12 h-12 rounded-full bg-[#b6ab9d] text-[#151515] border-2 border-[#151515] flex items-center justify-center text-2xl font-bold shadow-xl hover:scale-110 transition-transform"
+                            title="Ajouter ou changer l'image"
+                          >+</button>
+                          <span class="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-[#151515]/85 text-[#b6ab9d]">
+                            ${imgSrc ? (imgLink ? 'Changer l\'image • lien actif' : 'Changer l\'image') : 'Ajouter une image'}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div class="m2-resize-handle handle-nw" onpointerdown="startM2BlockInteract(event, '${page.id}', '${blk.id}', 'nw')"></div>
+                      <div class="m2-resize-handle handle-ne" onpointerdown="startM2BlockInteract(event, '${page.id}', '${blk.id}', 'ne')"></div>
+                      <div class="m2-resize-handle handle-sw" onpointerdown="startM2BlockInteract(event, '${page.id}', '${blk.id}', 'sw')"></div>
+                      <div class="m2-resize-handle handle-se" onpointerdown="startM2BlockInteract(event, '${page.id}', '${blk.id}', 'se')"></div>
+                      <div class="m2-resize-handle handle-e" onpointerdown="startM2BlockInteract(event, '${page.id}', '${blk.id}', 'e')"></div>
+                      <div class="m2-resize-handle handle-s" onpointerdown="startM2BlockInteract(event, '${page.id}', '${blk.id}', 's')"></div>
+                    </div>
+                  `;
+                } else if (blk.type === 'embed') {
+                  const embedTarget = resolveEmbedTarget(blk.embedUrl);
+                  const embedRadius = typeof blk.borderRadius === 'number' ? blk.borderRadius : 24;
+                  const embedLabels = {
+                    'tiktok-profile': embedTarget && embedTarget.username ? `Profil TikTok @${embedTarget.username}` : '',
+                    'tiktok-video': 'Vidéo TikTok',
+                    'youtube': 'Vidéo YouTube',
+                    'web': 'Site web'
+                  };
+
+                  return `
+                    <div
+                      class="m2-block m2-block-embed ${isSelected ? 'is-selected' : ''} ${toolbarBelowClass}"
+                      data-page-id="${page.id}"
+                      data-block-id="${blk.id}"
+                      data-block-type="embed"
+                      style="left:${blk.x}%; top:${blk.y}%; width:${blk.w}%; height:${blk.h}%;"
+                      onpointerdown="startM2BlockInteract(event, '${page.id}', '${blk.id}', 'move')"
+                    >
+                      <div class="m2-block-toolbar" onpointerdown="event.stopPropagation()">
+                        <button
+                          type="button"
+                          onclick="openM2EmbedModal('${page.id}', '${blk.id}')"
+                          class="px-2.5 py-1 rounded-lg bg-[#b6ab9d] text-[#151515] text-[11px] font-bold hover:brightness-110"
+                        >
+                          + Lien de la fenêtre
+                        </button>
+                        <button
+                          type="button"
+                          onclick="applyM2VideoPresetRatio('${page.id}', '${blk.id}', '9:16')"
+                          class="px-2 py-1 rounded-lg bg-[#252525] hover:bg-[#333] text-[11px] font-semibold"
+                          title="Format vertical 9:16 (TikTok)"
+                        >9:16</button>
+                        <button
+                          type="button"
+                          onclick="applyM2VideoPresetRatio('${page.id}', '${blk.id}', '16:9')"
+                          class="px-2 py-1 rounded-lg bg-[#252525] hover:bg-[#333] text-[11px] font-semibold"
+                          title="Format horizontal 16:9"
+                        >16:9</button>
+                        <button
+                          type="button"
+                          onclick="applyM2VideoPresetRatio('${page.id}', '${blk.id}', '1:1')"
+                          class="px-2 py-1 rounded-lg bg-[#252525] hover:bg-[#333] text-[11px] font-semibold"
+                          title="Format carré 1:1"
+                        >1:1</button>
+                        <button
+                          type="button"
+                          onclick="deleteM2Block('${page.id}', '${blk.id}')"
+                          class="px-2 py-1 rounded-lg bg-red-500/20 hover:bg-red-500/35 text-red-300 text-[11px] font-bold"
+                          title="Supprimer cette fenêtre"
+                        >✕</button>
+                      </div>
+
+                      <div
+                        class="m2-embed-frame relative w-full h-full overflow-hidden ${(embedTarget || isEditorMode) ? 'bg-[#151515]' : ''}"
+                        style="border-radius:${embedRadius}px; transform: translateZ(0);"
+                      >
+                        ${embedTarget ? buildEmbedIframeHtml(embedTarget, isEditorMode) : ''}
+
+                        ${(embedTarget && embedTarget.kind === 'web' && !isEditorMode) ? `
+                          <a
+                            href="${escapeHtml(embedTarget.openUrl)}"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="absolute top-2.5 right-2.5 z-20 px-2.5 py-1 rounded-full bg-[#151515]/85 border border-[#b6ab9d]/40 text-[#b6ab9d] text-[11px] font-semibold backdrop-blur-md hover:bg-[#151515] transition-colors"
+                            title="Ouvrir ce site dans un nouvel onglet"
+                          >↗ Ouvrir</a>
+                        ` : ''}
+
+                        <div class="cat-page-editor-placeholder ${isEditorMode ? 'flex' : 'hidden'} absolute inset-0 flex-col items-center justify-center gap-2 ${embedTarget ? 'bg-black/25' : 'border-2 border-dashed border-[#b6ab9d]/40'} z-10 pointer-events-none" style="border-radius:${embedRadius}px;">
+                          <button
+                            type="button"
+                            onpointerdown="event.stopPropagation()"
+                            onclick="event.stopPropagation(); openM2EmbedModal('${page.id}', '${blk.id}')"
+                            class="pointer-events-auto w-12 h-12 rounded-full bg-[#b6ab9d] text-[#151515] border-2 border-[#151515] flex items-center justify-center text-2xl font-bold shadow-xl hover:scale-110 transition-transform"
+                            title="Choisir ce qu'affiche cette fenêtre"
+                          >+</button>
+                          <span class="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-[#151515]/85 text-[#b6ab9d] text-center max-w-[90%]">
+                            ${embedTarget ? escapeHtml(embedLabels[embedTarget.kind]) : 'Fenêtre web : ajouter un lien'}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div class="m2-resize-handle handle-nw" onpointerdown="startM2BlockInteract(event, '${page.id}', '${blk.id}', 'nw')"></div>
+                      <div class="m2-resize-handle handle-ne" onpointerdown="startM2BlockInteract(event, '${page.id}', '${blk.id}', 'ne')"></div>
+                      <div class="m2-resize-handle handle-sw" onpointerdown="startM2BlockInteract(event, '${page.id}', '${blk.id}', 'sw')"></div>
+                      <div class="m2-resize-handle handle-se" onpointerdown="startM2BlockInteract(event, '${page.id}', '${blk.id}', 'se')"></div>
+                      <div class="m2-resize-handle handle-e" onpointerdown="startM2BlockInteract(event, '${page.id}', '${blk.id}', 'e')"></div>
+                      <div class="m2-resize-handle handle-s" onpointerdown="startM2BlockInteract(event, '${page.id}', '${blk.id}', 's')"></div>
+                    </div>
+                  `;
                 } else {
-                  const canDeleteTxt = textCount > 1 || blocks.length > 1;
+                  const canDeleteTxt = isBlankTemplate || textCount > 1 || blocks.length > 1;
                   const boldClass = blk.bold ? 'is-bold' : '';
                   const italicClass = blk.italic ? 'is-italic' : '';
                   const underlineClass = blk.underline ? 'is-underline' : '';
@@ -3214,7 +2968,7 @@
             </div>
           ` : ''}
 
-          ${isMediaTextTemplate ? m2BlocksHtml : ''}
+          ${m2BlocksHtml}
 
           <div class="cat-page-editor-bar ${isEditorMode ? 'flex' : 'hidden'} absolute top-24 left-6 right-6 z-40 items-center justify-between flex-wrap gap-2 pointer-events-auto">
             <div class="flex items-center flex-wrap gap-2">
@@ -3242,7 +2996,7 @@
                 <span>Fond : ${isTaupe ? 'Taupe' : 'Noir'} (Switcher)</span>
               </button>
 
-              ${isMediaTextTemplate ? `
+              ${(isMediaTextTemplate || isBlankTemplate) ? `
                 <button
                   type="button"
                   onclick="addM2BlockToPage('${page.id}', 'video')"
@@ -3258,6 +3012,22 @@
                   title="Ajouter une zone de texte sur cette page"
                 >
                   <span>+ Zone de texte</span>
+                </button>
+                <button
+                  type="button"
+                  onclick="addM2BlockToPage('${page.id}', 'image')"
+                  class="flex items-center gap-1 px-3 py-1.5 rounded-full bg-[#b6ab9d] text-[#151515] border border-[#151515] text-xs font-bold shadow-md hover:scale-105 transition-transform"
+                  title="Ajouter une image (PNG transparent, JPG...) sur cette page"
+                >
+                  <span>+ Image</span>
+                </button>
+                <button
+                  type="button"
+                  onclick="addM2BlockToPage('${page.id}', 'embed')"
+                  class="flex items-center gap-1 px-3 py-1.5 rounded-full bg-[#b6ab9d] text-[#151515] border border-[#151515] text-xs font-bold shadow-md hover:scale-105 transition-transform"
+                  title="Ajouter une petite fenêtre qui affiche ton TikTok, une vidéo ou un site"
+                >
+                  <span>+ Fenêtre web</span>
                 </button>
               ` : ''}
             </div>
@@ -3355,7 +3125,7 @@
                 />
               </div>
             </div>
-          ` : isMediaTextTemplate ? '' : `
+          ` : (isMediaTextTemplate || hasFreeBlocks) ? '' : `
             <div class="cat-page-editor-placeholder ${isEditorMode ? 'flex' : 'hidden'} relative z-10 flex-col items-center justify-center text-center px-6 opacity-55 pointer-events-none select-none">
               <span class="font-dela text-lg md:text-2xl mb-1">Page ${index + 1} — Page vierge (Fond uni)</span>
               <span class="text-xs uppercase tracking-widest">Plein écran 100% • Fond ${colorName}</span>
@@ -3396,9 +3166,11 @@
       const lastPage = cat.pages[cat.pages.length - 1];
       const nextIsTaupe = lastPage ? (lastPage.bgTheme === 'noir') : (cat.pages.length % 2 === 0);
       const nextColorLabel = nextIsTaupe ? 'Taupe (#b6ab9d)' : 'Noir (#151515)';
-      categoryEditorFooter.dataset.bgTheme = nextIsTaupe ? 'taupe' : 'noir';
-      categoryEditorFooter.style.backgroundColor = nextIsTaupe ? '#b6ab9d' : '#151515';
-      categoryEditorFooter.style.color = nextIsTaupe ? '#151515' : '#b6ab9d';
+      if (categoryEditorFooter) {
+        categoryEditorFooter.dataset.bgTheme = nextIsTaupe ? 'taupe' : 'noir';
+        categoryEditorFooter.style.backgroundColor = nextIsTaupe ? '#b6ab9d' : '#151515';
+        categoryEditorFooter.style.color = nextIsTaupe ? '#151515' : '#b6ab9d';
+      }
 
       const nextHintEl = document.getElementById('next-page-color-hint');
       if (nextHintEl) {
@@ -3467,7 +3239,10 @@
       const closeToken = ++categoryCloseToken;
       setTimeout(() => {
         if (closeToken !== categoryCloseToken || activeCategoryPageId) return;
-        categoryPagesList.querySelectorAll('iframe').forEach(ifr => ifr.removeAttribute('src'));
+        categoryPagesList.querySelectorAll('iframe').forEach(ifr => {
+          ifr.removeAttribute('srcdoc');
+          ifr.removeAttribute('src');
+        });
         categoryPagesList.querySelectorAll('video').forEach(vid => {
           vid.pause();
           vid.removeAttribute('src');
@@ -3819,9 +3594,19 @@
       const cat = categories.find(c => c.id === activeCategoryPageId);
       if (!cat || !Array.isArray(cat.pages)) return { cat: null, page: null, block: null };
       const page = cat.pages.find(p => p.id === pageId);
-      if (!page || !Array.isArray(page.blocks)) return { cat, page: null, block: null };
-      const block = page.blocks.find(b => b.id === blockId);
+      if (!page) return { cat, page: null, block: null };
+      const block = getPageBlockList(page).find(b => b.id === blockId);
       return { cat, page, block };
+    }
+
+    /** Liste des blocs de la page : blocs libres pour « Fond uni », cadres du Modèle 2 sinon */
+    function getPageBlockList(page) {
+      if (page.template === 'blank') {
+        if (!Array.isArray(page.freeBlocks)) page.freeBlocks = [];
+        return page.freeBlocks;
+      }
+      if (!Array.isArray(page.blocks) || page.blocks.length === 0) page.blocks = createDefaultM2Blocks();
+      return page.blocks;
     }
 
     function handleM2StagePointerDown(e, pageId) {
@@ -3970,10 +3755,34 @@
       const page = cat && cat.pages ? cat.pages.find(p => p.id === pageId) : null;
       if (!page) return;
 
-      if (!Array.isArray(page.blocks)) page.blocks = createDefaultM2Blocks();
-
-      const offset = (page.blocks.length % 4) * 3.5;
-      const newBlock = blockType === 'text'
+      const list = getPageBlockList(page);
+      const offset = (list.length % 4) * 3.5;
+      const vw = window.innerWidth || 1920;
+      const vh = window.innerHeight || 1080;
+      let newBlock;
+      if (blockType === 'image') {
+        newBlock = normalizeM2Block({
+          id: 'blk-img-' + Date.now(),
+          type: 'image',
+          x: Math.min(62, 40 + offset),
+          y: Math.min(56, 30 + offset),
+          w: 20,
+          h: 34
+        }, 0);
+      } else if (blockType === 'embed') {
+        // Format vertical façon TikTok, assez large pour son intégration (288 px minimum)
+        const h = 72;
+        const w = Math.min(45, Math.max((300 / vw) * 100, ((h / 100) * vh * (9 / 16) / vw) * 100));
+        newBlock = normalizeM2Block({
+          id: 'blk-web-' + Date.now(),
+          type: 'embed',
+          x: Math.max(2, Math.min(70, 50 - w / 2 + offset)),
+          y: 14,
+          w: Number(w.toFixed(2)),
+          h,
+          borderRadius: 24
+        }, 0);
+      } else newBlock = blockType === 'text'
         ? normalizeM2Block({
             id: 'blk-txt-' + Date.now(),
             type: 'text',
@@ -3995,16 +3804,25 @@
             borderRadius: 42
           }, 0);
 
-      page.blocks.push(newBlock);
+      list.push(newBlock);
       selectedM2BlockId = newBlock.id;
       saveCategoriesToStorage();
       renderCategoryPages(cat);
+
+      // Image ou fenêtre web : on ouvre directement la fenêtre de réglage
+      if (newBlock.type === 'image' && typeof openM2ImageModal === 'function') openM2ImageModal(pageId, newBlock.id);
+      if (newBlock.type === 'embed' && typeof openM2EmbedModal === 'function') openM2EmbedModal(pageId, newBlock.id);
     }
 
     function deleteM2Block(pageId, blockId) {
       const { cat, page } = findActivePageAndBlock(pageId, blockId);
-      if (!cat || !page || page.blocks.length <= 1) return;
-      page.blocks = page.blocks.filter(b => b.id !== blockId);
+      if (!cat || !page) return;
+      if (page.template === 'blank') {
+        page.freeBlocks = getPageBlockList(page).filter(b => b.id !== blockId);
+      } else {
+        if (page.blocks.length <= 1) return;
+        page.blocks = page.blocks.filter(b => b.id !== blockId);
+      }
       if (selectedM2BlockId === blockId) selectedM2BlockId = null;
       saveCategoriesToStorage();
       renderCategoryPages(cat);
@@ -4501,865 +4319,6 @@
       }
     }
 
-    /*************************************************************************
-     * 6. GESTION DU MODE ÉDITEUR, EXPORT .ZIP NETLIFY & MODALES "+"
-     *************************************************************************/
-    let secretCornerHoldTimer = null;
-
-    function startSecretCornerHold() {
-      if (isEditorMode) return;
-      if (secretCornerHoldTimer) clearTimeout(secretCornerHoldTimer);
-      secretCornerHoldTimer = setTimeout(() => {
-        handleLockButtonClick();
-      }, 1500);
-    }
-
-    function cancelSecretCornerHold() {
-      if (secretCornerHoldTimer) {
-        clearTimeout(secretCornerHoldTimer);
-        secretCornerHoldTimer = null;
-      }
-    }
-
-    function handleLockButtonClick() {
-      if (isEditorMode) {
-        toggleEditorMode(false);
-      } else {
-        document.getElementById('editor-pin-input').value = '';
-        document.getElementById('login-error-msg').classList.add('hidden');
-        openModal('modal-login');
-        setTimeout(() => {
-          const pinInput = document.getElementById('editor-pin-input');
-          if (pinInput) pinInput.focus();
-        }, 50);
-      }
-    }
-
-    function submitEditorLogin(e) {
-      e.preventDefault();
-      const pin = document.getElementById('editor-pin-input').value.trim();
-      const err = document.getElementById('login-error-msg');
-
-      if (pin === EDITOR_SECRET_PIN) {
-        err.classList.add('hidden');
-        closeModal('modal-login');
-        toggleEditorMode(true);
-      } else {
-        err.classList.remove('hidden');
-      }
-    }
-
-    function openChangePinModal() {
-      const input = document.getElementById('new-editor-pin-input');
-      const feedback = document.getElementById('pin-saved-feedback');
-      if (input) input.value = EDITOR_SECRET_PIN;
-      if (feedback) feedback.classList.add('hidden');
-      openModal('modal-change-pin');
-    }
-
-    function saveNewEditorPin(e) {
-      e.preventDefault();
-      const newPin = document.getElementById('new-editor-pin-input').value.trim();
-      if (!newPin || newPin.length < 3) return;
-      EDITOR_SECRET_PIN = newPin;
-      try {
-        localStorage.setItem(STORAGE_KEY_EDITOR_PIN, EDITOR_SECRET_PIN);
-      } catch (err) {}
-      const feedback = document.getElementById('pin-saved-feedback');
-      if (feedback) feedback.classList.remove('hidden');
-    }
-
-    /**
-     * Génère le code HTML propre et léger avec toutes les modifications sauvegardées
-     */
-    function resolveExportVideoUrl(url) {
-      if (!url) return '';
-      const str = String(url);
-      if (str.startsWith('blob:')) {
-        return pendingVideoUploads[str] ? pendingVideoUploads[str].repoPath : '';
-      }
-      return str;
-    }
-
-    function buildExportableHtmlString() {
-      const cleanCategories = categories.map(cat => ({
-        ...cat,
-        videoUrl: resolveExportVideoUrl(cat.videoUrl),
-        pages: (cat.pages || []).map((p, idx) => {
-          const norm = normalizePageObject(p, idx);
-          return {
-            ...norm,
-            videoUrl: resolveExportVideoUrl(norm.videoUrl),
-            blocks: (norm.blocks || []).map((b, bIdx) => ({
-              ...normalizeM2Block(b, bIdx),
-              videoUrl: resolveExportVideoUrl(b.videoUrl)
-            }))
-          };
-        })
-      }));
-
-      const cloneDoc = document.documentElement.cloneNode(true);
-
-      // Retirer tout ce qu'un outil ou un hébergeur a pu injecter dans la page (Gemini, Netlify...).
-      // Seuls 2 scripts appartiennent au site : Tailwind (CDN) et ce script principal.
-      cloneDoc.querySelectorAll('base').forEach(el => el.remove());
-      cloneDoc.querySelectorAll('script').forEach(sc => {
-        const src = sc.getAttribute('src') || '';
-        const isTailwind = /^https:\/\/cdn\.tailwindcss\.com\/?/i.test(src);
-        const isMainScript = !src && (sc.textContent || '').includes('__COLVEUR_CONFIG_START__');
-        if (!isTailwind && !isMainScript) sc.remove();
-      });
-      cloneDoc.querySelectorAll('*').forEach(el => {
-        if (/netlify/i.test(el.tagName) || /^netlify/i.test(el.id || '')) el.remove();
-      });
-
-      // Remettre les éléments de l'interface dans leur état de départ (la page est copiée en plein envoi)
-      const clonePushBtn = cloneDoc.querySelector('#btn-trigger-gh-push');
-      if (clonePushBtn) {
-        clonePushBtn.removeAttribute('disabled');
-        clonePushBtn.innerHTML = '<span>🚀 Publier sur le site maintenant</span>';
-      }
-      const clonePublishStatus = cloneDoc.querySelector('#gh-publish-status');
-      if (clonePublishStatus) {
-        clonePublishStatus.classList.add('hidden');
-        clonePublishStatus.textContent = '';
-      }
-
-      // Supprimer les styles dynamiques injectés par le CDN Tailwind pour garder un fichier léger et propre
-      const headStyles = cloneDoc.querySelectorAll('head style');
-      headStyles.forEach((st, idx) => {
-        if (idx > 0) st.remove();
-      });
-
-      const cloneBody = cloneDoc.querySelector('body');
-      if (cloneBody) {
-        cloneBody.classList.remove('editor-active');
-      }
-      const cloneTopbar = cloneDoc.querySelector('#editor-topbar');
-      if (cloneTopbar) {
-        cloneTopbar.classList.add('hidden');
-        cloneTopbar.classList.remove('flex');
-      }
-      const cloneAdminFloating = cloneDoc.querySelector('#admin-floating-controls');
-      if (cloneAdminFloating) {
-        cloneAdminFloating.classList.add('hidden');
-        cloneAdminFloating.classList.remove('flex');
-      }
-      cloneDoc.querySelectorAll('[id^="modal-"]').forEach(m => {
-        m.classList.add('hidden');
-        m.classList.remove('flex');
-      });
-      const cloneCatPage = cloneDoc.querySelector('#category-page');
-      if (cloneCatPage) {
-        cloneCatPage.classList.remove('is-open', 'header-visible');
-        cloneCatPage.setAttribute('aria-hidden', 'true');
-      }
-      const cloneTrack = cloneDoc.querySelector('#carousel-track');
-      if (cloneTrack) cloneTrack.innerHTML = '';
-      const clonePagesList = cloneDoc.querySelector('#category-pages-list');
-      if (clonePagesList) clonePagesList.innerHTML = '';
-      const cloneExportArea = cloneDoc.querySelector('#exported-html-textarea');
-      if (cloneExportArea) cloneExportArea.value = '';
-
-      // Sécurité : Ne jamais exporter les champs du formulaire GitHub dans le HTML public
-      ['#gh-owner-input', '#gh-repo-input', '#gh-token-input'].forEach(sel => {
-        const el = cloneDoc.querySelector(sel);
-        if (el) el.value = '';
-      });
-
-      const currentHoverMode = document.body.getAttribute('data-hover-mode') || 'eat';
-
-      let fullHtml = '<!DOCTYPE html>\n' + cloneDoc.outerHTML;
-
-      // Utilisation d'une fonction de remplacement pour éviter tout bug avec les caractères spéciaux ($)
-      fullHtml = fullHtml.replace(
-        /\/\* __COLVEUR_CONFIG_START__ \*\/[\s\S]*?\/\* __COLVEUR_CONFIG_END__ \*\//,
-        () => `/* __COLVEUR_CONFIG_START__ */\n    let EDITOR_SECRET_PIN = ${JSON.stringify(EDITOR_SECRET_PIN)};\n    let DEFAULT_HOVER_MODE = ${JSON.stringify(currentHoverMode)};\n    let DEFAULT_RESTING_OPACITY = ${Number(restingOpacity.toFixed(2))};\n    let DEFAULT_SCROLL_MODE = ${JSON.stringify(categoryScrollMode)};\n    /* __COLVEUR_CONFIG_END__ */`
-      );
-
-      fullHtml = fullHtml.replace(
-        /\/\* __COLVEUR_DATA_START__ \*\/[\s\S]*?\/\* __COLVEUR_DATA_END__ \*\//,
-        () => `/* __COLVEUR_DATA_START__ */\n    const DEFAULT_CATEGORIES = ${JSON.stringify(cleanCategories, null, 2)};\n    /* __COLVEUR_DATA_END__ */`
-      );
-
-      return fullHtml;
-    }
-
-    /*************************************************************************
-     * 6B. PUBLICATION EN 1 CLIC VERS GITHUB (SYNCHRONISATION AUTO NETLIFY)
-     *************************************************************************/
-    const STORAGE_KEY_GITHUB_SYNC = 'colveur_github_sync_config_v1';
-
-    function loadGitHubSyncConfig() {
-      try {
-        const raw = localStorage.getItem(STORAGE_KEY_GITHUB_SYNC);
-        if (!raw) return { owner: '', repo: '', token: '', branch: 'main' };
-        const parsed = JSON.parse(raw);
-        return {
-          owner: (parsed.owner || '').trim(),
-          repo: (parsed.repo || '').trim(),
-          token: (parsed.token || '').trim(),
-          branch: (parsed.branch || 'main').trim() || 'main'
-        };
-      } catch (e) {
-        return { owner: '', repo: '', token: '', branch: 'main' };
-      }
-    }
-
-    function saveGitHubSyncConfig(cfg) {
-      try {
-        localStorage.setItem(STORAGE_KEY_GITHUB_SYNC, JSON.stringify(cfg));
-      } catch (e) {}
-    }
-
-    function toggleGitHubConfigForm(showForm) {
-      const formWrap = document.getElementById('gh-config-form-wrap');
-      const banner = document.getElementById('gh-configured-banner');
-      if (!formWrap || !banner) return;
-
-      if (showForm) {
-        formWrap.classList.remove('hidden');
-        banner.classList.add('hidden');
-        banner.classList.remove('flex');
-      } else {
-        formWrap.classList.add('hidden');
-        banner.classList.remove('hidden');
-        banner.classList.add('flex');
-      }
-    }
-
-    function openGitHubPublishModal() {
-      const cfg = loadGitHubSyncConfig();
-      const ownerInput = document.getElementById('gh-owner-input');
-      const repoInput = document.getElementById('gh-repo-input');
-      const tokenInput = document.getElementById('gh-token-input');
-      const branchInput = document.getElementById('gh-branch-input');
-      const statusBox = document.getElementById('gh-publish-status');
-      const repoLabel = document.getElementById('gh-connected-repo-label');
-
-      if (ownerInput) ownerInput.value = cfg.owner;
-      if (repoInput) repoInput.value = cfg.repo;
-      if (tokenInput) tokenInput.value = cfg.token;
-      if (branchInput) branchInput.value = cfg.branch || 'main';
-      if (statusBox) {
-        statusBox.classList.add('hidden');
-        statusBox.textContent = '';
-      }
-
-      const isConfigured = Boolean(cfg.owner && cfg.repo && cfg.token);
-      if (repoLabel && isConfigured) {
-        repoLabel.textContent = `${cfg.owner}/${cfg.repo} (${cfg.branch || 'main'})`;
-      }
-      toggleGitHubConfigForm(!isConfigured);
-      openModal('modal-github-publish');
-    }
-
-    function utf8ToBase64(str) {
-      const bytes = new TextEncoder().encode(str);
-      let binary = '';
-      const chunkSize = 0x8000;
-      for (let i = 0; i < bytes.length; i += chunkSize) {
-        binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunkSize));
-      }
-      return btoa(binary);
-    }
-
-    function arrayBufferToBase64(buffer) {
-      const bytes = new Uint8Array(buffer);
-      let binary = '';
-      const chunkSize = 0x8000;
-      for (let i = 0; i < bytes.length; i += chunkSize) {
-        binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunkSize));
-      }
-      return btoa(binary);
-    }
-
-    async function uploadBinaryFileToGitHub(owner, repo, branch, token, repoPath, fileObj) {
-      const apiUrl = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${repoPath}`;
-      const headers = {
-        'Authorization': `Bearer ${token}`,
-        'Accept': 'application/vnd.github+json'
-      };
-
-      let currentSha = null;
-      const getRes = await fetch(`${apiUrl}?ref=${encodeURIComponent(branch)}&t=${Date.now()}`, {
-        method: 'GET',
-        headers
-      });
-      if (getRes.status === 200) {
-        const info = await getRes.json();
-        currentSha = info.sha;
-      }
-
-      const buffer = await fileObj.arrayBuffer();
-      const base64Data = arrayBufferToBase64(buffer);
-
-      const payload = {
-        message: `Envoi du média ${repoPath}`,
-        content: base64Data,
-        branch: branch
-      };
-      if (currentSha) payload.sha = currentSha;
-
-      const putRes = await fetch(apiUrl, {
-        method: 'PUT',
-        headers: {
-          ...headers,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(payload)
-      });
-
-      if (!putRes.ok) {
-        const errJson = await putRes.json().catch(() => ({}));
-        throw new Error(errJson.message || `Impossible d'envoyer le fichier ${fileObj.name} (${putRes.status}). Vérifie qu'il fait moins de 25 Mo.`);
-      }
-    }
-
-    async function publishDirectlyToGitHub() {
-      const owner = (document.getElementById('gh-owner-input').value || '').trim();
-      const repo = (document.getElementById('gh-repo-input').value || '').trim().replace(/\.git$/i, '');
-      const token = (document.getElementById('gh-token-input').value || '').trim();
-      const branch = (document.getElementById('gh-branch-input').value || 'main').trim() || 'main';
-      const statusBox = document.getElementById('gh-publish-status');
-      const pushBtn = document.getElementById('btn-trigger-gh-push');
-
-      function setStatus(type, htmlMsg) {
-        if (!statusBox) return;
-        statusBox.classList.remove('hidden', 'bg-red-500/15', 'text-red-300', 'border-red-500/30', 'bg-emerald-500/15', 'text-emerald-300', 'border-emerald-500/30', 'bg-white/5', 'text-[#b6ab9d]', 'border-[#b6ab9d]/25');
-        statusBox.classList.add('border');
-        if (type === 'error') {
-          statusBox.classList.add('bg-red-500/15', 'text-red-300', 'border-red-500/30');
-        } else if (type === 'success') {
-          statusBox.classList.add('bg-emerald-500/15', 'text-emerald-300', 'border-emerald-500/30');
-        } else {
-          statusBox.classList.add('bg-white/5', 'text-[#b6ab9d]', 'border-[#b6ab9d]/25');
-        }
-        statusBox.innerHTML = htmlMsg;
-      }
-
-      if (!owner || !repo || !token) {
-        toggleGitHubConfigForm(true);
-        setStatus('error', '⚠️ Renseigne ton pseudo GitHub, le nom de ton dépôt et ta clé Token GitHub.');
-        return;
-      }
-
-      saveGitHubSyncConfig({ owner, repo, token, branch });
-
-      if (pushBtn) {
-        pushBtn.disabled = true;
-        pushBtn.innerHTML = '<span>⏳ Envoi sur GitHub en cours...</span>';
-      }
-      setStatus('info', '⏳ Connexion à GitHub et préparation...');
-
-      try {
-        // 0. Envoyer d'abord toutes les vidéos locales (.mp4) choisies depuis l'ordinateur
-        const pendingEntries = Object.entries(pendingVideoUploads);
-        for (let i = 0; i < pendingEntries.length; i++) {
-          const [blobUrl, item] = pendingEntries[i];
-          const sizeMB = (item.file.size / (1024 * 1024)).toFixed(1);
-          setStatus('info', `⏳ Envoi du fichier <strong>${escapeHtml(item.name)}</strong> (${sizeMB} Mo) vers ton site (${i + 1}/${pendingEntries.length})...`);
-          await uploadBinaryFileToGitHub(owner, repo, branch, token, item.repoPath, item.file);
-
-          // Remplacer le blobUrl temporaire par le vrai chemin définitif (ex: videos/accueil-cat-docu.mp4 ou images/accueil-cat-docu.jpg)
-          categories.forEach(cat => {
-            if (cat.videoUrl === blobUrl) cat.videoUrl = item.repoPath;
-            (cat.pages || []).forEach(p => {
-              if (p.videoUrl === blobUrl) p.videoUrl = item.repoPath;
-              (p.blocks || []).forEach(b => {
-                if (b.videoUrl === blobUrl) b.videoUrl = item.repoPath;
-              });
-            });
-          });
-          delete pendingVideoUploads[blobUrl];
-        }
-        saveCategoriesToStorage();
-
-        setStatus('info', '⏳ Mise à jour de <code>index.html</code> sur GitHub...');
-
-        const apiUrl = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/index.html`;
-        const headers = {
-          'Authorization': `Bearer ${token}`,
-          'Accept': 'application/vnd.github+json'
-        };
-
-        // 1. Récupérer le SHA actuel de index.html sur la branche
-        let currentSha = null;
-        const getRes = await fetch(`${apiUrl}?ref=${encodeURIComponent(branch)}&t=${Date.now()}`, {
-          method: 'GET',
-          headers
-        });
-
-        if (getRes.status === 200) {
-          const fileInfo = await getRes.json();
-          currentSha = fileInfo.sha;
-        } else if (getRes.status !== 404) {
-          const errJson = await getRes.json().catch(() => ({}));
-          throw new Error(errJson.message || `Erreur GitHub (${getRes.status}) : vérifie le nom du dépôt, la branche (${branch}) et ton Token.`);
-        }
-
-        // 2. Construire le code HTML final et l'envoyer via PUT
-        const htmlStr = buildExportableHtmlString();
-        const base64Content = utf8ToBase64(htmlStr);
-
-        const bodyPayload = {
-          message: `Mise à jour du portfolio Colveur (${new Date().toLocaleString('fr-FR')})`,
-          content: base64Content,
-          branch: branch
-        };
-        if (currentSha) {
-          bodyPayload.sha = currentSha;
-        }
-
-        const putRes = await fetch(apiUrl, {
-          method: 'PUT',
-          headers: {
-            ...headers,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(bodyPayload)
-        });
-
-        if (!putRes.ok) {
-          const errJson = await putRes.json().catch(() => ({}));
-          throw new Error(errJson.message || `Échec de l'envoi sur GitHub (${putRes.status}). Vérifie que la case "repo" est bien cochée sur ton Token.`);
-        }
-
-        const repoLabel = document.getElementById('gh-connected-repo-label');
-        if (repoLabel) repoLabel.textContent = `${owner}/${repo} (${branch})`;
-        toggleGitHubConfigForm(false);
-
-        setStatus(
-          'success',
-          '✅ <strong>Publié avec succès sur GitHub !</strong><br>Netlify est en train de mettre ton site en ligne à jour automatiquement (rafraîchis ton site dans ~15 secondes).'
-        );
-      } catch (err) {
-        toggleGitHubConfigForm(true);
-        setStatus('error', `❌ <strong>Erreur :</strong> ${escapeHtml(err.message || String(err))}`);
-      } finally {
-        if (pushBtn) {
-          pushBtn.disabled = false;
-          pushBtn.innerHTML = '<span>🚀 Publier sur le site maintenant</span>';
-        }
-      }
-    }
-
-    /**
-     * Crée une archive .ZIP standard (contenant index.html à la racine) en pur JavaScript
-     * pour pouvoir glisser-déposer directement le .ZIP dans Netlify sans erreur "Request ID".
-     */
-    function createSingleFileZipBlob(filename, contentStr) {
-      const encoder = new TextEncoder();
-      const fileData = encoder.encode(contentStr);
-      const nameBytes = encoder.encode(filename);
-
-      // Table CRC32
-      const crcTable = new Uint32Array(256);
-      for (let n = 0; n < 256; n++) {
-        let c = n;
-        for (let k = 0; k < 8; k++) {
-          c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
-        }
-        crcTable[n] = c >>> 0;
-      }
-      let crc = 0xFFFFFFFF;
-      for (let i = 0; i < fileData.length; i++) {
-        crc = (crc >>> 8) ^ crcTable[(crc ^ fileData[i]) & 0xFF];
-      }
-      crc = (crc ^ 0xFFFFFFFF) >>> 0;
-
-      const localHeaderLen = 30 + nameBytes.length;
-      const centralHeaderLen = 46 + nameBytes.length;
-      const endRecordLen = 22;
-      const totalLen = localHeaderLen + fileData.length + centralHeaderLen + endRecordLen;
-
-      const buf = new ArrayBuffer(totalLen);
-      const view = new DataView(buf);
-      const bytes = new Uint8Array(buf);
-      let offset = 0;
-
-      // 1. Local File Header
-      view.setUint32(offset, 0x04034b50, true); offset += 4;
-      view.setUint16(offset, 20, true); offset += 2;
-      view.setUint16(offset, 0, true); offset += 2;
-      view.setUint16(offset, 0, true); offset += 2;
-      view.setUint16(offset, 0, true); offset += 2;
-      view.setUint16(offset, 0x0021, true); offset += 2;
-      view.setUint32(offset, crc, true); offset += 4;
-      view.setUint32(offset, fileData.length, true); offset += 4;
-      view.setUint32(offset, fileData.length, true); offset += 4;
-      view.setUint16(offset, nameBytes.length, true); offset += 2;
-      view.setUint16(offset, 0, true); offset += 2;
-      bytes.set(nameBytes, offset); offset += nameBytes.length;
-
-      // Données de index.html
-      bytes.set(fileData, offset); offset += fileData.length;
-
-      // 2. Central Directory Header
-      const centralDirOffset = offset;
-      view.setUint32(offset, 0x02014b50, true); offset += 4;
-      view.setUint16(offset, 20, true); offset += 2;
-      view.setUint16(offset, 20, true); offset += 2;
-      view.setUint16(offset, 0, true); offset += 2;
-      view.setUint16(offset, 0, true); offset += 2;
-      view.setUint16(offset, 0, true); offset += 2;
-      view.setUint16(offset, 0x0021, true); offset += 2;
-      view.setUint32(offset, crc, true); offset += 4;
-      view.setUint32(offset, fileData.length, true); offset += 4;
-      view.setUint32(offset, fileData.length, true); offset += 4;
-      view.setUint16(offset, nameBytes.length, true); offset += 2;
-      view.setUint16(offset, 0, true); offset += 2;
-      view.setUint16(offset, 0, true); offset += 2;
-      view.setUint16(offset, 0, true); offset += 2;
-      view.setUint16(offset, 0, true); offset += 2;
-      view.setUint32(offset, 0, true); offset += 4;
-      view.setUint32(offset, 0, true); offset += 4;
-      bytes.set(nameBytes, offset); offset += nameBytes.length;
-
-      // 3. End of Central Directory Record
-      view.setUint32(offset, 0x06054b50, true); offset += 4;
-      view.setUint16(offset, 0, true); offset += 2;
-      view.setUint16(offset, 0, true); offset += 2;
-      view.setUint16(offset, 1, true); offset += 2;
-      view.setUint16(offset, 1, true); offset += 2;
-      view.setUint32(offset, centralHeaderLen, true); offset += 4;
-      view.setUint32(offset, centralDirOffset, true); offset += 4;
-      view.setUint16(offset, 0, true); offset += 2;
-
-      return new Blob([buf], { type: 'application/zip' });
-    }
-
-    function openExportCodeModal() {
-      const htmlStr = buildExportableHtmlString();
-      const area = document.getElementById('exported-html-textarea');
-      if (area) area.value = htmlStr;
-      const copyBtn = document.getElementById('btn-copy-exported-code');
-      if (copyBtn) copyBtn.textContent = '📋 Copier le code';
-      openModal('modal-export-code');
-    }
-
-    function copyExportedHtmlCode() {
-      const area = document.getElementById('exported-html-textarea');
-      if (!area) return;
-      area.select();
-      area.setSelectionRange(0, 999999);
-      document.execCommand('copy');
-      const copyBtn = document.getElementById('btn-copy-exported-code');
-      if (copyBtn) {
-        copyBtn.textContent = '✓ Code copié !';
-      }
-    }
-
-    function downloadNetlifyReadyZip() {
-      const htmlStr = buildExportableHtmlString();
-      const zipBlob = createSingleFileZipBlob('index.html', htmlStr);
-      const url = URL.createObjectURL(zipBlob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'site-colveur-netlify.zip';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    }
-
-    function downloadUpdatedHtmlFile() {
-      const htmlStr = buildExportableHtmlString();
-      const blob = new Blob([htmlStr], { type: 'text/html;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'index.html';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    }
-
-    function toggleEditorMode(enable) {
-      isEditorMode = enable;
-      const topbar = document.getElementById('editor-topbar');
-      const adminFloating = document.getElementById('admin-floating-controls');
-      const lockIcon = document.getElementById('lock-icon');
-      const lockLabel = document.getElementById('lock-label');
-      const pageEditorBars = document.querySelectorAll('.cat-page-editor-bar');
-      const pagePlaceholders = document.querySelectorAll('.cat-page-editor-placeholder');
-
-      if (enable) {
-        document.body.classList.add('editor-active');
-        topbar.classList.remove('hidden');
-        topbar.classList.add('flex');
-        if (adminFloating) {
-          adminFloating.classList.remove('hidden');
-          adminFloating.classList.add('flex');
-        }
-        lockIcon.textContent = '🔓';
-        lockLabel.textContent = 'Quitter Éditeur';
-        pageEditorBars.forEach(el => {
-          el.classList.remove('hidden');
-          el.classList.add('flex');
-        });
-        pagePlaceholders.forEach(el => {
-          el.classList.remove('hidden');
-          el.classList.add('flex');
-        });
-      } else {
-        document.body.classList.remove('editor-active');
-        topbar.classList.add('hidden');
-        topbar.classList.remove('flex');
-        if (adminFloating) {
-          adminFloating.classList.add('hidden');
-          adminFloating.classList.remove('flex');
-        }
-        lockIcon.textContent = '🔒';
-        lockLabel.textContent = 'Mode Éditeur';
-        pendingDeletePageId = null;
-        selectedM2BlockId = null;
-        pageEditorBars.forEach(el => {
-          el.classList.add('hidden');
-          el.classList.remove('flex');
-        });
-        pagePlaceholders.forEach(el => {
-          el.classList.add('hidden');
-          el.classList.remove('flex');
-        });
-      }
-
-      if (activeCategoryPageId) {
-        const activeCat = categories.find(c => c.id === activeCategoryPageId);
-        if (activeCat) renderCategoryPages(activeCat);
-      }
-
-      syncEditorTopbarContext();
-      updateCategorySplitHeader();
-    }
-
-    window.addEventListener('keydown', (e) => {
-      if (e.shiftKey && (e.key === 'E' || e.key === 'e')) {
-        const tag = document.activeElement && document.activeElement.tagName;
-        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
-        e.preventDefault();
-        handleLockButtonClick();
-      }
-    });
-
-    function openCategoryEditModal(catId) {
-      const cat = categories.find(c => c.id === catId);
-      if (!cat) return;
-
-      activeEditCatId = catId;
-      document.getElementById('modal-video-cat-name').textContent = cat.title;
-      document.getElementById('edit-cat-title-input').value = cat.title;
-      const pendingItem = pendingVideoUploads[cat.videoUrl];
-      document.getElementById('edit-cat-url-input').value = pendingItem
-        ? pendingItem.repoPath
-        : (cat.videoUrl.startsWith('blob:') ? '' : cat.videoUrl);
-      document.getElementById('modal-pos-x-slider').value = cat.posX;
-      document.getElementById('modal-pos-x-label').textContent = `${Math.round(cat.posX)}%`;
-
-      const badge = document.getElementById('cat-local-file-badge');
-      if (badge) {
-        badge.textContent = pendingItem
-          ? `✓ Fichier prêt : ${pendingItem.name} (clique sur 🚀 Publier en 1 clic)`
-          : 'Sera envoyée automatiquement sur ton site via « 🚀 Publier en 1 clic »';
-      }
-
-      const delBtn = document.getElementById('btn-delete-category');
-      delBtn.style.display = categories.length > 2 ? 'inline-block' : 'none';
-
-      openModal('modal-video-edit');
-    }
-
-    function handleLocalVideoUpload(event) {
-      const file = event.target.files && event.target.files[0];
-      if (!file || !activeEditCatId) return;
-
-      const badge = document.getElementById('cat-local-file-badge');
-      const isImageFile = /^image\//i.test(file.type || '');
-      const isVideoFile = /^video\//i.test(file.type || '');
-      const rawExt = (file.name.split('.').pop() || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-
-      // Les photos iPhone (.HEIC) ne s'affichent pas dans Chrome/Firefox : on les refuse
-      if (/^image\/hei[cf]/i.test(file.type || '') || rawExt === 'heic' || rawExt === 'heif') {
-        if (badge) badge.textContent = '⚠️ Format HEIC non lisible par les navigateurs : exporte la photo en .JPG ou .WEBP.';
-        event.target.value = '';
-        return;
-      }
-      if (!isImageFile && !isVideoFile) {
-        if (badge) badge.textContent = '⚠️ Ce fichier n\'est ni une vidéo ni une photo.';
-        event.target.value = '';
-        return;
-      }
-
-      const blobUrl = URL.createObjectURL(file);
-      const safeExt = rawExt || (isImageFile ? 'jpg' : 'mp4');
-      const folder = isImageFile ? 'images' : 'videos';
-      const repoPath = `${folder}/accueil-${activeEditCatId}.${safeExt}`;
-
-      // Si un autre fichier avait déjà été choisi pour cette catégorie sans être publié, on le remplace
-      Object.keys(pendingVideoUploads).forEach(key => {
-        if (/\/accueil-/.test(pendingVideoUploads[key].repoPath) &&
-            pendingVideoUploads[key].repoPath.split('/').pop().replace(/\.[^.]+$/, '') === `accueil-${activeEditCatId}`) {
-          delete pendingVideoUploads[key];
-        }
-      });
-      pendingVideoUploads[blobUrl] = { file, repoPath, name: file.name };
-
-      const cat = categories.find(c => c.id === activeEditCatId);
-      if (cat) {
-        cat.videoUrl = blobUrl;
-        applyCategoryVideoUpdate(cat.id, blobUrl);
-      }
-
-      const urlInput = document.getElementById('edit-cat-url-input');
-      if (urlInput) urlInput.value = repoPath;
-      if (badge) {
-        const sizeMB = file.size / (1024 * 1024);
-        badge.textContent = sizeMB > 25
-          ? `⚠️ ${file.name} pèse ${sizeMB.toFixed(1)} Mo : l'envoi risque d'échouer au-delà de 25 Mo et le carrousel sera moins fluide. Vise une vidéo courte de 2 à 6 Mo.`
-          : `✓ Fichier prêt : ${file.name} (${sizeMB.toFixed(1)} Mo) — enregistre puis clique sur 🚀 Publier en 1 clic`;
-      }
-      event.target.value = '';
-    }
-
-    function applyCategoryVideoUpdate(catId, newUrl) {
-      const ytId = extractYouTubeId(newUrl);
-      const isYt = Boolean(ytId);
-      const isImg = Boolean(newUrl) && !isYt && isImageMediaUrl(newUrl);
-
-      document.querySelectorAll(`.diag-column[data-cat-id="${catId}"]`).forEach(col => {
-        const vid = col.querySelector('video.diag-video');
-        const img = col.querySelector('.diag-image');
-        const ytWrap = col.querySelector('.diag-yt-wrap');
-        const ytIframe = col.querySelector('.diag-yt-iframe');
-        const sim = col.querySelector('.diag-sim-canvas');
-
-        const hideVideo = () => {
-          vid.classList.add('hidden');
-          if (vid.getAttribute('src')) {
-            vid.pause();
-            vid.removeAttribute('src');
-            vid.load();
-          }
-        };
-        const hideImage = () => {
-          if (!img) return;
-          img.classList.add('hidden');
-          img.removeAttribute('src');
-        };
-        const hideYouTube = () => {
-          if (ytWrap && ytIframe) {
-            ytWrap.classList.add('hidden');
-            ytIframe.removeAttribute('src');
-          }
-        };
-
-        if (newUrl && isYt) {
-          sim.classList.add('hidden');
-          hideVideo();
-          hideImage();
-          if (ytWrap && ytIframe) {
-            ytWrap.classList.remove('hidden');
-            ytIframe.src = buildYouTubeEmbedUrl(ytId, false);
-          }
-        } else if (isImg && img) {
-          sim.classList.add('hidden');
-          hideVideo();
-          hideYouTube();
-          img.classList.remove('hidden');
-          img.src = newUrl;
-        } else if (newUrl) {
-          sim.classList.add('hidden');
-          hideImage();
-          hideYouTube();
-          vid.classList.remove('hidden');
-          vid.src = newUrl;
-          vid.load();
-        } else {
-          hideVideo();
-          hideImage();
-          hideYouTube();
-          sim.classList.remove('hidden');
-        }
-      });
-    }
-
-    function saveCategoryModalChanges() {
-      if (!activeEditCatId) return;
-      const cat = categories.find(c => c.id === activeEditCatId);
-      if (!cat) return;
-
-      const newTitle = document.getElementById('edit-cat-title-input').value.trim();
-      const newUrl = document.getElementById('edit-cat-url-input').value.trim();
-
-      if (newTitle) {
-        cat.title = newTitle;
-        document.querySelectorAll(`.diag-column[data-cat-id="${cat.id}"] .diag-title`).forEach(el => {
-          el.textContent = newTitle;
-        });
-        if (activeCategoryPageId === cat.id) {
-          document.querySelectorAll('.cat-header-title').forEach(el => {
-            el.textContent = newTitle;
-          });
-        }
-      }
-
-      if (newUrl && newUrl !== cat.videoUrl) {
-        const isPendingRepoPath = cat.videoUrl.startsWith('blob:') &&
-          pendingVideoUploads[cat.videoUrl] &&
-          pendingVideoUploads[cat.videoUrl].repoPath === newUrl;
-        if (!isPendingRepoPath) {
-          // Un fichier choisi sur l'ordinateur est remplacé par un lien : inutile de l'envoyer
-          if (pendingVideoUploads[cat.videoUrl]) delete pendingVideoUploads[cat.videoUrl];
-          cat.videoUrl = newUrl;
-          applyCategoryVideoUpdate(cat.id, newUrl);
-        }
-      } else if (!newUrl && cat.videoUrl) {
-        // Champ vidé : la colonne revient à l'animation par défaut
-        if (pendingVideoUploads[cat.videoUrl]) delete pendingVideoUploads[cat.videoUrl];
-        cat.videoUrl = '';
-        applyCategoryVideoUpdate(cat.id, '');
-      }
-
-      saveCategoriesToStorage();
-      closeModal('modal-video-edit');
-    }
-
-    function deleteActiveCategory() {
-      if (!activeEditCatId || categories.length <= 2) return;
-      categories = categories.filter(c => c.id !== activeEditCatId);
-      activeEditCatId = null;
-      saveCategoriesToStorage();
-      closeModal('modal-video-edit');
-      buildInfiniteCarousel();
-    }
-
-    function openAddCategoryModal() {
-      document.getElementById('new-cat-name-input').value = '';
-      openModal('modal-add-category');
-    }
-
-    function confirmAddCategory(e) {
-      e.preventDefault();
-      const name = document.getElementById('new-cat-name-input').value.trim();
-      if (!name) return;
-
-      const themes = ['docu', 'event', 'reseaux'];
-      const newCat = {
-        id: 'cat-' + Date.now(),
-        title: name,
-        theme: themes[categories.length % themes.length],
-        videoUrl: '',
-        posX: 50,
-        pages: createDefaultPages()
-      };
-
-      categories.push(newCat);
-      saveCategoriesToStorage();
-      closeModal('modal-add-category');
-      buildInfiniteCarousel();
-    }
-
     function openModal(id) {
       const m = document.getElementById(id);
       if (!m) return;
@@ -5403,226 +4362,6 @@
       requestAnimationFrame(animateCarouselLoop);
       startIntroAnimation(false);
     });
+
   </script>
-
-
-<iframe id="nl-hud-frame" title="Netlify" srcdoc="&lt;!doctype html&gt;&lt;html&gt;&lt;head&gt;&lt;meta charset=&quot;utf-8&quot;&gt;&lt;meta name=&quot;color-scheme&quot; content=&quot;dark&quot;&gt;&lt;style&gt;
-    :root{--nl-vw:1878px;--nl-vh:1000px}
-    *{box-sizing:border-box}
-    html,body{margin:0;padding:0;background:transparent;overflow:hidden}
-    body{display:flex;align-items:flex-end;justify-content:flex-end;height:100vh;
-      padding:8px 18px 18px 8px;
-      font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:14px;line-height:1.5;color:#f4f9f9;-webkit-font-smoothing:antialiased}
-    .nl-wrap{display:flex;flex-direction:column;align-items:flex-end;gap:10px;width:max-content;max-width:calc(var(--nl-vw,100vw) - 26px)}
-    button{font-family:inherit;cursor:pointer}
-    :focus-visible{outline:2px solid #32e6e2;outline-offset:2px;border-radius:6px}
-    .nl-icon-btn{position:relative;flex:none;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;border-radius:8px;border:1px solid transparent;background:transparent;color:#d5e3e6;transition:background .15s ease,color .15s ease}
-    .nl-icon-btn:hover{background:rgba(255,255,255,0.08);color:#f4f9f9}
-    .nl-tap::after{content:&quot;&quot;;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
-      width:max(100%,44px);height:max(100%,44px)}
-    @keyframes nl-rise{from{opacity:0;transform:translateY(10px) scale(.97)}to{opacity:1;transform:none}}
-    @media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition:none!important}}
-  
-      .nl-popover{display:none;width:min(320px,calc(var(--nl-vw,100vw) - 26px));max-height:calc(var(--nl-vh,100vh) - 90px);overflow-y:auto;background:linear-gradient(180deg,#132832 0%,#0e1e25 100%);border:1px solid rgba(255,255,255,0.09);border-radius:18px;transform-origin:bottom right;animation:nl-rise .28s cubic-bezier(.34,1.4,.4,1) both}
-      .nl-popover.open{display:block}
-      .nl-popover-head{display:flex;align-items:center;gap:9px;padding:13px 12px 5px 16px}
-      .nl-popover-icon{display:inline-flex;color:#32e6e2}
-      .nl-popover-title{flex:1;font-size:13.5px;font-weight:700;letter-spacing:-0.01em;color:#f4f9f9}
-      .nl-popover-body{padding:0 16px 12px}
-      .nl-task{display:flex;align-items:center;gap:10px;padding:11px 0}
-      .nl-task+.nl-task{border-top:1px solid rgba(255,255,255,0.06)}
-      .nl-task-meta{flex:1;min-width:0}
-      .nl-task-title{font-size:13.5px;font-weight:650;color:#f4f9f9}
-      .nl-task-desc{font-size:11.5px;color:#a9bdc2}
-      .nl-task-run{flex:none;display:inline-flex;align-items:center;gap:6px;text-decoration:none;border:1px solid rgba(50,230,226,0.35);background:transparent;color:#32e6e2;font-size:12px;font-weight:700;border-radius:999px;padding:6px 13px;transition:background .15s ease,transform .15s cubic-bezier(.34,1.4,.4,1)}
-      .nl-task-run:hover{background:rgba(5,189,186,0.12);transform:translateY(-1px)}
-      .nl-bar,.nl-mini{-webkit-user-select:none;user-select:none}
-      .nl-bar{display:flex;align-items:center;gap:2px;white-space:nowrap;border:1px solid rgba(255,255,255,0.09);background:linear-gradient(180deg,#142b34,#0e1e25);border-radius:999px;padding:7px 8px 7px 14px;color:#f4f9f9}
-      .nl-logo{flex:none;margin-right:8px;display:inline-flex}
-      .nl-status{display:inline-flex;align-items:center;gap:5px;border:0;background:transparent;font-family:inherit;font-size:12.5px;font-weight:700;letter-spacing:0.01em;color:#fbbf24;padding:6px 5px;border-radius:8px;transition:background .15s ease}
-      .nl-status:hover,.nl-status[aria-expanded='true']{background:rgba(251,191,36,0.12)}
-      .nl-tip{display:none;align-self:flex-start;width:min(300px,calc(var(--nl-vw,100vw) - 26px));background:linear-gradient(180deg,#132832 0%,#0e1e25 100%);border:1px solid rgba(255,255,255,0.09);border-radius:14px;padding:12px 14px;font-size:12px;line-height:1.5;color:#d5e3e6;animation:nl-rise .2s cubic-bezier(.34,1.4,.4,1) both}
-      .nl-tip.open{display:block}
-      .nl-tip a{display:flex;width:fit-content;align-items:center;gap:4px;margin-top:8px;color:#32e6e2;text-decoration:none;font-weight:650}
-      .nl-tip a:hover{text-decoration:underline}
-      .nl-sep{width:1px;height:18px;background:rgba(255,255,255,0.09);margin:0 10px 0 12px;flex:none}
-      .nl-btn{display:inline-flex;align-items:center;gap:7px;text-decoration:none;border:0;background:transparent;color:#d5e3e6;font-family:inherit;font-size:13px;font-weight:600;padding:8px 12px;border-radius:999px;transition:background .15s ease,color .15s ease}
-      .nl-btn svg{color:#32e6e2}
-      .nl-btn:hover{background:rgba(255,255,255,0.07);color:#f4f9f9}
-      .nl-btn[aria-expanded='true']{background:rgba(255,255,255,0.1);color:#f4f9f9}
-      .nl-publish{display:inline-flex;align-items:center;gap:7px;text-decoration:none;margin-left:6px;background:#05bdba;color:#02191b;font-size:13px;font-weight:700;padding:8px 15px;border-radius:999px;transition:background .15s ease,transform .15s cubic-bezier(.34,1.4,.4,1)}
-      .nl-publish:hover{background:#32e6e2;transform:translateY(-1px)}
-      .nl-min{margin-left:6px}
-
-      /* ——— Minimized ——— */
-      .nl-bar,.nl-mini{min-height:52px}
-      .nl-mini{display:none;align-items:center;gap:2px;border:1px solid rgba(255,255,255,0.09);background:linear-gradient(180deg,#142b34,#0e1e25);border-radius:999px;padding:5px 5px 5px 13px;cursor:pointer}
-      .nl-mini-state .nl-mini{display:flex}
-      .nl-mini-state .nl-bar,.nl-mini-state .nl-popover,.nl-mini-state .nl-tip{display:none}
-      .nl-mini-brand{display:inline-flex;align-items:center;gap:7px;padding-right:8px}
-      .nl-mini-lock{display:inline-flex;color:#fbbf24}
-
-      /* ——— Narrow layout ——— */
-      .nl-narrow .nl-shrinks{position:absolute;width:1px;height:1px;overflow:hidden;
-        clip-path:inset(50%);white-space:nowrap}
-      .nl-narrow .nl-status{gap:0}
-      .nl-narrow .nl-bar{padding:6px 6px 6px 10px}
-      .nl-narrow .nl-logo{margin-right:6px}
-      .nl-narrow .nl-sep{margin:0 6px 0 8px}
-      .nl-narrow .nl-btn{padding:8px 9px}
-      .nl-narrow .nl-publish{margin-left:4px;padding:8px 11px}
-    &lt;/style&gt;&lt;/head&gt;&lt;body&gt;
-      &lt;div class=&quot;nl-wrap&quot;&gt;
-        &lt;section class=&quot;nl-popover&quot; id=&quot;nl-pop&quot; aria-label=&quot;Pre-launch tools&quot;&gt;
-          &lt;div class=&quot;nl-popover-head&quot;&gt;
-            &lt;span class=&quot;nl-popover-icon&quot;&gt;&lt;svg width=&quot;15&quot; height=&quot;15&quot; viewBox=&quot;0 0 16 16&quot; fill=&quot;currentColor&quot; aria-hidden=&quot;true&quot;&gt;&lt;path fill-rule=&quot;evenodd&quot; clip-rule=&quot;evenodd&quot; d=&quot;M7.98407 9.625L8.58935 11.0952C8.62792 11.1889 8.71922 11.25 8.82053 11.25H9.77587C9.88268 11.25 9.95527 11.1415 9.91454 11.0428L7.3828 4.90468C7.3442 4.81107 7.25294 4.75 7.15169 4.75H6.34295C6.24163 4.75 6.15033 4.81115 6.11177 4.90484L3.58524 11.0429C3.54461 11.1416 3.61719 11.25 3.72395 11.25H4.67399C4.7753 11.25 4.86659 11.1889 4.90516 11.0952L5.51045 9.625H7.98407ZM7.46943 8.375L6.74726 6.62092L6.02508 8.375H7.46943Z&quot;/&gt;&lt;path d=&quot;M10.75 11.25C10.6119 11.25 10.5 11.1381 10.5 11V5C10.5 4.86193 10.6119 4.75 10.75 4.75H11.5C11.6381 4.75 11.75 4.86193 11.75 5V11C11.75 11.1381 11.6381 11.25 11.5 11.25H10.75Z&quot;/&gt;&lt;path fill-rule=&quot;evenodd&quot; clip-rule=&quot;evenodd&quot; d=&quot;M0 5.5C0 2.73858 2.23858 0.5 5 0.5H11C13.7614 0.5 16 2.73858 16 5.5V10.5C16 13.2614 13.7614 15.5 11 15.5H5C2.23858 15.5 0 13.2614 0 10.5V5.5ZM5 1.75H11C13.0711 1.75 14.75 3.42893 14.75 5.5V10.5C14.75 12.5711 13.0711 14.25 11 14.25H5C2.92893 14.25 1.25 12.5711 1.25 10.5V5.5C1.25 3.42893 2.92893 1.75 5 1.75Z&quot;/&gt;&lt;/svg&gt;&lt;/span&gt;
-            &lt;span class=&quot;nl-popover-title&quot;&gt;Pre-launch tools&lt;/span&gt;
-            &lt;button type=&quot;button&quot; class=&quot;nl-icon-btn nl-tap&quot; id=&quot;nl-pop-close&quot; aria-label=&quot;Close&quot;&gt;&lt;svg width=&quot;14&quot; height=&quot;14&quot; viewBox=&quot;0 0 16 16&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;1.9&quot; stroke-linecap=&quot;round&quot; aria-hidden=&quot;true&quot;&gt;&lt;path d=&quot;M4.5 4.5 11.5 11.5M11.5 4.5 4.5 11.5&quot;/&gt;&lt;/svg&gt;&lt;/button&gt;
-          &lt;/div&gt;
-          &lt;div class=&quot;nl-popover-body&quot;&gt;
-            
-      &lt;div class=&quot;nl-task&quot;&gt;
-        &lt;div class=&quot;nl-task-meta&quot;&gt;&lt;div class=&quot;nl-task-title&quot;&gt;SEO / GEO audit&lt;/div&gt;&lt;div class=&quot;nl-task-desc&quot;&gt;Check that Google and AI assistants can find and read your site.&lt;/div&gt;&lt;/div&gt;
-        &lt;a class=&quot;nl-task-run&quot; href=&quot;https://app.netlify.com/projects/6f7f2756-51b1-4117-b20d-c404f5a1ad24/overview?promptTemplate=d7bd9353-a6a3-442d-86f0-9b15488f68c3&amp;from_hud=private&amp;hud_action=ar_task&quot; target=&quot;_blank&quot; rel=&quot;noopener&quot;&gt;&lt;svg width=&quot;12&quot; height=&quot;12&quot; viewBox=&quot;0 0 16 16&quot; fill=&quot;currentColor&quot; aria-hidden=&quot;true&quot;&gt;&lt;path d=&quot;M5.68 9.925 4.607 8.85l-.013-.379 1.1-1.1.38.012 1.075 1.075.012.379-1.1 1.1zM9.96 9.925 8.886 8.85l-.013-.379 1.1-1.1.38.012 1.075 1.075.012.379-1.1 1.1z&quot;/&gt;&lt;path fill-rule=&quot;evenodd&quot; clip-rule=&quot;evenodd&quot; d=&quot;M9.005 2.52v1.296h2.657a3.19 3.19 0 0 1 3.191 3.192v3.356a3.19 3.19 0 0 1-3.191 3.191H4.338a3.19 3.19 0 0 1-3.191-3.19V7.007a3.19 3.19 0 0 1 3.191-3.192h2.836V2.52l.229-.245h1.373zM4.338 5.316c-.934 0-1.691.758-1.691 1.692v3.356c0 .934.758 1.691 1.691 1.691h7.324c.933 0 1.69-.757 1.691-1.69V7.007c0-.934-.757-1.692-1.691-1.692z&quot;/&gt;&lt;/svg&gt; Run&lt;/a&gt;
-      &lt;/div&gt;
-            
-      &lt;div class=&quot;nl-task&quot;&gt;
-        &lt;div class=&quot;nl-task-meta&quot;&gt;&lt;div class=&quot;nl-task-title&quot;&gt;Performance check&lt;/div&gt;&lt;div class=&quot;nl-task-desc&quot;&gt;See how fast your pages load, and what is slowing them down.&lt;/div&gt;&lt;/div&gt;
-        &lt;a class=&quot;nl-task-run&quot; href=&quot;https://app.netlify.com/projects/6f7f2756-51b1-4117-b20d-c404f5a1ad24/overview?promptTemplate=f8ef80a5-be9b-494d-9fac-a4ac5d5689a4&amp;from_hud=private&amp;hud_action=ar_task&quot; target=&quot;_blank&quot; rel=&quot;noopener&quot;&gt;&lt;svg width=&quot;12&quot; height=&quot;12&quot; viewBox=&quot;0 0 16 16&quot; fill=&quot;currentColor&quot; aria-hidden=&quot;true&quot;&gt;&lt;path d=&quot;M5.68 9.925 4.607 8.85l-.013-.379 1.1-1.1.38.012 1.075 1.075.012.379-1.1 1.1zM9.96 9.925 8.886 8.85l-.013-.379 1.1-1.1.38.012 1.075 1.075.012.379-1.1 1.1z&quot;/&gt;&lt;path fill-rule=&quot;evenodd&quot; clip-rule=&quot;evenodd&quot; d=&quot;M9.005 2.52v1.296h2.657a3.19 3.19 0 0 1 3.191 3.192v3.356a3.19 3.19 0 0 1-3.191 3.191H4.338a3.19 3.19 0 0 1-3.191-3.19V7.007a3.19 3.19 0 0 1 3.191-3.192h2.836V2.52l.229-.245h1.373zM4.338 5.316c-.934 0-1.691.758-1.691 1.692v3.356c0 .934.758 1.691 1.691 1.691h7.324c.933 0 1.69-.757 1.691-1.69V7.007c0-.934-.757-1.692-1.691-1.692z&quot;/&gt;&lt;/svg&gt; Run&lt;/a&gt;
-      &lt;/div&gt;
-            
-      &lt;div class=&quot;nl-task&quot;&gt;
-        &lt;div class=&quot;nl-task-meta&quot;&gt;&lt;div class=&quot;nl-task-title&quot;&gt;Security audit&lt;/div&gt;&lt;div class=&quot;nl-task-desc&quot;&gt;Look for common weak spots, like out-of-date code or open settings.&lt;/div&gt;&lt;/div&gt;
-        &lt;a class=&quot;nl-task-run&quot; href=&quot;https://app.netlify.com/projects/6f7f2756-51b1-4117-b20d-c404f5a1ad24/overview?promptTemplate=5f50f746-2ba1-4a3d-8a47-1a515f4420eb&amp;from_hud=private&amp;hud_action=ar_task&quot; target=&quot;_blank&quot; rel=&quot;noopener&quot;&gt;&lt;svg width=&quot;12&quot; height=&quot;12&quot; viewBox=&quot;0 0 16 16&quot; fill=&quot;currentColor&quot; aria-hidden=&quot;true&quot;&gt;&lt;path d=&quot;M5.68 9.925 4.607 8.85l-.013-.379 1.1-1.1.38.012 1.075 1.075.012.379-1.1 1.1zM9.96 9.925 8.886 8.85l-.013-.379 1.1-1.1.38.012 1.075 1.075.012.379-1.1 1.1z&quot;/&gt;&lt;path fill-rule=&quot;evenodd&quot; clip-rule=&quot;evenodd&quot; d=&quot;M9.005 2.52v1.296h2.657a3.19 3.19 0 0 1 3.191 3.192v3.356a3.19 3.19 0 0 1-3.191 3.191H4.338a3.19 3.19 0 0 1-3.191-3.19V7.007a3.19 3.19 0 0 1 3.191-3.192h2.836V2.52l.229-.245h1.373zM4.338 5.316c-.934 0-1.691.758-1.691 1.692v3.356c0 .934.758 1.691 1.691 1.691h7.324c.933 0 1.69-.757 1.691-1.69V7.007c0-.934-.757-1.692-1.691-1.692z&quot;/&gt;&lt;/svg&gt; Run&lt;/a&gt;
-      &lt;/div&gt;
-          &lt;/div&gt;
-        &lt;/section&gt;
-        &lt;div class=&quot;nl-mini&quot; id=&quot;nl-mini&quot;&gt;
-          &lt;span class=&quot;nl-mini-brand&quot;&gt;&lt;svg width=&quot;18&quot; height=&quot;18&quot; viewBox=&quot;-45.625 -47.625 456.25 456.25&quot; fill=&quot;none&quot; aria-hidden=&quot;true&quot;&gt;
-    &lt;path fill-rule=&quot;evenodd&quot; clip-rule=&quot;evenodd&quot; d=&quot;M122.608 207.222V298.975C122.608 301.415 123.574 303.775 125.317 305.518L177.467 357.668C181.06 361.261 186.932 361.261 190.525 357.668L232.675 315.519C236.268 311.926 236.268 306.053 232.675 302.434L133.119 202.878C129.231 198.99 122.608 201.726 122.608 207.222Z&quot; fill=&quot;white&quot;/&gt;
-    &lt;path fill-rule=&quot;evenodd&quot; clip-rule=&quot;evenodd&quot; d=&quot;M232.675 44.8449L190.525 2.69468C186.932 -0.898228 181.06 -0.898228 177.467 2.69468L125.317 54.846C123.574 56.5889 122.608 58.922 122.608 61.362V153.115C122.608 158.584 129.231 161.346 133.119 157.459L232.675 57.9031C236.268 54.3101 236.268 48.4385 232.675 44.8187V44.8449Z&quot; fill=&quot;white&quot;/&gt;
-    &lt;path fill-rule=&quot;evenodd&quot; clip-rule=&quot;evenodd&quot; d=&quot;M307.482 126.543L151.056 174.243C145.238 176.012 145.238 184.243 151.056 186.013L307.482 233.713C310.726 234.705 314.319 233.82 316.706 231.407L361.483 186.629C365.076 183.036 365.076 177.165 361.483 173.545L316.706 128.767C314.292 126.354 310.753 125.469 307.482 126.462V126.515V126.543Z&quot; fill=&quot;white&quot;/&gt;
-    &lt;path d=&quot;M48.6878 131.481L6.52195 173.647C2.91992 177.249 2.91992 183.089 6.52195 186.691L48.6883 228.857C52.2903 232.459 58.1302 232.459 61.7322 228.857L103.898 186.691C107.5 183.089 107.5 177.249 103.898 173.647L61.7317 131.481C58.1297 127.879 52.2899 127.879 48.6878 131.481Z&quot; fill=&quot;white&quot;/&gt;&lt;/svg&gt;&lt;span class=&quot;nl-mini-lock&quot;&gt;&lt;svg width=&quot;13&quot; height=&quot;13&quot; viewBox=&quot;0 0 16 16&quot; fill=&quot;currentColor&quot; fill-rule=&quot;evenodd&quot; aria-hidden=&quot;true&quot;&gt;&lt;path d=&quot;M8 1.5A3.5 3.5 0 0 0 4.5 5v2H4A1.5 1.5 0 0 0 2.5 8.5v4A1.5 1.5 0 0 0 4 14h8a1.5 1.5 0 0 0 1.5-1.5v-4A1.5 1.5 0 0 0 12 7h-.5V5A3.5 3.5 0 0 0 8 1.5zm2 5.5V5a2 2 0 1 0-4 0v2h4z&quot;/&gt;&lt;/svg&gt;&lt;/span&gt;&lt;/span&gt;
-          &lt;button type=&quot;button&quot; class=&quot;nl-icon-btn nl-tap nl-mini-open&quot; id=&quot;nl-mini-open&quot;
-                  aria-label=&quot;Show Netlify site tools&quot;&gt;&lt;svg width=&quot;14&quot; height=&quot;14&quot; viewBox=&quot;0 0 16 16&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;1.7&quot; stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; aria-hidden=&quot;true&quot;&gt;&lt;path d=&quot;M12 4.5 8.5 8 12 11.5M7.5 4.5 4 8 7.5 11.5&quot;/&gt;&lt;/svg&gt;&lt;/button&gt;
-          &lt;button type=&quot;button&quot; class=&quot;nl-icon-btn nl-tap nl-mini-hide&quot; id=&quot;nl-mini-hide&quot;
-                  aria-label=&quot;Hide Netlify tools on this site&quot;&gt;&lt;svg width=&quot;14&quot; height=&quot;14&quot; viewBox=&quot;0 0 16 16&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;1.9&quot; stroke-linecap=&quot;round&quot; aria-hidden=&quot;true&quot;&gt;&lt;path d=&quot;M4.5 4.5 11.5 11.5M11.5 4.5 4.5 11.5&quot;/&gt;&lt;/svg&gt;&lt;/button&gt;
-        &lt;/div&gt;
-        &lt;section class=&quot;nl-tip&quot; id=&quot;nl-tip&quot; aria-label=&quot;Project visibility&quot;&gt;
-          This project is private - only your team and people you invite can view it.
-          &lt;a href=&quot;https://docs.netlify.com/manage/security/secure-access-to-sites/project-visibility/&quot;
-             target=&quot;_blank&quot; rel=&quot;noopener&quot;&gt;Learn more &lt;span aria-hidden=&quot;true&quot;&gt;&amp;#8599;&lt;/span&gt;&lt;/a&gt;
-        &lt;/section&gt;
-        &lt;div class=&quot;nl-bar&quot; role=&quot;toolbar&quot; aria-label=&quot;Netlify site tools&quot;&gt;
-          &lt;span class=&quot;nl-logo&quot;&gt;&lt;svg width=&quot;20&quot; height=&quot;20&quot; viewBox=&quot;-45.625 -47.625 456.25 456.25&quot; fill=&quot;none&quot; aria-hidden=&quot;true&quot;&gt;
-    &lt;path fill-rule=&quot;evenodd&quot; clip-rule=&quot;evenodd&quot; d=&quot;M122.608 207.222V298.975C122.608 301.415 123.574 303.775 125.317 305.518L177.467 357.668C181.06 361.261 186.932 361.261 190.525 357.668L232.675 315.519C236.268 311.926 236.268 306.053 232.675 302.434L133.119 202.878C129.231 198.99 122.608 201.726 122.608 207.222Z&quot; fill=&quot;white&quot;/&gt;
-    &lt;path fill-rule=&quot;evenodd&quot; clip-rule=&quot;evenodd&quot; d=&quot;M232.675 44.8449L190.525 2.69468C186.932 -0.898228 181.06 -0.898228 177.467 2.69468L125.317 54.846C123.574 56.5889 122.608 58.922 122.608 61.362V153.115C122.608 158.584 129.231 161.346 133.119 157.459L232.675 57.9031C236.268 54.3101 236.268 48.4385 232.675 44.8187V44.8449Z&quot; fill=&quot;white&quot;/&gt;
-    &lt;path fill-rule=&quot;evenodd&quot; clip-rule=&quot;evenodd&quot; d=&quot;M307.482 126.543L151.056 174.243C145.238 176.012 145.238 184.243 151.056 186.013L307.482 233.713C310.726 234.705 314.319 233.82 316.706 231.407L361.483 186.629C365.076 183.036 365.076 177.165 361.483 173.545L316.706 128.767C314.292 126.354 310.753 125.469 307.482 126.462V126.515V126.543Z&quot; fill=&quot;white&quot;/&gt;
-    &lt;path d=&quot;M48.6878 131.481L6.52195 173.647C2.91992 177.249 2.91992 183.089 6.52195 186.691L48.6883 228.857C52.2903 232.459 58.1302 232.459 61.7322 228.857L103.898 186.691C107.5 183.089 107.5 177.249 103.898 173.647L61.7317 131.481C58.1297 127.879 52.2899 127.879 48.6878 131.481Z&quot; fill=&quot;white&quot;/&gt;&lt;/svg&gt;&lt;/span&gt;
-          &lt;button type=&quot;button&quot; class=&quot;nl-status&quot; id=&quot;nl-status&quot;
-                  aria-expanded=&quot;false&quot; aria-controls=&quot;nl-tip&quot;&gt;&lt;svg width=&quot;13&quot; height=&quot;13&quot; viewBox=&quot;0 0 16 16&quot; fill=&quot;currentColor&quot; fill-rule=&quot;evenodd&quot; aria-hidden=&quot;true&quot;&gt;&lt;path d=&quot;M8 1.5A3.5 3.5 0 0 0 4.5 5v2H4A1.5 1.5 0 0 0 2.5 8.5v4A1.5 1.5 0 0 0 4 14h8a1.5 1.5 0 0 0 1.5-1.5v-4A1.5 1.5 0 0 0 12 7h-.5V5A3.5 3.5 0 0 0 8 1.5zm2 5.5V5a2 2 0 1 0-4 0v2h4z&quot;/&gt;&lt;/svg&gt;&lt;span class=&quot;nl-shrinks&quot;&gt;Private&lt;/span&gt;&lt;/button&gt;
-          &lt;span class=&quot;nl-sep&quot; aria-hidden=&quot;true&quot;&gt;&lt;/span&gt;
-          &lt;a class=&quot;nl-btn&quot; href=&quot;https://app.netlify.com/projects/6f7f2756-51b1-4117-b20d-c404f5a1ad24/overview?modal=share&amp;from_hud=private&amp;hud_action=share&quot; target=&quot;_blank&quot; rel=&quot;noopener&quot;&gt;&lt;svg width=&quot;15&quot; height=&quot;15&quot; viewBox=&quot;0 0 16 16&quot; fill=&quot;currentColor&quot; aria-hidden=&quot;true&quot;&gt;&lt;path fill-rule=&quot;evenodd&quot; clip-rule=&quot;evenodd&quot; d=&quot;M7.5636 8C6.94548 8.31953 6.24382 8.5 5.5 8.5C4.75618 8.5 4.05452 8.31953 3.4364 8H1.5L0.5 9V13L1.5 14H9.5L10.5 13V9L9.5 8H7.5636ZM8.87868 9.5H7.90075C7.16414 9.82186 6.35125 10 5.5 10C4.64875 10 3.83586 9.82186 3.09925 9.5H2.12132L2 9.62132V12.3787L2.12132 12.5H8.87868L9 12.3787V9.62132L8.87868 9.5Z&quot;/&gt;&lt;path d=&quot;M13.9999 10.1213V11.8463L12.2043 11.8481L12.0039 12.0357V13.1606L12.2043 13.3481H13.7955L13.7975 13.3463H14.7024L15.4999 12.5V9.5L14.5001 8.5001L12.2043 8.49976L12.0039 8.68726V9.81225L12.2043 9.99976L13.8786 10L13.9999 10.1213Z&quot;/&gt;&lt;path fill-rule=&quot;evenodd&quot; clip-rule=&quot;evenodd&quot; d=&quot;M5.5 7C6.88071 7 8 5.88071 8 4.5C8 3.11929 6.88071 2 5.5 2C4.11929 2 3 3.11929 3 4.5C3 5.88071 4.11929 7 5.5 7ZM5.5 5.5C6.05228 5.5 6.5 5.05228 6.5 4.5C6.5 3.94772 6.05228 3.5 5.5 3.5C4.94772 3.5 4.5 3.94772 4.5 4.5C4.5 5.05228 4.94772 5.5 5.5 5.5Z&quot;/&gt;&lt;path fill-rule=&quot;evenodd&quot; clip-rule=&quot;evenodd&quot; d=&quot;M13.7 5.1C13.7 6.25937 12.7594 7.2 11.6 7.2C10.4406 7.2 9.5 6.25937 9.5 5.1C9.5 3.94062 10.4406 3 11.6 3C12.7594 3 13.7 3.94062 13.7 5.1ZM11.6 5.7C11.9309 5.7 12.2 5.43095 12.2 5.1C12.2 4.76905 11.9309 4.5 11.6 4.5C11.2691 4.5 11 4.76905 11 5.1C11 5.43095 11.2691 5.7 11.6 5.7Z&quot;/&gt;&lt;/svg&gt;
-            &lt;span class=&quot;nl-shrinks&quot;&gt;Share&lt;/span&gt;&lt;/a&gt;
-          &lt;button type=&quot;button&quot; class=&quot;nl-btn&quot; id=&quot;nl-tools&quot; aria-expanded=&quot;false&quot; aria-controls=&quot;nl-pop&quot;&gt;&lt;svg width=&quot;15&quot; height=&quot;15&quot; viewBox=&quot;0 0 16 16&quot; fill=&quot;currentColor&quot; aria-hidden=&quot;true&quot;&gt;&lt;path fill-rule=&quot;evenodd&quot; clip-rule=&quot;evenodd&quot; d=&quot;M7.98407 9.625L8.58935 11.0952C8.62792 11.1889 8.71922 11.25 8.82053 11.25H9.77587C9.88268 11.25 9.95527 11.1415 9.91454 11.0428L7.3828 4.90468C7.3442 4.81107 7.25294 4.75 7.15169 4.75H6.34295C6.24163 4.75 6.15033 4.81115 6.11177 4.90484L3.58524 11.0429C3.54461 11.1416 3.61719 11.25 3.72395 11.25H4.67399C4.7753 11.25 4.86659 11.1889 4.90516 11.0952L5.51045 9.625H7.98407ZM7.46943 8.375L6.74726 6.62092L6.02508 8.375H7.46943Z&quot;/&gt;&lt;path d=&quot;M10.75 11.25C10.6119 11.25 10.5 11.1381 10.5 11V5C10.5 4.86193 10.6119 4.75 10.75 4.75H11.5C11.6381 4.75 11.75 4.86193 11.75 5V11C11.75 11.1381 11.6381 11.25 11.5 11.25H10.75Z&quot;/&gt;&lt;path fill-rule=&quot;evenodd&quot; clip-rule=&quot;evenodd&quot; d=&quot;M0 5.5C0 2.73858 2.23858 0.5 5 0.5H11C13.7614 0.5 16 2.73858 16 5.5V10.5C16 13.2614 13.7614 15.5 11 15.5H5C2.23858 15.5 0 13.2614 0 10.5V5.5ZM5 1.75H11C13.0711 1.75 14.75 3.42893 14.75 5.5V10.5C14.75 12.5711 13.0711 14.25 11 14.25H5C2.92893 14.25 1.25 12.5711 1.25 10.5V5.5C1.25 3.42893 2.92893 1.75 5 1.75Z&quot;/&gt;&lt;/svg&gt;
-            &lt;span class=&quot;nl-shrinks&quot;&gt;Pre-launch tools&lt;/span&gt;&lt;/button&gt;
-          &lt;a class=&quot;nl-publish&quot; href=&quot;https://app.netlify.com/projects/6f7f2756-51b1-4117-b20d-c404f5a1ad24/overview?modal=go-live&amp;from_hud=private&amp;hud_action=make_public&quot; target=&quot;_blank&quot; rel=&quot;noopener&quot;&gt;&lt;svg width=&quot;15&quot; height=&quot;15&quot; viewBox=&quot;0 0 16 16&quot; fill=&quot;currentColor&quot; aria-hidden=&quot;true&quot;&gt;&lt;path d=&quot;M11.072 6C10.8557 5.99995 10.6443 5.93576 10.4644 5.81554C10.2846 5.69533 10.1444 5.52449 10.0617 5.32463C9.97895 5.12477 9.95733 4.90486 9.99956 4.69271C10.0418 4.48056 10.146 4.2857 10.299 4.13276C10.4519 3.97982 10.6468 3.87568 10.859 3.8335C11.0711 3.79132 11.291 3.81299 11.4909 3.89578C11.6907 3.97857 11.8615 4.11876 11.9817 4.29862C12.1019 4.47848 12.166 4.68994 12.166 4.90625C12.1658 5.19633 12.0505 5.47447 11.8454 5.67956C11.6402 5.88464 11.3621 5.9999 11.072 6Z&quot;/&gt;&lt;path fill-rule=&quot;evenodd&quot; clip-rule=&quot;evenodd&quot; d=&quot;M3.59279 4.5H6.77473L8.48034 2.74577L10.1619 1L14.4308 1.00686L15 1.59031V6.01763L11.5291 9.61732L11.78 12.4852L11.1608 13.7165L8.58695 15.2986L7.59043 14.7959L7.31674 11.6676L4.624 8.875H1.65598L1.06836 7.92609L2.42011 5.22418L3.59279 4.5ZM8.7673 11.037L8.96573 13.305L10.0122 12.6618L10.2486 12.1917L10.1476 11.037L8.7673 11.037ZM8.43037 10.6616L12.036 6.93056L13.5 5.41225V2.50537L10.7987 2.50103L10.0283 3.30089L5.69627 7.82603L8.43037 10.6616ZM5.27424 7.38834L5.35943 6H4.01862L3.57089 6.27649L3.02131 7.375H5.26138L5.27424 7.38834Z&quot;/&gt;&lt;path d=&quot;M2.05008 10.9935L3.79156 9.6874L4.81429 10.7954L3.17932 12.0216L2.95615 13.1374L4.07201 12.9143L5.28155 11.3016L6.31603 12.4222L5.10008 14.0435L4.64717 14.3289L2.14717 14.8289L1.26465 13.9464L1.76465 11.4464L2.05008 10.9935Z&quot;/&gt;&lt;/svg&gt; Make public&lt;/a&gt;
-          &lt;button type=&quot;button&quot; class=&quot;nl-icon-btn nl-tap nl-min&quot; id=&quot;nl-min&quot;
-                  aria-label=&quot;Minimize Netlify tools&quot;&gt;&lt;svg width=&quot;14&quot; height=&quot;14&quot; viewBox=&quot;0 0 16 16&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;1.7&quot; stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; aria-hidden=&quot;true&quot;&gt;&lt;path d=&quot;M4 4.5 7.5 8 4 11.5M8.5 4.5 12 8 8.5 11.5&quot;/&gt;&lt;/svg&gt;&lt;/button&gt;
-        &lt;/div&gt;
-      &lt;/div&gt;
-      &lt;script&gt;
-        
-    function nlSend(){
-      var wrap=document.querySelector('.nl-wrap'),boxes=[];
-      for(var i=0;i&lt;wrap.children.length;i++){
-        var c=wrap.children[i];
-        if(!c.offsetWidth||!c.offsetHeight)continue;
-        boxes.push({x:c.offsetLeft-wrap.offsetLeft+8,
-                    y:c.offsetTop-wrap.offsetTop+8,
-                    w:c.offsetWidth,h:c.offsetHeight});
-      }
-      parent.postMessage({nlHud:'resize',
-        width:wrap.offsetWidth+26,
-        height:wrap.offsetHeight+26,
-        boxes:boxes},'*');
-    }
-    function nlSendSoon(){requestAnimationFrame(nlSend);}
-    window.addEventListener('load',nlSend);
-    window.addEventListener('message',function(e){
-      if(e.source!==parent||!e.data||e.data.nlHud!=='viewport')return;
-      var s=document.documentElement.style;
-      s.setProperty('--nl-vw',e.data.w+'px');
-      s.setProperty('--nl-vh',e.data.h+'px');
-      document.documentElement.classList.toggle('nl-narrow',e.data.w&lt;600);
-      nlSendSoon();
-    });
-    var nlCoarse=window.matchMedia('(pointer: coarse)').matches;
-    function nlSubmit(form){
-      if(form.requestSubmit)return form.requestSubmit();
-      if(form.checkValidity&amp;&amp;!form.checkValidity())
-        return form.reportValidity&amp;&amp;form.reportValidity();
-      form.submit();
-    }
-  
-        var btn=document.getElementById('nl-tools'),pop=document.getElementById('nl-pop');
-        function setOpen(open){
-          pop.classList.toggle('open',open);
-          btn.setAttribute('aria-expanded',open?'true':'false');
-          nlSendSoon();
-        }
-        btn.addEventListener('click',function(){setOpen(!pop.classList.contains('open'));});
-        document.getElementById('nl-pop-close').addEventListener('click',function(){setOpen(false);btn.focus();});
-
-        var statusBtn=document.getElementById('nl-status'),tip=document.getElementById('nl-tip'),tipTimer=null;
-        function setTip(open){
-          tip.classList.toggle('open',open);
-          statusBtn.setAttribute('aria-expanded',open?'true':'false');
-          nlSendSoon();
-        }
-        function openTip(){clearTimeout(tipTimer);setTip(true);}
-        function closeTipSoon(){clearTimeout(tipTimer);tipTimer=setTimeout(function(){setTip(false);},200);}
-        if(!nlCoarse){
-          statusBtn.addEventListener('mouseenter',openTip);
-          statusBtn.addEventListener('mouseleave',closeTipSoon);
-          tip.addEventListener('mouseenter',openTip);
-          tip.addEventListener('mouseleave',closeTipSoon);
-        }
-        statusBtn.addEventListener('focus',function(){
-          var keyboard;
-          try{keyboard=statusBtn.matches(':focus-visible');}catch(e){keyboard=!nlCoarse;}
-          if(keyboard)openTip();
-        });
-        statusBtn.addEventListener('blur',closeTipSoon);
-        statusBtn.addEventListener('click',function(){
-          clearTimeout(tipTimer);
-          setTip(nlCoarse ? !tip.classList.contains('open') : true);
-        });
-
-        var root=document.documentElement;
-        function setStage(value){
-          root.classList.toggle('nl-mini-state',value==='mini');
-          if(value==='mini'){setOpen(false);setTip(false);}
-          parent.postMessage({nlHud:'state',value:value},'*');
-          nlSendSoon();
-        }
-        document.getElementById('nl-min').addEventListener('click',function(){
-          setStage('mini');
-          document.getElementById('nl-mini-open').focus();
-        });
-        document.getElementById('nl-mini').addEventListener('click',function(e){
-          if(e.target.closest('#nl-mini-hide'))return;
-          setStage('');
-          document.getElementById('nl-min').focus();
-        });
-        document.getElementById('nl-mini-hide').addEventListener('click',function(){
-          parent.postMessage({nlHud:'state',value:'hidden'},'*');
-        });
-        document.addEventListener('keydown',function(e){
-          if(e.key!=='Escape')return;
-          if(tip.classList.contains('open')){setTip(false);statusBtn.focus();return;}
-          if(pop.classList.contains('open')){setOpen(false);btn.focus();}
-        });
-      &lt;/script&gt;
-    &lt;/body&gt;&lt;/html&gt;" style="position: fixed; bottom: 0px; right: 0px; border: 0px; margin: 0px; padding: 0px; background: transparent; color-scheme: dark; z-index: 2147483645; width: 573px; height: 78px; clip-path: path(&quot;M 3 3 H 560 V 65 H 3 Z&quot;);" data-nl-ready="1"></iframe>
 </body></html>
